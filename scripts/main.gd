@@ -17,6 +17,7 @@ const DialogueBoxScript := preload("res://scripts/ui/dialogue_box.gd")
 const TitleScreenScript := preload("res://scripts/ui/title_screen.gd")
 const PauseMenuScript := preload("res://scripts/ui/pause_menu.gd")
 const MinimapScript := preload("res://scripts/ui/minimap.gd")
+const TouchControlsScript := preload("res://scripts/ui/touch_controls.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 const WORLD_SIZE := Vector2(1500, 1000)
@@ -83,6 +84,7 @@ var dialog_box: CanvasLayer
 var title_screen: CanvasLayer
 var pause_menu: CanvasLayer
 var minimap: CanvasLayer
+var touch_ui: CanvasLayer
 var fade_rect: ColorRect
 
 var interactables: Array = []
@@ -564,6 +566,13 @@ func _build_ui() -> void:
 	add_child(minimap)
 	minimap.setup(ground.texture, player, world, self)
 	minimap.toast_cb = func(t: String, c: Color) -> void: hud.toast(t, c)
+	# Điện thoại/tablet: thêm joystick ảo + nút cảm ứng (máy tính giữ bàn phím)
+	if DisplayServer.is_touchscreen_available() or OS.get_environment("FARM_TOUCH") != "":
+		if not DisplayServer.is_touchscreen_available():
+			Input.emulate_touch_from_mouse = true  # chạy thử joystick bằng chuột trên PC
+		touch_ui = TouchControlsScript.new()
+		add_child(touch_ui)
+		touch_ui.main = self
 
 	var fade_layer := CanvasLayer.new()
 	fade_layer.layer = 60
@@ -585,6 +594,8 @@ func _process(delta: float) -> void:
 	if _clicktest != "":
 		_clicktest_step()
 	minimap.visible = mode == Mode.PLAY
+	if touch_ui != null:
+		touch_ui.visible = mode == Mode.PLAY
 	if mode != Mode.PLAY or get_tree().paused:
 		return
 	GameState.tick(delta)
