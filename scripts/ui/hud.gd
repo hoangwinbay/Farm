@@ -110,13 +110,13 @@ func _ready() -> void:
 	h_h.add_child(h_ic)
 	hoe_label = UIKit.label(h_h, "Cuốc ×0", 14, Color(0.90, 0.82, 0.70))
 
-	# --- 2. THÔNG BÁO CUỘN GIẤY TRÊN PHẢI ---
+	# --- 2. THÔNG BÁO CUỘN GIẤY PHẢI PHÍA DƯỚI BẢN ĐỒ NHỎ ---
 	var tr := MarginContainer.new()
 	tr.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	tr.offset_left = -340
 	tr.offset_right = -16
-	tr.offset_top = 16
-	tr.offset_bottom = 300
+	tr.offset_top = 344
+	tr.offset_bottom = 648
 	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(tr)
 	toast_row = VBoxContainer.new()

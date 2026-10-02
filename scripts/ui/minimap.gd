@@ -156,7 +156,7 @@ func _place_panel() -> void:
 	if big:
 		panel.position = (vs - ps) / 2.0
 	else:
-		panel.position = Vector2(vs.x - ps.x - 16.0, vs.y - ps.y - 16.0)
+		panel.position = Vector2(vs.x - ps.x - 16.0, 16.0)
 
 
 func _process(_delta: float) -> void:
