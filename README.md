@@ -79,6 +79,12 @@ Game mô phỏng nông trại 2D làm bằng **Godot 4.7**, hình ảnh pixel-ar
 | 15 | Hồ tiêu | Công nghiệp | 78 | 280 | 4,5 | 9.000 |
 | 16 | Cao su | Công nghiệp | 95 | 330 | 5 | 12.000 |
 
+## 📱 Chơi trên điện thoại (mới!)
+- Bản APK Android: xem thư mục `build/` (file `NongTraiViet.apk`) — cài trực tiếp vào điện thoại.
+- **Màn hình cảm ứng tự có joystick ảo** (góc trái) + nút **E / I / R / tạm dừng** (góc phải) — máy tính vẫn dùng WASD như cũ, cùng một bản code.
+- Màn hình tự xoay ngang; giao diện, bản đồ nhỏ, chỉ đường… giữ nguyên như trên máy tính.
+- Bản Windows (file `NongTraiViet.exe`) cũng trong `build/` — chạy song song với bản điện thoại, mỗi máy lưu game riêng.
+
 ## Xử lý sự cố
 **Không bấm được nút "Bắt đầu mới"?** Thử lần lượt:
 1. Bấm phím **Enter** (hoặc **C**) ngay trong cửa sổ game — luôn bắt đầu được.
