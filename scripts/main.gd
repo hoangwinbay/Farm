@@ -16,6 +16,7 @@ const InventoryPanelScript := preload("res://scripts/ui/inventory_panel.gd")
 const DialogueBoxScript := preload("res://scripts/ui/dialogue_box.gd")
 const TitleScreenScript := preload("res://scripts/ui/title_screen.gd")
 const PauseMenuScript := preload("res://scripts/ui/pause_menu.gd")
+const MinimapScript := preload("res://scripts/ui/minimap.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 const WORLD_SIZE := Vector2(1500, 1000)
@@ -33,6 +34,19 @@ const PLAYER_START := Vector2(250, 470)
 const POND_RECT := Rect2(940, 760, 180, 100)
 const FISH_SPOT_POS := Vector2(1030, 810)   # tâm hồ — câu được ở MỌI bờ
 const PEN_RECT := Rect2(144, 568, 224, 128) # khu chuồng nuôi
+
+# Mạng lối đi hình chữ nhật (24px) — trùng với đồ thị chỉ đường trong minimap.
+# Đại lộ đông-tây + nhánh nhà, 3 nhánh quầy hàng, nhánh cổng chuồng, nhánh bờ ao.
+const PATHS := [
+	Rect2(238, 236, 24, 246),    # từ cửa nhà xuống đại lộ
+	Rect2(238, 458, 1162, 24),   # đại lộ đông - tây (qua 2 cổng ruộng)
+	Rect2(970, 370, 430, 24),    # lối chợ chạy trước 3 quầy
+	Rect2(998, 394, 24, 64),     # nhánh lên quầy Cô Tư
+	Rect2(1168, 394, 24, 64),    # nhánh lên quầy Bác Tư
+	Rect2(1338, 394, 24, 64),    # nhánh lên quầy Chú Hai
+	Rect2(292, 482, 24, 84),     # nhánh tới cổng chuồng gia cầm
+	Rect2(1018, 482, 24, 266),   # nhánh xuống bờ ao câu cá
+]
 
 enum Mode { TITLE, PLAY, DIALOG, PANEL }
 
@@ -58,6 +72,7 @@ var inv_panel: CanvasLayer
 var dialog_box: CanvasLayer
 var title_screen: CanvasLayer
 var pause_menu: CanvasLayer
+var minimap: CanvasLayer
 var fade_rect: ColorRect
 
 var interactables: Array = []
@@ -126,16 +141,7 @@ func _build_world() -> void:
 	ground = Sprite2D.new()
 	ground.centered = false
 	var farm_px := Rect2(FARM_ORIGIN, Vector2(FARM_TILES.x * 32, FARM_TILES.y * 32))
-	var paths := [
-		Rect2(226, 232, 24, 250),
-		Rect2(226, 458, 390, 24),
-		Rect2(616, 458, 524, 24),
-		Rect2(1116, 360, 24, 110),
-		Rect2(970, 370, 430, 24),
-		Rect2(226, 470, 90, 24),
-		Rect2(292, 470, 24, 95),
-	]
-	ground.texture = TextureGen.make_ground(int(WORLD_SIZE.x), int(WORLD_SIZE.y), farm_px, paths, POND_RECT)
+	ground.texture = TextureGen.make_ground(int(WORLD_SIZE.x), int(WORLD_SIZE.y), farm_px, PATHS, POND_RECT)
 	world.add_child(ground)
 
 	# nông trại + ô vuông chỉ điểm
@@ -532,6 +538,10 @@ func _build_ui() -> void:
 	add_child(dialog_box)
 	title_screen = TitleScreenScript.new()
 	add_child(title_screen)
+	minimap = MinimapScript.new()
+	add_child(minimap)
+	minimap.setup(ground.texture, player, world, self)
+	minimap.toast_cb = func(t: String, c: Color) -> void: hud.toast(t, c)
 
 	var fade_layer := CanvasLayer.new()
 	fade_layer.layer = 60
@@ -552,6 +562,7 @@ func _process(delta: float) -> void:
 		_debug_step()
 	if _clicktest != "":
 		_clicktest_step()
+	minimap.visible = mode == Mode.PLAY
 	if mode != Mode.PLAY or get_tree().paused:
 		return
 	GameState.tick(delta)
@@ -1052,6 +1063,30 @@ func _debug_step() -> void:
 			_shot("14_poultry")
 		470:
 			poultry_shop.close()
+			mode = Mode.PLAY
+			GameState.clock = 800
+			player.position = Vector2(310, 610)
+			cam.reset_smoothing()
+		480:
+			minimap.set_big(true)
+		490:
+			_shot("15_minimap_big")
+		495:
+			minimap.set_big(false)
+			minimap._on_poi_clicked("pond")
+			print("MINIMAP guide_on=", minimap.guide_dest == "pond",
+					" cancel=", minimap.cancel_btn.visible,
+					" route_pts=", minimap.guide.route.size())
+		530:
+			_shot("16_minimap_guide")
+		535:
+			minimap._on_cancel_pressed()
+			print("MINIMAP after_cancel=", minimap.guide_dest == "")
+		540:
+			minimap._on_poi_clicked("batu")
+			player.position = Vector2(1180, 415)
+		580:
+			print("MINIMAP arrival_cleared=", minimap.guide_dest == "")
 			_debug_done()
 
 

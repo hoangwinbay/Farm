@@ -25,6 +25,12 @@ Game mô phỏng nông trại 2D làm bằng **Godot 4.7**, hình ảnh pixel-ar
 - 11 loại: **Gà thịt, Gà đẻ trứng, Gà thả vườn, Vịt thịt, Vịt đẻ trứng, Ngan (Vịt xiêm), Ngỗng, Chim cút, Bồ câu, Chim trĩ, Đà điểu**.
 - Con nào đủ thời gian tự cho sản phẩm (tối đa 3 con/sản phẩm chờ) — ra chuồng bấm **E** để thu → bán cho Cô Tư.
 
+## 🗺️ Bản đồ nhỏ & chỉ đường (mới!)
+- **Bản đồ nhỏ ở góc dưới phải**: hiển thị toàn bộ nông trại, các con đường và vị trí bạn đang đứng (chấm trắng nhấp nháy).
+- **Bấm vào một địa điểm trên bản đồ** (Nhà, Nông trại, Chuồng, 3 quầy hàng, Ao cá) → dải **chấm trắng** chạy dọc lối đi dẫn tới nơi, kèm vòng sáng chỉ đích.
+- **Nút "✕ HỦY CHỈ ĐƯỜNG"** bên dưới bản đồ (hoặc tự tắt khi đến nơi).
+- Phím **+** phóng to bản đồ ra **giữa màn hình** (kèm tên từng địa điểm), phím **−** thu về như cũ.
+
 ## Điều khiển
 | Phím | Chức năng |
 |---|---|
@@ -32,6 +38,7 @@ Game mô phỏng nông trại 2D làm bằng **Godot 4.7**, hình ảnh pixel-ar
 | E / Space | Tương tác: cày đất, gieo hạt, tưới nước, thu hoạch, nói chuyện |
 | I / Tab | Kho đồ — chọn hạt giống để gieo |
 | R | Đổi nhanh loại hạt đang cầm |
+| + / − | Phóng to bản đồ ra giữa màn hình / thu về như cũ |
 | Esc | Tạm dừng / đóng cửa sổ |
 
 ## Vòng lặp chơi (đúng lộ trình 13 bước)
@@ -93,5 +100,5 @@ scripts/
   farm.gd, farm_tile.gd — lưới ô đất canh tác
   player.gd, npc.gd     — nhân vật, NPC
   main.gd               — điều phối + ngày/đêm + ngủ + debug
-  ui/                   — HUD, cửa hàng, kho đồ, hội thoại, menu
+  ui/                   — HUD, cửa hàng, kho đồ, hội thoại, menu, bản đồ nhỏ chỉ đường
 ```

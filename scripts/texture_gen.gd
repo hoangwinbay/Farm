@@ -22,6 +22,13 @@ static func px(img: Image, x: int, y: int, c: Color) -> void:
 		img.set_pixel(x, y, c)
 
 
+# Giá trị mặt nạ 1 kênh (dùng khi vẽ viền lối đi); ngoài biên coi như tắt.
+static func _mask_on(img: Image, x: int, y: int) -> bool:
+	if x < 0 or y < 0 or x >= img.get_width() or y >= img.get_height():
+		return false
+	return img.get_pixel(x, y).r > 0.5
+
+
 static func rect(img: Image, x: int, y: int, w: int, h: int, c: Color) -> void:
 	for yy in range(y, y + h):
 		for xx in range(x, x + w):
@@ -171,6 +178,18 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 				px(img, x, y, Color(0.72, 0.62, 0.42))
 			else:
 				px(img, x, y, Color(0.88, 0.79, 0.58))
+	# viền đất sẫm quanh toàn mạng lối đi (vẽ sau khi gộp hết để không hở ở chỗ các đường nối nhau)
+	var road_mask := Image.create(w, h, false, Image.FORMAT_L8)
+	for p in paths:
+		road_mask.fill_rect(Rect2i(p), Color.WHITE)
+	for p in paths:
+		var er := Rect2i(int(p.position.x) - 1, int(p.position.y) - 1, int(p.size.x) + 2, int(p.size.y) + 2)
+		for ey in range(maxi(er.position.y, 0), mini(er.end.y, h)):
+			for ex in range(maxi(er.position.x, 0), mini(er.end.x, w)):
+				if _mask_on(road_mask, ex, ey) and not (_mask_on(road_mask, ex - 1, ey)
+						and _mask_on(road_mask, ex + 1, ey) and _mask_on(road_mask, ex, ey - 1)
+						and _mask_on(road_mask, ex, ey + 1)):
+					px(img, ex, ey, Color(0.60, 0.50, 0.31))
 	# Khuôn viên chợ quê phía sau (nền gạch đá cho 3 quầy hàng)
 	var plaza := Rect2i(950, 318, 480, 84)
 	img.fill_rect(plaza, Color(0.74, 0.64, 0.44))
