@@ -22,6 +22,7 @@ Game mô phỏng nông trại 2D làm bằng **Godot 4.7**, hình ảnh pixel-ar
 ## 🐔 Chăn nuôi gia cầm (mới!)
 - Gặp **Cô Tư** (cạnh chuồng phía Tây Nam): mua **chuồng** + **gia cầm giống** + thu mua sản phẩm.
 - **Muốn nuôi phải mua chuồng trước**: Chuồng nhỏ 400 xu (Gà/Vịt/Ngan/Cút/Bồ câu) · Chuồng lớn 1200 xu (Ngỗng/Trĩ/Đà điểu). 1 chuồng nuôi 1 con.
+- **Mỗi loại gia cầm một ô chuồng riêng**: khu chuồng chia lưới ô có biển tên, con vật ở đúng ô của loại nó, ô trống chờ mua thêm — chuồng tự co/giãn theo số loại đang nuôi.
 - 11 loại: **Gà thịt, Gà đẻ trứng, Gà thả vườn, Vịt thịt, Vịt đẻ trứng, Ngan (Vịt xiêm), Ngỗng, Chim cút, Bồ câu, Chim trĩ, Đà điểu**.
 - Con nào đủ thời gian tự cho sản phẩm (tối đa 3 con/sản phẩm chờ) — ra chuồng bấm **E** để thu → bán cho Cô Tư.
 

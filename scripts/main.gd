@@ -33,7 +33,17 @@ const SCARECROW_POS := Vector2(392, 356)
 const PLAYER_START := Vector2(250, 470)
 const POND_RECT := Rect2(940, 760, 180, 100)
 const FISH_SPOT_POS := Vector2(1030, 810)   # tâm hồ — câu được ở MỌI bờ
-const PEN_RECT := Rect2(144, 568, 224, 128) # khu chuồng nuôi
+# Khu chuồng: sân trong (y 560..660) + lưới ô chuồng 3 cột bên dưới.
+# Mỗi LOẠI gia cầm một ô riêng; chuồng co/giãn theo số loại đang nuôi.
+const PEN_RECT := Rect2(120, 560, 272, 108)
+const PEN_COL_X := [128.0, 216.0, 304.0]  # mép trái 3 cột ô
+const PEN_CELL := Vector2(80, 64)         # cỡ 1 ô chuồng
+const PEN_GRID_TOP := 668.0               # mép trên hàng ô đầu tiên
+const PEN_ROW_STEP := 72.0                # 64 ô + 8 divider
+const PEN_SPOTS := [                      # chỗ đứng con vật trong ô (so tâm ô)
+	Vector2(0, -8), Vector2(-18, 8), Vector2(18, 10),
+	Vector2(-8, 18), Vector2(22, -6), Vector2(-24, -4),
+]
 
 # Mạng lối đi hình chữ nhật (24px) — trùng với đồ thị chỉ đường trong minimap.
 # Đại lộ đông-tây + nhánh nhà, 3 nhánh quầy hàng, nhánh cổng chuồng, nhánh bờ ao.
@@ -161,8 +171,8 @@ func _build_world() -> void:
 	for tpos in [
 		Vector2(90, 130), Vector2(300, 90), Vector2(420, 110), Vector2(720, 90),
 		Vector2(1010, 120), Vector2(1350, 110), Vector2(1150, 60), Vector2(1450, 300),
-		Vector2(60, 360), Vector2(1450, 540), Vector2(80, 700), Vector2(350, 720),
-		Vector2(170, 900), Vector2(500, 930), Vector2(820, 940), Vector2(1210, 900),
+		Vector2(60, 360), Vector2(1450, 540), Vector2(80, 700), Vector2(700, 760),
+		Vector2(740, 780), Vector2(500, 930), Vector2(820, 940), Vector2(1210, 900),
 		Vector2(1430, 780), Vector2(960, 640),
 	]:
 		_add_decor(TextureGen.get_tex("tree"), tpos, 1.5, Rect2(-7, -8, 14, 10))
@@ -261,154 +271,165 @@ func _add_ellipse_wall(center: Vector2, rx: float, ry: float) -> void:
 
 
 func _build_pen() -> void:
-	var fh := TextureGen.get_tex("fence_h")
-	var fv := TextureGen.get_tex("fence_v")
-	var fc := TextureGen.get_tex("fence_corner")
-	var gate_coop := TextureGen.get_tex("gate_coop")
-	var x_left := int(PEN_RECT.position.x) + 16
-	var x_right := int(PEN_RECT.end.x) - 16
-	var y_top := int(PEN_RECT.position.y) - 8
-	var y_bot := int(PEN_RECT.end.y) + 8
-
-	# 1. Mặt sàn lót rơm và đất mịn cho toàn khu chuồng
-	var bedding := Sprite2D.new()
-	bedding.texture = TextureGen.get_tex("pen_bedding")
-	bedding.position = PEN_RECT.position + PEN_RECT.size / 2.0
-	bedding.z_index = -1
-	world.add_child(bedding)
-
-	# 2. Hàng rào chuồng mộc mạc:
-	for x in range(x_left, x_right, 32):
-		_add_sprite(fh, Vector2(x, y_bot))
-	for y in range(y_top + 16, y_bot, 32):
-		_add_sprite(fv, Vector2(PEN_RECT.position.x - 12, y))
-		_add_sprite(fv, Vector2(PEN_RECT.end.x + 12, y))
-
-	# Rào bắc (trên) có CỬA CHUỒNG ở giữa (x ~ 304):
-	for x in [160, 192, 224, 256]:
-		_add_sprite(fh, Vector2(x, y_top))
-	_add_sprite(fh, Vector2(344, y_top))
-
-	# Cổng chuồng gia cầm pixel-art tuyệt đẹp đặt ở x=304, y=y_top
-	_add_sprite(gate_coop, Vector2(304, y_top))
-
-	# Cọc góc hàng rào chuồng
-	_add_sprite(fc, Vector2(PEN_RECT.position.x - 12, y_top))
-	_add_sprite(fc, Vector2(PEN_RECT.end.x + 12, y_top))
-	_add_sprite(fc, Vector2(PEN_RECT.position.x - 12, y_bot))
-	_add_sprite(fc, Vector2(PEN_RECT.end.x + 12, y_bot))
-
-	# Tường chắn chuồng
-	_wall(Vector2((x_left + x_right) / 2.0, y_bot), Vector2(x_right - x_left, 8))
-	_wall(Vector2(PEN_RECT.position.x - 12, (y_top + y_bot) / 2.0), Vector2(8, y_bot - y_top + 20))
-	_wall(Vector2(PEN_RECT.end.x + 12, (y_top + y_bot) / 2.0), Vector2(8, y_bot - y_top + 20))
-	# Tường chắn phía Bắc: chắn 2 bên cổng, để hở lối vào (280..328)
-	_wall(Vector2((PEN_RECT.position.x - 12 + 280) / 2.0, y_top), Vector2(280 - (PEN_RECT.position.x - 12), 8))
-	_wall(Vector2((328 + PEN_RECT.end.x + 12) / 2.0, y_top), Vector2((PEN_RECT.end.x + 12) - 328, 8))
-
-	# 3. Nhà chuồng chính mái lá rơm nhiều tầng
-	var coop := StaticBody2D.new()
-	coop.position = PEN_RECT.position + Vector2(44, 40)
-	var spr := Sprite2D.new()
-	spr.texture = TextureGen.get_tex("coop")
-	coop.add_child(spr)
-	var col := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = Vector2(50, 28)
-	col.shape = shape
-	col.position = Vector2(0, 4)
-	coop.add_child(col)
-	world.add_child(coop)
-
-	# 4. Đống rơm vàng truyền thống ở góc chuồng
-	var hay := Sprite2D.new()
-	hay.texture = TextureGen.get_tex("hay_bale")
-	hay.position = PEN_RECT.position + Vector2(26, 102)
-	world.add_child(hay)
-
-	# 5. Máng ăn gỗ đựng hạt ngô vàng
-	var trough := Sprite2D.new()
-	trough.texture = TextureGen.get_tex("trough")
-	trough.position = PEN_RECT.position + Vector2(92, 38)
-	world.add_child(trough)
-
-	# 6. Máng nước mát lành
-	var water_trough := Sprite2D.new()
-	water_trough.texture = TextureGen.get_tex("water_trough")
-	water_trough.position = PEN_RECT.position + Vector2(92, 56)
-	world.add_child(water_trough)
-
-	# 7. Ổ rơm đẻ trứng
-	var nest := Sprite2D.new()
-	nest.texture = TextureGen.get_tex("nest_box")
-	nest.position = PEN_RECT.position + Vector2(30, 74)
-	world.add_child(nest)
-
-	# Nơi con vật đứng (được vẽ lại khi mua/bán)
 	pen_node = Node2D.new()
-	pen_node.position = PEN_RECT.position
+	pen_node.name = "Pen"
+	pen_node.position = Vector2(120, 560)
 	world.add_child(pen_node)
 	_rebuild_pen()
 
 
+# Dựng lại toàn khu chuồng: rào ngoại vi, sân trong, lưới ô chuồng
+# (mỗi LOẠI gia cầm một ô riêng) và các con vật trong ô của chúng.
 func _rebuild_pen() -> void:
 	if pen_node == null:
 		return
 	for c in pen_node.get_children():
 		c.queue_free()
 
-	# Các vị trí phân bố tự nhiên trong sân chuồng
-	var spots := [
-		Vector2(130, 40), Vector2(165, 58), Vector2(135, 82), Vector2(175, 98),
-		Vector2(95, 78), Vector2(110, 105), Vector2(65, 45), Vector2(62, 95),
-		Vector2(145, 25), Vector2(98, 20), Vector2(175, 28), Vector2(60, 110),
-	]
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 777
+	var fh := TextureGen.get_tex("fence_h")
+	var fv := TextureGen.get_tex("fence_v")
+	var fc := TextureGen.get_tex("fence_corner")
+	var org := Vector2(120, 560)  # mọi toạ độ con là toạ độ thế giới trừ org
 
+	# Các loại đang nuôi, xếp theo thứ tự DB để ô không đổi chỗ khi mua/bán
+	var species: Array = []
+	for d in PoultryDB.ANIMALS:
+		for a in Inventory.animals:
+			if str(a.id) == str(d.id):
+				species.append(str(d.id))
+				break
+	var rows: int = int(ceil(species.size() / float(PEN_COL_X.size())))
+	var y_s := 660.0 + PEN_ROW_STEP * rows  # mép trên dải rào đóng đáy chuồng
+
+	# 1. Nền rơm phủ toàn khu chuồng
+	var bedding := Sprite2D.new()
+	bedding.texture = TextureGen.get_tex("pen_bedding")
+	bedding.position = Vector2(136.0, (y_s - 552.0) / 2.0)
+	bedding.scale = Vector2(272.0 / 224.0, (y_s - 552.0) / 128.0)
+	bedding.z_index = -1
+	pen_node.add_child(bedding)
+
+	# 2. Hàng rào ngoại vi — cổng giữ nguyên ở x 280..328
+	for x in [136, 168, 200, 232, 264, 344, 376]:
+		_add_sprite(fh, Vector2(x, 560.0) - org, pen_node)
+	_add_sprite(TextureGen.get_tex("gate_coop"), Vector2(304, 560.0) - org, pen_node)
+	for y in range(576, int(y_s) + 8, 32):
+		_add_sprite(fv, Vector2(120.0, y) - org, pen_node)
+		_add_sprite(fv, Vector2(392.0, y) - org, pen_node)
+	for x in range(136, 392, 32):
+		_add_sprite(fh, Vector2(x, y_s + 8.0) - org, pen_node)
+	for cpos in [Vector2(120, 560), Vector2(392, 560), Vector2(120, y_s + 8), Vector2(392, y_s + 8)]:
+		_add_sprite(fc, cpos - org, pen_node)
+
+	# 3. Sân trong: nhà chuồng, máng ăn/nước, ổ đẻ, đống rơm
+	var coop := StaticBody2D.new()
+	coop.position = Vector2(56, 54)
+	var coop_spr := Sprite2D.new()
+	coop_spr.texture = TextureGen.get_tex("coop")
+	coop.add_child(coop_spr)
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(50, 28)
+	col.shape = shape
+	col.position = Vector2(0, 4)
+	coop.add_child(col)
+	pen_node.add_child(coop)
+	_add_sprite(TextureGen.get_tex("hay_bale"), Vector2(234, 82), pen_node)
+	_add_sprite(TextureGen.get_tex("trough"), Vector2(130, 52), pen_node)
+	_add_sprite(TextureGen.get_tex("water_trough"), Vector2(130, 70), pen_node)
+	_add_sprite(TextureGen.get_tex("nest_box"), Vector2(212, 52), pen_node)
+
+	# 4. Va chạm: ngoại vi + dải ngang trước từng hàng ô (chừa lỗ 32px giữa mỗi cột)
+	var pwall := func(center: Vector2, size: Vector2) -> void:
+		_wall(center - org, size, pen_node)
+	pwall.call(Vector2(200, 564), Vector2(160, 8))
+	pwall.call(Vector2(360, 564), Vector2(64, 8))
+	pwall.call(Vector2(120, (568.0 + y_s) / 2.0), Vector2(8, y_s - 552.0))
+	pwall.call(Vector2(392, (568.0 + y_s) / 2.0), Vector2(8, y_s - 552.0))
+	pwall.call(Vector2(256, y_s + 4.0), Vector2(272, 8))
+	for r in rows:
+		var yb := 660.0 + PEN_ROW_STEP * r + 4.0
+		pwall.call(Vector2(136, yb), Vector2(32, 8))
+		pwall.call(Vector2(212, yb), Vector2(56, 8))
+		pwall.call(Vector2(300, yb), Vector2(56, 8))
+		pwall.call(Vector2(376, yb), Vector2(32, 8))
+		for x in [136, 212, 300, 376]:
+			_add_sprite(fh, Vector2(x, 664.0 + PEN_ROW_STEP * r) - org, pen_node)
+	if rows > 0:
+		var colh := y_s - 668.0
+		pwall.call(Vector2(212, 668.0 + colh / 2.0), Vector2(8, colh))
+		pwall.call(Vector2(300, 668.0 + colh / 2.0), Vector2(8, colh))
+		for cx in [212.0, 300.0]:
+			for y in range(676, int(y_s), 32):
+				_add_sprite(fv, Vector2(cx, y) - org, pen_node)
+
+	# 5. Ô chuồng: biển tên từng loại, ô chưa dùng hiện "Trống"
+	var total_slots: int = rows * PEN_COL_X.size()
+	for i in total_slots:
+		var cx: float = PEN_COL_X[i % PEN_COL_X.size()]
+		var cy := PEN_GRID_TOP + PEN_ROW_STEP * floori(i / float(PEN_COL_X.size()))
+		var badge := PanelContainer.new()
+		if i < species.size():
+			badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.18, 0.12, 0.06, 0.92), UIKit.COLOR_BORDER_GOLD, 4))
+			UIKit.label(badge, str(PoultryDB.get_animal(species[i]).name), 10, UIKit.COLOR_TEXT_TITLE)
+		else:
+			badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07, 0.8), Color(0.32, 0.26, 0.2), 4))
+			UIKit.label(badge, "Ô trống", 10, UIKit.COLOR_TEXT_MUTED)
+		badge.position = Vector2(cx - 120.0, cy - 560.0) + Vector2(2, 1)
+		pen_node.add_child(badge)
+
+	# 6. Con vật: mỗi loại đứng trong ô của nó
+	if species.size() > 0:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 777
+		var used := {}
+		for a in Inventory.animals:
+			var sid := str(a.id)
+			var ci: int = species.find(sid)
+			var cx: float = PEN_COL_X[ci % PEN_COL_X.size()]
+			var cy := PEN_GRID_TOP + PEN_ROW_STEP * floori(ci / float(PEN_COL_X.size()))
+			var k: int = int(used.get(sid, 0))
+			used[sid] = k + 1
+			var animal_node := Node2D.new()
+			animal_node.position = Vector2(cx + PEN_CELL.x / 2.0, cy + PEN_CELL.y / 2.0) \
+					+ PEN_SPOTS[k % PEN_SPOTS.size()] \
+					+ Vector2(rng.randf_range(-4, 4), rng.randf_range(-3, 3)) - org
+			pen_node.add_child(animal_node)
+
+			var d := PoultryDB.get_animal(sid)
+			if d.is_empty():
+				continue
+			var spr := Sprite2D.new()
+			spr.texture = TextureGen.animal_sprite(str(d.shape), str(d.color))
+			spr.scale = Vector2(1.5, 1.5)
+			animal_node.add_child(spr)
+
+			# Hiệu ứng mổ thóc / cử động sống động
+			var tw := animal_node.create_tween().set_loops()
+			var delay := rng.randf_range(0.2, 1.8)
+			tw.tween_interval(delay)
+			tw.tween_property(spr, "position:y", 2.0, 0.15)
+			tw.tween_interval(0.1)
+			tw.tween_property(spr, "position:y", 0.0, 0.15)
+			tw.tween_interval(rng.randf_range(1.5, 3.0))
+
+			# Bong bóng trứng nổi trên đầu nếu con này có sản phẩm chờ thu
+			if int(a.get("ready", 0)) > 0:
+				var egg_bubble := Sprite2D.new()
+				egg_bubble.texture = TextureGen.orb_icon(str(d.product_color))
+				egg_bubble.scale = Vector2(0.85, 0.85)
+				egg_bubble.position = Vector2(0, -18)
+				animal_node.add_child(egg_bubble)
+
+				var btw := egg_bubble.create_tween().set_loops()
+				btw.tween_property(egg_bubble, "position:y", -21.0, 0.5).set_trans(Tween.TRANS_SINE)
+				btw.tween_property(egg_bubble, "position:y", -17.0, 0.5).set_trans(Tween.TRANS_SINE)
+
+	# 7. Biển báo thu hoạch nổi trên sân nếu có sản phẩm
 	var total_ready: int = Inventory.ready_products()
-
-	for i in mini(Inventory.animals.size(), spots.size()):
-		var a = Inventory.animals[i]
-		var d := PoultryDB.get_animal(str(a.id))
-		if d.is_empty():
-			continue
-
-		var animal_node := Node2D.new()
-		var pos: Vector2 = spots[i] + Vector2(rng.randf_range(-5, 5), rng.randf_range(-4, 4))
-		animal_node.position = pos
-		pen_node.add_child(animal_node)
-
-		var spr := Sprite2D.new()
-		spr.texture = TextureGen.animal_sprite(str(d.shape), str(d.color))
-		spr.scale = Vector2(1.5, 1.5)
-		animal_node.add_child(spr)
-
-		# Hiệu ứng mổ thóc / cử động sống động
-		var tw := animal_node.create_tween().set_loops()
-		var delay := rng.randf_range(0.2, 1.8)
-		tw.tween_interval(delay)
-		tw.tween_property(spr, "position:y", 2.0, 0.15)
-		tw.tween_interval(0.1)
-		tw.tween_property(spr, "position:y", 0.0, 0.15)
-		tw.tween_interval(rng.randf_range(1.5, 3.0))
-
-		# Bong bóng trứng nổi trên đầu nếu con này có sản phẩm chờ thu
-		if int(a.get("ready", 0)) > 0:
-			var egg_bubble := Sprite2D.new()
-			egg_bubble.texture = TextureGen.orb_icon(str(d.product_color))
-			egg_bubble.scale = Vector2(0.85, 0.85)
-			egg_bubble.position = Vector2(0, -18)
-			animal_node.add_child(egg_bubble)
-
-			var btw := egg_bubble.create_tween().set_loops()
-			btw.tween_property(egg_bubble, "position:y", -21.0, 0.5).set_trans(Tween.TRANS_SINE)
-			btw.tween_property(egg_bubble, "position:y", -17.0, 0.5).set_trans(Tween.TRANS_SINE)
-
-	# Biển báo thu hoạch nổi trên chuồng nếu có sản phẩm
 	if total_ready > 0:
 		var harvest_sign := Node2D.new()
-		harvest_sign.position = Vector2(44, 4)
+		harvest_sign.position = Vector2(48, 30)
 		pen_node.add_child(harvest_sign)
 
 		var sign_bubble := PanelContainer.new()
@@ -430,6 +451,7 @@ func _rebuild_pen() -> void:
 		var stw := harvest_sign.create_tween().set_loops()
 		stw.tween_property(harvest_sign, "position:y", 1.0, 0.6).set_trans(Tween.TRANS_SINE)
 		stw.tween_property(harvest_sign, "position:y", 6.0, 0.6).set_trans(Tween.TRANS_SINE)
+
 
 
 
@@ -493,11 +515,11 @@ func _build_fences() -> void:
 		_add_sprite(TextureGen.get_tex("gate_v"), Vector2(door_x, (door_w1 + door_w2) / 2.0))
 
 
-func _add_sprite(tex: Texture2D, pos: Vector2) -> void:
+func _add_sprite(tex: Texture2D, pos: Vector2, parent: Node = null) -> void:
 	var s := Sprite2D.new()
 	s.texture = tex
 	s.position = pos
-	world.add_child(s)
+	(parent if parent != null else world).add_child(s)
 
 
 func _build_walls() -> void:
@@ -508,7 +530,7 @@ func _build_walls() -> void:
 	_wall(Vector2(WORLD_SIZE.x + t / 2, WORLD_SIZE.y / 2), Vector2(t, WORLD_SIZE.y + t * 2))
 
 
-func _wall(center: Vector2, size: Vector2) -> void:
+func _wall(center: Vector2, size: Vector2, parent: Node = null) -> void:
 	var body := StaticBody2D.new()
 	body.position = center
 	var col := CollisionShape2D.new()
@@ -516,7 +538,7 @@ func _wall(center: Vector2, size: Vector2) -> void:
 	shape.size = size
 	col.shape = shape
 	body.add_child(col)
-	world.add_child(body)
+	(parent if parent != null else world).add_child(body)
 
 
 # ---------------- xây UI ----------------
@@ -1300,17 +1322,17 @@ func _clicktest_step() -> void:
 			cam.reset_smoothing()
 			Input.action_press("move_down")
 		750:
-			Input.action_release("move_up")
+			Input.action_release("move_down")
 			print("GATETEST player=", player.position,
-					" (kỳ vọng 570 < y < 660: vào chuồng qua cửa)")
+					" (kỳ vọng 570 < y <= 665: vào chuồng qua cổng)")
 		755:
 			# rào nam chuồng chỗ KHÔNG có cửa: đi lên phải bị chặn
-			player.position = Vector2(200, 740)
+			player.position = Vector2(300, 700)
 			Input.action_press("move_up")
 		830:
 			Input.action_release("move_up")
 			print("FENCETEST player=", player.position,
-					" (kỳ vọng y > 695: bị rào chặn)")
+					" (kỳ vọng y > 640: bị rào nam chuồng chặn)")
 		835:
 			# rào tây chuồng: đi phải bị chặn
 			player.position = Vector2(110, 626)
