@@ -132,6 +132,7 @@ func _ready() -> void:
 	visible = true  # chống trường hợp node Main bị ẩn vô tình trong editor
 	_debug_mode = OS.get_environment("FARM_SHOT")
 	_clicktest = OS.get_environment("FARM_CLICKTEST")
+	mailbox_data = _default_mailbox_data()
 
 	_build_world()
 	_build_ui()
@@ -243,14 +244,14 @@ func _build_world() -> void:
 	_build_pen()
 
 	interactables = [
-		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ (sang ngày mới + lưu game)", "cb": _ask_sleep},
+		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ", "cb": _ask_sleep},
 		{"pos": MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": _open_mailbox},
-		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪 (Bày hàng bán cho dân làng)", "cb": _open_market_stall},
-		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư — hạt giống & nông sản", "cb": _talk_npc},
-		{"pos": CHU_HAI_POS, "r": 60.0, "label": "Chú Hai — cần câu & thu mua cá", "cb": _talk_hai},
-		{"pos": COTU_POS, "r": 60.0, "label": "Cô Tư — mua gia cầm & chuồng", "cb": _talk_tu},
-		{"pos": PEN_RECT.get_center() + Vector2(0, 4), "r": 75.0, "label": "Thu sản phẩm chăn nuôi", "cb": _collect_products},
-		{"pos": FISH_SPOT_POS, "r": 152.0, "label": "Thả câu cá (15 giây)", "cb": _start_fishing},
+		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪", "cb": _open_market_stall},
+		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư", "cb": _talk_npc},
+		{"pos": CHU_HAI_POS, "r": 60.0, "label": "Chú Hai", "cb": _talk_hai},
+		{"pos": COTU_POS, "r": 60.0, "label": "Cô Tư", "cb": _talk_tu},
+		{"pos": PEN_RECT.get_center() + Vector2(0, 4), "r": 75.0, "label": "Thu hoạch chuồng", "cb": _collect_products},
+		{"pos": FISH_SPOT_POS, "r": 152.0, "label": "Câu cá", "cb": _start_fishing},
 	]
 
 
@@ -526,12 +527,54 @@ func _build_mailbox() -> void:
 	_update_mailbox_badge()
 
 
+func _default_mailbox_data() -> Dictionary:
+	return {
+		"hoes": 999,
+		"coins": 9999,
+		"produce": {
+			"tomato": 50,
+			"corn": 50,
+			"watermelon": 50,
+			"strawberry": 50,
+			"carrot": 50,
+			"potato": 50,
+			"rice": 50,
+			"trung_ga": 50,
+			"trung_vit": 50,
+			"thit_ga": 30,
+			"long_ngong": 20,
+			"trung_da_dieu": 10,
+		},
+		"fish": {
+			"chep": 30,
+			"hoi": 30,
+			"tram": 30,
+			"tre_vang": 20,
+			"chien": 10,
+		}
+	}
+
+
+func _has_mailbox_items() -> bool:
+	if int(mailbox_data.get("hoes", 0)) > 0 or int(mailbox_data.get("coins", 0)) > 0:
+		return true
+	var prod = mailbox_data.get("produce", {})
+	if typeof(prod) == TYPE_DICTIONARY:
+		for k in prod:
+			if int(prod[k]) > 0:
+				return true
+	var fish = mailbox_data.get("fish", {})
+	if typeof(fish) == TYPE_DICTIONARY:
+		for k in fish:
+			if int(fish[k]) > 0:
+				return true
+	return false
+
+
 func _update_mailbox_badge() -> void:
 	if mailbox_badge == null:
 		return
-	var h_count: int = int(mailbox_data.get("hoes", 0))
-	var c_count: int = int(mailbox_data.get("coins", 0))
-	mailbox_badge.visible = (h_count > 0 or c_count > 0)
+	mailbox_badge.visible = _has_mailbox_items()
 
 
 func _build_market_stall() -> void:
@@ -1023,18 +1066,16 @@ func _update_hint_and_highlight() -> void:
 		if near.pos == PEN_RECT.get_center() + Vector2(0, 4):
 			var r_count := Inventory.ready_products()
 			if r_count > 0:
-				lbl = "Thu hoạch %d sản phẩm chăn nuôi 🥚" % r_count
+				lbl = "Thu hoạch (%d) 🥚" % r_count
 			elif Inventory.animals.size() > 0:
-				lbl = "Chuồng gia cầm (%d con đang lớn) 🌾" % Inventory.animals.size()
+				lbl = "Chuồng gia cầm (%d con)" % Inventory.animals.size()
 			else:
-				lbl = "Chuồng gia cầm (Gặp Cô Tư mua giống)"
+				lbl = "Chuồng gia cầm"
 		elif near.pos == MAILBOX_POS:
-			var h_count: int = int(mailbox_data.get("hoes", 0))
-			var c_count: int = int(mailbox_data.get("coins", 0))
-			if h_count > 0 or c_count > 0:
-				lbl = "Mở hòm thư 📬 (Có quà: %d cuốc, %d xu)" % [h_count, c_count]
+			if _has_mailbox_items():
+				lbl = "Hòm thư 📬 (Có quà)"
 			else:
-				lbl = "Mở hòm thư 📬 (Trống)"
+				lbl = "Hòm thư 📬 (Trống)"
 		elif near.pos == MARKET_STALL_POS + Vector2(0, 16):
 			var count_items := 0
 			var occupied_crates := 0
@@ -1043,9 +1084,9 @@ func _update_hint_and_highlight() -> void:
 					count_items += int(sl.get("count", 0))
 					occupied_crates += 1
 			if occupied_crates > 0:
-				lbl = "Sạp nông sản 🏪 (%d/6 ô đang bày %d món · Bán cho dân làng +20%%)" % [occupied_crates, count_items]
+				lbl = "Sạp hàng 🏪 (%d/6 ô · %d món)" % [occupied_crates, count_items]
 			else:
-				lbl = "Sạp nông sản 🏪 (Trống · Bày hàng bán cho dân làng +20%%)"
+				lbl = "Sạp hàng 🏪"
 		hud.set_hint("E: " + lbl)
 		return
 	var tile = farm.tile_at_world(player.get_facing_point())
@@ -1408,7 +1449,7 @@ func start_new_game() -> void:
 	Inventory.selected_seed = "rice"
 	Inventory.add_hoes(2)
 	Inventory.add_seed("rice", 2)
-	mailbox_data = {"hoes": 999, "coins": 999}
+	mailbox_data = _default_mailbox_data()
 	_update_mailbox_badge()
 	stall_slots = [{}, {}, {}, {}, {}, {}]
 	_update_stall_crates_visual()
@@ -1451,13 +1492,10 @@ func continue_game() -> void:
 		"animals": d.get("animals", []),
 	})
 	var mb_dict = d.get("mailbox", null)
-	if typeof(mb_dict) == TYPE_DICTIONARY and not mb_dict.is_empty():
-		mailbox_data = {
-			"hoes": int(mb_dict.get("hoes", 0)),
-			"coins": int(mb_dict.get("coins", 0)),
-		}
+	if typeof(mb_dict) == TYPE_DICTIONARY and not mb_dict.is_empty() and (mb_dict.has("produce") or mb_dict.has("fish")):
+		mailbox_data = mb_dict.duplicate(true)
 	else:
-		mailbox_data = {"hoes": 999, "coins": 999}
+		mailbox_data = _default_mailbox_data()
 	_update_mailbox_badge()
 	var st_arr = d.get("stall", [])
 	if typeof(st_arr) == TYPE_ARRAY and st_arr.size() == 6:
@@ -1848,12 +1886,15 @@ func _clicktest_step() -> void:
 			mailbox_panel._claim_all()
 			var claimed_hoes: bool = Inventory.hoes >= 999
 			var claimed_coins: bool = GameState.money >= 999
+			var claimed_produce: bool = Inventory.produce_count("tomato") >= 50 and Inventory.produce_count("trung_ga") >= 50
+			var claimed_fish: bool = int(Inventory.fish.get("chep", 0)) >= 30
 			var mb_empty: bool = int(mailbox_data.get("hoes", -1)) == 0 and int(mailbox_data.get("coins", -1)) == 0
 			_close_panels()
 			var closed_ok: bool = not mailbox_panel.visible
 			print("MAILBOXTEST near=", is_near_mb, " before=(", mb_hoes_before, ",", mb_coins_before,
 					") opened=", opened_ok, " claimed=(", claimed_hoes, ",", claimed_coins,
-					") empty=", mb_empty, " closed=", closed_ok)
+					") resources=", (claimed_produce and claimed_fish),
+					" empty=", mb_empty, " closed=", closed_ok)
 		989:
 			# test không tưới được khi chưa trồng hạt giống & kiểm tra texture cây trồng Stardew Valley
 			var test_tile = farm.tiles[Vector2i(6, 6)]

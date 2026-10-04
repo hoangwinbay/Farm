@@ -63,8 +63,7 @@ func _ready() -> void:
 	title_v.add_theme_constant_override("separation", 2)
 	head.add_child(title_v)
 
-	UIKit.title_label(title_v, "🏪 SẠP HÀNG NÔNG SẢN CỦA TÔI", 22, UIKit.COLOR_TEXT_TITLE)
-	UIKit.label(title_v, "Bày nông sản lên 6 ô sạp gỗ · Dân làng ghé mua hàng tự động (+20% giá trị so với bán buôn)", 12, UIKit.COLOR_TEXT_MUTED)
+	UIKit.title_label(title_v, "🏪 SẠP HÀNG", 20, UIKit.COLOR_TEXT_TITLE)
 
 	# Tiền hiện có
 	var money_box := PanelContainer.new()
@@ -90,7 +89,7 @@ func _ready() -> void:
 	var crates_header := HBoxContainer.new()
 	crates_header.add_theme_constant_override("separation", 10)
 	v.add_child(crates_header)
-	UIKit.label(crates_header, "🧺 CÁC Ô TRƯNG BÀY TRÊN SẠP (6 Ô GỖ)", 14, UIKit.COLOR_BORDER_BRIGHT)
+	UIKit.label(crates_header, "🧺 Ô TRƯNG BÀY (6 Ô)", 13, UIKit.COLOR_BORDER_BRIGHT)
 
 	crates_grid = GridContainer.new()
 	crates_grid.columns = 3
@@ -104,7 +103,7 @@ func _ready() -> void:
 	var inv_header := HBoxContainer.new()
 	inv_header.add_theme_constant_override("separation", 10)
 	v.add_child(inv_header)
-	UIKit.label(inv_header, "🎒 CHỌN ĐỒ TRONG TÚI ĐỂ BÀY LÊN SẠP", 14, UIKit.COLOR_BORDER_BRIGHT)
+	UIKit.label(inv_header, "🎒 TÚI ĐỒ", 13, UIKit.COLOR_BORDER_BRIGHT)
 
 	var tabs_h := HBoxContainer.new()
 	tabs_h.add_theme_constant_override("separation", 6)
@@ -238,8 +237,7 @@ func _build_crate_slot_card(idx: int, slot: Dictionary) -> Control:
 	if not is_empty:
 		var count: int = int(slot.get("count", 0))
 		var price: int = int(slot.get("price", 0))
-		UIKit.label(info_v, "Số lượng: ×%d · Giá: %d xu/cái" % [count, price], 11, UIKit.COLOR_TEXT_GOLD)
-		UIKit.label(info_v, "Tổng trị giá: %d xu" % (count * price), 11, Color(0.65, 0.95, 0.6))
+		UIKit.label(info_v, "×%d · %d xu/món" % [count, price], 11, UIKit.COLOR_TEXT_GOLD)
 
 		var retrieve_btn := UIKit.styled_button(h, "Thu hồi", 11, "ghost")
 		retrieve_btn.custom_minimum_size = Vector2(62, 28)
@@ -247,7 +245,7 @@ func _build_crate_slot_card(idx: int, slot: Dictionary) -> Control:
 			_retrieve_from_stall(idx)
 		)
 	else:
-		UIKit.label(info_v, "(Chưa có hàng bày bán)", 11, Color(0.6, 0.55, 0.5))
+		UIKit.label(info_v, "(Trống)", 11, UIKit.COLOR_TEXT_MUTED)
 
 	return p
 
@@ -322,7 +320,7 @@ func _build_inventory_item_card(id: String, type: String, name: String, count: i
 
 	UIKit.label(info_v, name, 14, UIKit.COLOR_TEXT_BODY)
 	var stall_price: int = maxi(1, int(round(float(base_price) * 1.2)))
-	UIKit.label(info_v, "Giá bán buôn: %d xu  ➔  Giá bán sạp: %d xu/cái (+20%%)" % [base_price, stall_price], 12, UIKit.COLOR_TEXT_GOLD)
+	UIKit.label(info_v, "%d xu (+20%%)" % stall_price, 12, UIKit.COLOR_TEXT_GOLD)
 
 	# Số lượng có trong túi
 	var count_pill := PanelContainer.new()
