@@ -1362,9 +1362,10 @@ func _do_interact() -> void:
 	var act := str(info.act)
 	if act != "none":
 		_spawn_effect("fx_" + act, farm.tile_center(tile.coord))
-	player.play_action_anim()
+	player.play_action_anim(act)
 	player.can_move = false
-	await get_tree().create_timer(0.25).timeout
+	var act_time: float = player.get_action_duration(act)
+	await get_tree().create_timer(act_time).timeout
 	if not fishing:
 		player.can_move = true
 

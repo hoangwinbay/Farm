@@ -2048,6 +2048,22 @@ static func sweat_drop_icon() -> ImageTexture:
 
 # ---------- nhân vật (nón lá!) ----------
 
+static func char_action_tex(dir: String, act: String, step: int) -> ImageTexture:
+	var d := dir
+	if d != "up" and d != "down":
+		d = "side"
+	var key := "char_act_%s_%s_%d" % [d, act, step]
+	if _cache.has(key):
+		return _cache[key]
+	var path := "res://picture/farmer_%s_%s_%d.png" % [d, act, step]
+	var loaded := _load_picture(path)
+	if loaded != null:
+		var t := _tex(loaded)
+		_cache[key] = t
+		return t
+	return char_tex(dir, 99)
+
+
 static func char_tex(dir: String, frame: int, npc: bool = false) -> ImageTexture:
 	var key := "char_%s_%d_%d" % [dir, frame, 1 if npc else 0]
 	if _cache.has(key):
