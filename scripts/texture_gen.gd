@@ -1978,7 +1978,10 @@ static func _fence_corner_dir(dir: String) -> ImageTexture:
 
 
 # ---------- NHÂN VẬT DÂN LÀNG STARDEW VALLEY (NPC) ----------
-const SDV_CHARACTERS := ["Abigail", "Haley", "Leah", "Penny", "Sam"]
+const SDV_CHARACTERS := [
+	"Abigail", "Haley", "Leah", "Penny", "Sam",
+	"Alex", "Emily", "Harvey", "Maru", "Sebastian"
+]
 
 static func sdv_char_tex(char_name: String, dir: String, frame_idx: int) -> Texture2D:
 	var cname := char_name if char_name != "" else "Abigail"
@@ -2023,6 +2026,24 @@ static func sdv_char_tex(char_name: String, dir: String, frame_idx: int) -> Text
 		return atlas
 
 	return char_tex(dir, frame_idx, true)
+
+
+static func sweat_drop_icon() -> ImageTexture:
+	if _cache.has("sweat_drop"):
+		return _cache["sweat_drop"]
+	var img := _img(12, 12)
+	var blue := Color(0.35, 0.65, 0.95)
+	var light_blue := Color(0.70, 0.88, 1.0)
+	px(img, 5, 2, blue)
+	px(img, 6, 2, blue)
+	rect(img, 4, 3, 4, 2, blue)
+	rect(img, 3, 5, 6, 4, blue)
+	rect(img, 4, 9, 4, 2, blue)
+	px(img, 4, 5, light_blue)
+	px(img, 4, 6, light_blue)
+	var t := _tex(img)
+	_cache["sweat_drop"] = t
+	return t
 
 
 # ---------- nhân vật (nón lá!) ----------

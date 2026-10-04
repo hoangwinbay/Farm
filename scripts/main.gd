@@ -29,7 +29,42 @@ const FARM_TILES := Vector2i(14, 9)
 const HOUSE_POS := Vector2(241, 248)
 const MAILBOX_POS := Vector2(320, 246)
 const MARKET_STALL_POS := Vector2(184, 440) # sạp hàng nông sản tại góc rẽ trái
-const SDV_CUSTOMERS := ["Abigail", "Haley", "Leah", "Penny", "Sam"]
+
+# 10 nhân vật Stardew Valley với tên Việt Nam thân thiện
+const SDV_CUSTOMERS_DATA := [
+	{"name": "Bé Lan", "asset": "Abigail"},
+	{"name": "Cô Mai", "asset": "Haley"},
+	{"name": "Chị Thảo", "asset": "Leah"},
+	{"name": "Em Cúc", "asset": "Penny"},
+	{"name": "Anh Nam", "asset": "Sam"},
+	{"name": "Anh Dũng", "asset": "Alex"},
+	{"name": "Chị Hoa", "asset": "Emily"},
+	{"name": "Bác Minh", "asset": "Harvey"},
+	{"name": "Bé Linh", "asset": "Maru"},
+	{"name": "Anh Phong", "asset": "Sebastian"},
+]
+const SDV_CUSTOMERS := ["Abigail", "Haley", "Leah", "Penny", "Sam", "Alex", "Emily", "Harvey", "Maru", "Sebastian"]
+
+# Các vị trí đứng song song trước quầy sạp hàng để nhiều NPC ghé cùng lúc
+const STALL_COUNTER_SPOTS := [
+	Vector2(152, 468),
+	Vector2(184, 468),
+	Vector2(216, 468),
+]
+
+const STALL_WISHLIST_ITEMS := [
+	{"id": "wheat", "type": "crop", "name": "Lúa mì", "base_price": 45},
+	{"id": "rice", "type": "crop", "name": "Lúa nước", "base_price": 25},
+	{"id": "tomato", "type": "crop", "name": "Cà chua", "base_price": 96},
+	{"id": "carrot", "type": "crop", "name": "Cà rốt", "base_price": 66},
+	{"id": "corn", "type": "crop", "name": "Bắp ngô", "base_price": 70},
+	{"id": "potato", "type": "crop", "name": "Khoai tây", "base_price": 88},
+	{"id": "cabbage", "type": "crop", "name": "Bắp cải", "base_price": 110},
+	{"id": "watermelon", "type": "crop", "name": "Dưa hấu", "base_price": 155},
+	{"id": "chep", "type": "fish", "name": "Cá chép", "base_price": 40},
+	{"id": "trung_ga", "type": "poultry", "name": "Trứng gà", "base_price": 30},
+	{"id": "trung_vit", "type": "poultry", "name": "Trứng vịt", "base_price": 45},
+]
 const STAND_POS := Vector2(1180, 416)       # quầy Bác Tư
 const STAND_HAI_POS := Vector2(1350, 416)   # quầy Chú Hai
 const STAND_TU_POS := Vector2(1010, 416)    # quầy Cô Tư
@@ -90,6 +125,7 @@ var stall_coin_badge: PanelContainer
 var stall_coin_label: Label
 var _stall_customer_timer: float = 0.0
 var _active_stall_customer: Node2D = null
+var _stall_customers: Array[Node2D] = []
 var inv_panel: CanvasLayer
 var mailbox_panel: CanvasLayer
 var mailbox_badge: PanelContainer
@@ -1039,51 +1075,123 @@ func _process(delta: float) -> void:
 
 
 func _process_stall_customers(delta: float) -> void:
-	if stall_slots.is_empty():
-		return
 	var t := GameState.clock
 	if t < 420.0 or t > 1140.0:
 		return
 
-	if _active_stall_customer != null and is_instance_valid(_active_stall_customer):
-		return
+	# Lọc danh sách khách hàng đang hoạt động
+	var alive: Array[Node2D] = []
+	for c in _stall_customers:
+		if is_instance_valid(c):
+			alive.append(c)
+	_stall_customers = alive
+	_active_stall_customer = _stall_customers[0] if not _stall_customers.is_empty() else null
 
-	var available_indices: Array[int] = []
-	for i in stall_slots.size():
-		var slot = stall_slots[i]
-		if typeof(slot) == TYPE_DICTIONARY and not slot.is_empty() and int(slot.get("count", 0)) > 0:
-			available_indices.append(i)
-
-	if available_indices.is_empty():
+	# Cho phép nhiều NPC ghé sạp cùng lúc (tối đa bằng số vị trí đứng STALL_COUNTER_SPOTS)
+	if _stall_customers.size() >= STALL_COUNTER_SPOTS.size():
 		return
 
 	_stall_customer_timer += delta
-	# Cứ mỗi 10-15s có một khách NPC đi bộ ghé sạp mua hàng
-	if _stall_customer_timer < 10.0:
+	# Cứ mỗi 5-8s có một khách NPC mới ghé sạp
+	if _stall_customer_timer < 6.0:
 		return
 	_stall_customer_timer = 0.0
 
-	_spawn_stall_customer(available_indices)
+	_spawn_stall_customer()
 
 
-func _spawn_stall_customer(available_indices: Array[int]) -> void:
-	var idx: int = available_indices[randi() % available_indices.size()]
-	var slot: Dictionary = stall_slots[idx]
+func _spawn_stall_customer(forced_slot_idx: int = -1) -> Node2D:
+	# Tìm vị trí đứng còn trống trước quầy sạp hàng
+	var occupied_spots: Array[Vector2] = []
+	for c in _stall_customers:
+		if is_instance_valid(c):
+			occupied_spots.append(c.target_stall_pos)
+
+	var free_spots: Array[Vector2] = []
+	for spot in STALL_COUNTER_SPOTS:
+		if not spot in occupied_spots:
+			free_spots.append(spot)
+
+	if free_spots.is_empty():
+		return null
+
+	var chosen_spot: Vector2 = free_spots[randi() % free_spots.size()]
+
+	# Chọn nhân vật Stardew Valley (1 trong 10 dân làng với tên tiếng Việt thân thuộc)
+	var available_chars := []
+	for d in SDV_CUSTOMERS_DATA:
+		var in_use := false
+		for c in _stall_customers:
+			if is_instance_valid(c) and c.display_name == str(d.name):
+				in_use = true
+				break
+		if not in_use:
+			available_chars.append(d)
+
+	var cdata: Dictionary = available_chars[randi() % available_chars.size()] if not available_chars.is_empty() else SDV_CUSTOMERS_DATA[randi() % SDV_CUSTOMERS_DATA.size()]
+
+	# Lựa chọn món đồ khách muốn mua:
+	# Ưu tiên chọn món đang có sẵn trên sạp (để mua được ngay), hoặc chọn từ wishlist (đứng chờ người chơi bày hàng)
+	var target_item: Dictionary = {}
+	var stocked_indices: Array[int] = []
+	for i in stall_slots.size():
+		var slot = stall_slots[i]
+		if typeof(slot) == TYPE_DICTIONARY and not slot.is_empty() and int(slot.get("count", 0)) > 0:
+			stocked_indices.append(i)
+
+	if forced_slot_idx >= 0 and forced_slot_idx < stall_slots.size() and not stall_slots[forced_slot_idx].is_empty():
+		var slot: Dictionary = stall_slots[forced_slot_idx]
+		target_item = {
+			"id": str(slot.get("id", "")),
+			"type": str(slot.get("type", "crop")),
+			"name": str(slot.get("name", "Nông sản")),
+			"price": int(slot.get("price", 10)),
+			"qty": mini(int(slot.get("count", 1)), randi_range(1, 3))
+		}
+	elif not stocked_indices.is_empty() and randf() < 0.65:
+		var idx: int = stocked_indices[randi() % stocked_indices.size()]
+		var slot: Dictionary = stall_slots[idx]
+		target_item = {
+			"id": str(slot.get("id", "")),
+			"type": str(slot.get("type", "crop")),
+			"name": str(slot.get("name", "Nông sản")),
+			"price": int(slot.get("price", 10)),
+			"qty": mini(int(slot.get("count", 1)), randi_range(1, 3))
+		}
+	else:
+		var w_item: Dictionary = STALL_WISHLIST_ITEMS[randi() % STALL_WISHLIST_ITEMS.size()]
+		var bp: int = int(w_item.get("base_price", 20))
+		target_item = {
+			"id": str(w_item.get("id", "wheat")),
+			"type": str(w_item.get("type", "crop")),
+			"name": str(w_item.get("name", "Lúa mì")),
+			"price": maxi(1, int(round(float(bp) * 1.2))),
+			"qty": randi_range(1, 3)
+		}
 
 	var cust: Node2D = StallCustomerScript.new()
-	cust.character_name = SDV_CUSTOMERS[randi() % SDV_CUSTOMERS.size()]
-	cust.target_slot_idx = idx
-	cust.item_id = str(slot.get("id", ""))
-	cust.item_type = str(slot.get("type", "crop"))
-	cust.item_name = str(slot.get("name", "Nông sản"))
-	cust.unit_price = int(slot.get("price", 10))
-	cust.buy_qty = mini(int(slot.get("count", 1)), (1 if randf() < 0.65 else 2))
+	cust.character_name = str(cdata.asset)
+	cust.display_name = str(cdata.name)
+	cust.target_stall_pos = chosen_spot
+	cust.stall_slots = stall_slots
+
+	cust.item_id = str(target_item.get("id", "wheat"))
+	cust.item_type = str(target_item.get("type", "crop"))
+	cust.item_name = str(target_item.get("name", "Lúa mì"))
+	cust.unit_price = int(target_item.get("price", 10))
+	cust.buy_qty = int(target_item.get("qty", 1))
 
 	cust.purchase_completed.connect(_on_stall_customer_purchased)
-	cust.departed.connect(func(): _active_stall_customer = null)
+	cust.departed.connect(func():
+		_stall_customers.erase(cust)
+		if _active_stall_customer == cust:
+			_active_stall_customer = _stall_customers[0] if not _stall_customers.is_empty() else null
+	)
 
+	_stall_customers.append(cust)
 	_active_stall_customer = cust
 	world.add_child(cust)
+	return cust
 
 
 func _on_stall_customer_purchased(slot_idx: int, item_name: String, qty: int, coins: int, buyer_name: String = "") -> void:
@@ -2058,12 +2166,19 @@ func _clicktest_step() -> void:
 			# Test NPC khách hàng ghé mua và tích lũy tiền tại sạp (không tự cộng vào ví)
 			var wallet_before: int = GameState.money
 			var rev_before: int = stall_revenue
-			_spawn_stall_customer([0])
-			var cust_spawned: bool = (_active_stall_customer != null and _active_stall_customer.character_name in SDV_CUSTOMERS)
-			var cust_from_left: bool = (_active_stall_customer.position.x < 0.0)
-			var cust_slow: bool = (_active_stall_customer.speed <= 40.0)
+			var cust1: Node2D = _spawn_stall_customer(0)
+			var cust_spawned: bool = (cust1 != null and cust1.character_name in SDV_CUSTOMERS and cust1.display_name != "")
+			var cust_from_left: bool = (cust1.position.x < 0.0)
+			var cust_slow: bool = (cust1.speed <= 40.0)
+			var cust_bubble_has_qty: bool = (cust1._bubble_qty_label != null and cust1._bubble_qty_label.text.begins_with("×"))
+
+			# Thử nghiệm spawn thêm NPC thứ 2 ghé sạp cùng lúc tại vị trí khác
+			var cust2: Node2D = _spawn_stall_customer()
+			var multi_cust_ok: bool = (_stall_customers.size() >= 2 and cust2.target_stall_pos != cust1.target_stall_pos)
+			var diff_names_ok: bool = (cust2.display_name != cust1.display_name)
+
 			# Giả lập hoàn thành mua hàng 1 quả cà chua giá 18 xu
-			_on_stall_customer_purchased(0, "Cà chua", 1, 18, _active_stall_customer.character_name)
+			_on_stall_customer_purchased(0, "Cà chua", 1, 18, cust1.display_name)
 			var wallet_unchanged: bool = (GameState.money == wallet_before)
 			var stall_rev_accumulated: bool = (stall_revenue == rev_before + 18)
 			var badge_active: bool = (stall_coin_badge.visible and stall_coin_label.text == "18 xu")
@@ -2089,9 +2204,11 @@ func _clicktest_step() -> void:
 			stall_panel.close()
 
 			# Dọn khách hàng NPC test
-			if _active_stall_customer != null and is_instance_valid(_active_stall_customer):
-				_active_stall_customer.queue_free()
-				_active_stall_customer = null
+			for c in _stall_customers:
+				if is_instance_valid(c):
+					c.queue_free()
+			_stall_customers.clear()
+			_active_stall_customer = null
 
 			# Kiểm tra đường mòn kéo dài hết map sang trái, nền cỏ dưới sạp và POI minimap
 			var west_road_exists: bool = false
@@ -2110,6 +2227,8 @@ func _clicktest_step() -> void:
 					" slot1_filled=", slot1_filled, " crate1_visual=", crate1_visible,
 					" crate1_cleared=", crate1_cleared, " cust_spawned=", cust_spawned,
 					" cust_from_left=", cust_from_left, " cust_slow=", cust_slow,
+					" bubble_qty=", cust_bubble_has_qty, " multi_cust=", multi_cust_ok,
+					" diff_names=", diff_names_ok,
 					" wallet_unchanged=", wallet_unchanged, " stall_rev_accumulated=", stall_rev_accumulated,
 					" badge_active=", badge_active, " slot0_dec=", slot0_count_decreased,
 					" collect_btn=", collect_btn_shows_18, " wallet_collected=", wallet_collected,
