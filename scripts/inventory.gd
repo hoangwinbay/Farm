@@ -10,6 +10,9 @@ var seeds: Dictionary = {}
 var produce: Dictionary = {}
 var selected_seed := ""
 var hoes := 0
+var water_level := 20
+var water_max := 20
+var active_item: Dictionary = {"type": "hoe"}
 var rods: Dictionary = {}  # tier -> số lượt câu còn lại
 var fish: Dictionary = {}  # fish_id -> số lượng
 var coops: Dictionary = {"small": 0, "large": 0}  # số chuồng đã mua theo loại
@@ -21,6 +24,9 @@ func reset() -> void:
 	produce = {}
 	selected_seed = ""
 	hoes = 0
+	water_level = 20
+	water_max = 20
+	active_item = {"type": "hoe"}
 	rods = {}
 	fish = {}
 	coops = {"small": 0, "large": 0}
@@ -77,6 +83,40 @@ func take_hoe() -> bool:
 	hoes -= 1
 	changed.emit()
 	return true
+
+
+# ---- bình tưới nước ----
+
+func has_water() -> bool:
+	return water_level > 0
+
+
+func take_water(n: int = 1) -> bool:
+	if water_level < n:
+		return false
+	water_level -= n
+	changed.emit()
+	return true
+
+
+func refill_water() -> int:
+	var added: int = water_max - water_level
+	water_level = water_max
+	changed.emit()
+	return added
+
+
+# ---- chọn đồ thanh công cụ ----
+
+func select_tool(tool_type: String) -> void:
+	active_item = {"type": tool_type}
+	changed.emit()
+
+
+func select_seed(id: String) -> void:
+	selected_seed = id
+	active_item = {"type": "seed", "id": id}
+	changed.emit()
 
 
 # ---- cần câu ----
@@ -215,13 +255,16 @@ func cycle_seed() -> String:
 		return selected_seed
 	var idx := pool.find(selected_seed)
 	selected_seed = str(pool[(idx + 1) % pool.size()])
+	active_item = {"type": "seed", "id": selected_seed}
 	changed.emit()
 	return selected_seed
 
 
 func get_state() -> Dictionary:
 	return {"seeds": seeds.duplicate(), "produce": produce.duplicate(), "sel": selected_seed,
-			"hoes": hoes, "rods": rods.duplicate(), "fish": fish.duplicate(),
+			"hoes": hoes, "water_level": water_level, "water_max": water_max,
+			"active_item": active_item.duplicate(),
+			"rods": rods.duplicate(), "fish": fish.duplicate(),
 			"coops": coops.duplicate(), "animals": animals.duplicate(true)}
 
 
@@ -253,4 +296,10 @@ func set_state(d: Dictionary) -> void:
 					"ready": int(a.get("ready", 0))})
 	selected_seed = str(d.get("sel", ""))
 	hoes = int(d.get("hoes", 0))
+	water_level = int(d.get("water_level", 20))
+	water_max = int(d.get("water_max", 20))
+	if d.has("active_item") and d["active_item"] is Dictionary:
+		active_item = (d["active_item"] as Dictionary).duplicate()
+	else:
+		active_item = {"type": "hoe"}
 	changed.emit()

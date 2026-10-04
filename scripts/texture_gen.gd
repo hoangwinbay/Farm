@@ -2593,6 +2593,11 @@ static func hoe_icon() -> ImageTexture:
 	var key := "hoe_icon"
 	if _cache.has(key):
 		return _cache[key]
+	var loaded := _load_picture("res://picture/hoe_icon.png")
+	if loaded != null:
+		var t := _tex(loaded)
+		_cache[key] = t
+		return t
 	var img := _img(16, 16)
 	var wood := Color(0.55, 0.38, 0.22)
 	var metal := Color(0.72, 0.75, 0.78)
@@ -2608,6 +2613,26 @@ static func hoe_icon() -> ImageTexture:
 	var tex := _tex(img)
 	_cache[key] = tex
 	return tex
+
+
+static func watering_can_icon() -> ImageTexture:
+	var key := "watering_can_icon"
+	if _cache.has(key):
+		return _cache[key]
+	var loaded := _load_picture("res://picture/watering_can_icon.png")
+	if loaded != null:
+		var t := _tex(loaded)
+		_cache[key] = t
+		return t
+	var img := _img(16, 16)
+	var metal := Color(0.70, 0.75, 0.80)
+	var water := Color(0.35, 0.65, 0.95)
+	rect(img, 3, 5, 10, 7, metal)
+	rect(img, 9, 3, 4, 3, water)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
 
 
 static func rod_icon(color_hex: String) -> ImageTexture:

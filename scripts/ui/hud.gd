@@ -9,12 +9,15 @@ var clock_label: Label
 var day_label: Label
 var money_label: Label
 var hoe_label: Label
+var water_label: Label
 var hint_container: PanelContainer
 var hint_label: Label
+var active_label: Label
 var seed_label: Label
 var toast_row: VBoxContainer
 var hotbar_row: HBoxContainer
 var _group: ButtonGroup
+var _slots_cache: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -110,6 +113,21 @@ func _ready() -> void:
 	h_h.add_child(h_ic)
 	hoe_label = UIKit.label(h_h, "Cuốc ×0", 14, Color(0.90, 0.82, 0.70))
 
+	# Bình nước
+	var water_pill := PanelContainer.new()
+	water_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.12, 0.18, 0.24), Color(0.3, 0.6, 0.8), 6))
+	water_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h_assets.add_child(water_pill)
+	var h_w := HBoxContainer.new()
+	h_w.add_theme_constant_override("separation", 5)
+	water_pill.add_child(h_w)
+	var w_ic := TextureRect.new()
+	w_ic.texture = TextureGen.watering_can_icon()
+	w_ic.custom_minimum_size = Vector2(16, 16)
+	w_ic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	h_w.add_child(w_ic)
+	water_label = UIKit.label(h_w, "Nước 20/20", 14, Color(0.70, 0.90, 1.0))
+
 	# --- 2. THÔNG BÁO CUỘN GIẤY PHẢI PHÍA DƯỚI BẢN ĐỒ NHỎ ---
 	var tr := MarginContainer.new()
 	tr.set_anchors_preset(Control.PRESET_TOP_RIGHT)
@@ -171,13 +189,14 @@ func _ready() -> void:
 	hb.add_theme_constant_override("separation", 12)
 	tray.add_child(hb)
 
-	# Huy hiệu loại hạt đang cầm
-	var seed_pill := PanelContainer.new()
-	seed_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.14, 0.09), UIKit.COLOR_BORDER_WOOD, 6))
-	hb.add_child(seed_pill)
-	seed_label = UIKit.label(seed_pill, "Hạt: ...", 14, UIKit.COLOR_TEXT_GREEN)
+	# Huy hiệu loại đồ đang cầm
+	var active_pill := PanelContainer.new()
+	active_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.14, 0.09), UIKit.COLOR_BORDER_GOLD, 6))
+	hb.add_child(active_pill)
+	active_label = UIKit.label(active_pill, "Đang cầm: ...", 13, UIKit.COLOR_TEXT_TITLE)
+	seed_label = active_label
 
-	# Danh sách các ô chọn hạt giống
+	# Danh sách các ô chọn công cụ & hạt giống
 	hotbar_row = HBoxContainer.new()
 	hotbar_row.add_theme_constant_override("separation", 6)
 	hb.add_child(hotbar_row)
@@ -186,11 +205,14 @@ func _ready() -> void:
 	var tips_box := HBoxContainer.new()
 	tips_box.add_theme_constant_override("separation", 6)
 	hb.add_child(tips_box)
-	UIKit.key_badge(tips_box, "I")
-	UIKit.label(tips_box, "Kho đồ", 13, UIKit.COLOR_TEXT_MUTED)
-	UIKit.label(tips_box, "·", 13, UIKit.COLOR_BORDER_WOOD)
+	UIKit.key_badge(tips_box, "1-9")
+	UIKit.label(tips_box, "Chọn ô", 12, UIKit.COLOR_TEXT_MUTED)
+	UIKit.label(tips_box, "·", 12, UIKit.COLOR_BORDER_WOOD)
 	UIKit.key_badge(tips_box, "R")
-	UIKit.label(tips_box, "Đổi nhanh", 13, UIKit.COLOR_TEXT_MUTED)
+	UIKit.label(tips_box, "Đổi đồ", 12, UIKit.COLOR_TEXT_MUTED)
+	UIKit.label(tips_box, "·", 12, UIKit.COLOR_BORDER_WOOD)
+	UIKit.key_badge(tips_box, "I")
+	UIKit.label(tips_box, "Kho đồ", 12, UIKit.COLOR_TEXT_MUTED)
 
 	_group = ButtonGroup.new()
 	rebuild_hotbar()
@@ -211,62 +233,187 @@ func set_hint(t: String) -> void:
 
 
 func rebuild_hotbar() -> void:
-	hoe_label.text = "Cuốc ×%d" % Inventory.hoes
-	day_label.text = "Ngày %d" % GameState.day
+	if hoe_label != null:
+		hoe_label.text = "Cuốc ×%d" % Inventory.hoes
+	if water_label != null:
+		water_label.text = "Nước %d/%d" % [Inventory.water_level, Inventory.water_max]
+	if day_label != null:
+		day_label.text = "Ngày %d" % GameState.day
+
+	if hotbar_row == null:
+		return
 
 	for c in hotbar_row.get_children():
 		c.queue_free()
 
+	_slots_cache.clear()
+
+	var act_t: String = str(Inventory.active_item.get("type", "hoe"))
+
+	# Ô 1: Cuốc
+	var hoe_active: bool = (act_t == "hoe")
+	_slots_cache.append({
+		"key": "1",
+		"type": "hoe",
+		"name": "Cuốc",
+		"desc": "×%d" % Inventory.hoes,
+		"icon": TextureGen.hoe_icon(),
+		"active": hoe_active,
+		"action": func():
+			Inventory.select_tool("hoe")
+	})
+
+	# Ô 2: Bình tưới (hiện rõ số nước X/20)
+	var water_active: bool = (act_t == "watering_can")
+	_slots_cache.append({
+		"key": "2",
+		"type": "watering_can",
+		"name": "Bình tưới",
+		"desc": "%d/%d" % [Inventory.water_level, Inventory.water_max],
+		"icon": TextureGen.watering_can_icon(),
+		"active": water_active,
+		"action": func():
+			Inventory.select_tool("watering_can")
+	})
+
+	# Ô 3: Cần câu
+	var rod_active: bool = (act_t == "rod")
+	_slots_cache.append({
+		"key": "3",
+		"type": "rod",
+		"name": "Cần câu",
+		"desc": ("%d lượt" % Inventory.total_casts()) if Inventory.total_casts() > 0 else "0",
+		"icon": TextureGen.get_tex("fx_rod"),
+		"active": rod_active,
+		"action": func():
+			Inventory.select_tool("rod")
+	})
+
+	# Các ô tiếp theo: Hạt giống (hotkey 4..9)
 	var ids: Array = Inventory.owned_seed_ids()
 	if ids.is_empty():
 		ids = GameState.unlocked.duplicate()
 
-	var shown: int = mini(ids.size(), 7)
+	var max_seed_slots: int = 6
+	var shown: int = mini(ids.size(), max_seed_slots)
 	for i in shown:
-		var id := str(ids[i])
-		var c := CropDB.get_crop(id)
-		if c.is_empty():
+		var sid := str(ids[i])
+		var crop := CropDB.get_crop(sid)
+		if crop.is_empty():
 			continue
+		var is_seed_active: bool = (act_t == "seed" and Inventory.selected_seed == sid)
+		_slots_cache.append({
+			"key": str(4 + i),
+			"type": "seed",
+			"id": sid,
+			"name": str(crop.name),
+			"desc": "×%d" % Inventory.seed_count(sid),
+			"icon": TextureGen.seed_icon(crop),
+			"active": is_seed_active,
+			"action": func():
+				Inventory.select_seed(sid)
+		})
 
-		var is_selected := (Inventory.selected_seed == id)
+	for slot in _slots_cache:
 		var b := Button.new()
-		b.toggle_mode = true
-		b.button_group = _group
-		b.icon = TextureGen.seed_icon(c)
-		b.text = " %s ×%d" % [c.name, Inventory.seed_count(id)]
-		b.add_theme_font_size_override("font_size", 13)
+		b.icon = slot.icon
+		b.text = " [%s] %s %s" % [slot.key, slot.name, slot.desc]
+		b.add_theme_font_size_override("font_size", 12)
 		b.custom_minimum_size = Vector2(0, 32)
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-		# Áp style slot mộc mạc
-		b.add_theme_stylebox_override("normal", UIKit.slot_box(false))
-		b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.32, 0.22, 0.14), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
-		b.add_theme_stylebox_override("pressed", UIKit.slot_box(true))
+		var is_act: bool = bool(slot.active)
+		if is_act:
+			b.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.38, 0.25, 0.12), UIKit.COLOR_BORDER_GOLD, 6, 2))
+			b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.46, 0.30, 0.15), UIKit.COLOR_BORDER_GOLD, 6, 2))
+			b.add_theme_stylebox_override("pressed", UIKit.btn_style(Color(0.30, 0.18, 0.08), UIKit.COLOR_BORDER_GOLD, 6, 2))
+			b.add_theme_color_override("font_color", UIKit.COLOR_TEXT_TITLE)
+		else:
+			b.add_theme_stylebox_override("normal", UIKit.slot_box(false))
+			b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.30, 0.20, 0.12), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
+			b.add_theme_stylebox_override("pressed", UIKit.slot_box(true))
+			b.add_theme_color_override("font_color", UIKit.COLOR_TEXT_BODY)
 
-		b.add_theme_color_override("font_color", UIKit.COLOR_TEXT_BODY)
-		b.add_theme_color_override("font_pressed_color", UIKit.COLOR_TEXT_TITLE)
 		b.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.95))
 		b.add_theme_constant_override("outline_size", 2)
 
-		b.button_pressed = is_selected
-		b.pressed.connect(_select_seed.bind(id))
+		var fn: Callable = slot.action
+		b.pressed.connect(func():
+			fn.call()
+			rebuild_hotbar()
+		)
 		hotbar_row.add_child(b)
 
 	if ids.size() > shown:
 		var more_pill := PanelContainer.new()
 		more_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.14, 0.09), UIKit.COLOR_BORDER_WOOD, 6))
-		var more_l := UIKit.label(more_pill, "+%d loại (I)" % (ids.size() - shown), 12, UIKit.COLOR_TEXT_MUTED)
+		var _more_l := UIKit.label(more_pill, "+%d loại (I)" % (ids.size() - shown), 12, UIKit.COLOR_TEXT_MUTED)
 		hotbar_row.add_child(more_pill)
 
-	_update_seed_label()
+	_update_active_label()
+
+
+func select_slot_by_index(idx: int) -> void:
+	if idx >= 0 and idx < _slots_cache.size():
+		var slot: Dictionary = _slots_cache[idx]
+		var act: Callable = slot.get("action", Callable())
+		if act.is_valid():
+			act.call()
+			rebuild_hotbar()
+			toast("Đã chọn: %s" % slot.get("name", ""), Color(1.0, 0.9, 0.5))
+
+
+func cycle_slot(delta: int) -> void:
+	if _slots_cache.is_empty():
+		return
+	var cur_idx := 0
+	for i in _slots_cache.size():
+		if bool(_slots_cache[i].get("active", false)):
+			cur_idx = i
+			break
+	var next_idx: int = (cur_idx + delta) % _slots_cache.size()
+	if next_idx < 0:
+		next_idx += _slots_cache.size()
+	select_slot_by_index(next_idx)
 
 
 func _select_seed(id: String) -> void:
-	Inventory.selected_seed = id
+	Inventory.select_seed(id)
+	rebuild_hotbar()
+
+
+func _update_active_label() -> void:
+	if active_label == null:
+		return
+	var act_type: String = str(Inventory.active_item.get("type", "hoe"))
+	match act_type:
+		"hoe":
+			active_label.text = "⛏ Cuốc (×%d)" % Inventory.hoes
+			active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_TITLE)
+		"watering_can":
+			active_label.text = "💧 Bình tưới (%d/%d)" % [Inventory.water_level, Inventory.water_max]
+			active_label.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0))
+		"rod":
+			active_label.text = "🎣 Cần câu (%d lượt)" % Inventory.total_casts()
+			active_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.4))
+		"seed":
+			var sid := Inventory.selected_seed
+			var c := CropDB.get_crop(sid)
+			if c.is_empty():
+				active_label.text = "🌱 Hạt: Chưa chọn"
+				active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_MUTED)
+			else:
+				active_label.text = "🌱 Hạt: %s (×%d)" % [c.name, Inventory.seed_count(sid)]
+				active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_GREEN)
+		_:
+			active_label.text = "Đang cầm: Trống"
+			active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_MUTED)
 	_update_seed_label()
 
 
 func _update_seed_label() -> void:
+	if seed_label == null or seed_label == active_label:
+		return
 	var sid := Inventory.selected_seed
 	if sid == "":
 		seed_label.text = "Chưa chọn hạt"

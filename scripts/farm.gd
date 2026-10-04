@@ -49,13 +49,15 @@ func action_at(tile) -> Dictionary:
 		var c := CropDB.get_crop(tile.crop_id)
 		return {"act": "harvest", "label": "Thu hoạch %s" % c.get("name", "?"), "ok": true}
 	if tile.tstate == FarmTileScript.TState.PLANTED and not tile.watered:
-		return {"act": "water", "label": "Tưới nước", "ok": true}
+		var has_w := Inventory.has_water()
+		var label := "Tưới nước (%d/%d)" % [Inventory.water_level, Inventory.water_max] if has_w else "Bình hết nước (ra bờ ao múc!)"
+		return {"act": "water", "label": label, "ok": has_w}
 	if tile.tstate == FarmTileScript.TState.TILLED:
 		var sid := Inventory.selected_seed
 		if sid != "" and GameState.has_crop(sid) and Inventory.seed_count(sid) > 0:
 			var cs := CropDB.get_crop(sid)
 			return {"act": "plant", "label": "Gieo hạt %s (còn ×%d)" % [cs.get("name", "?"), Inventory.seed_count(sid)], "ok": true}
-		return {"act": "none", "label": "Chưa gieo hạt (bấm I để chọn hạt gieo trước khi tưới)", "ok": false}
+		return {"act": "none", "label": "Chưa gieo hạt (chọn hạt ở thanh công cụ hoặc bấm I)", "ok": false}
 	if tile.tstate == FarmTileScript.TState.PLANTED:
 		var c2 := CropDB.get_crop(tile.crop_id)
 		var pct := int(clampf(tile.growth / float(c2.get("grow_sec", 1)) * 100.0, 0.0, 99.0))
@@ -78,8 +80,10 @@ func perform_at(tile) -> String:
 		"water":
 			if tile.tstate != FarmTileScript.TState.PLANTED:
 				return "Cần gieo hạt giống trước khi tưới nước!"
+			if not Inventory.take_water(1):
+				return "Bình tưới hết nước rồi! Hãy ra bờ ao để múc đầy bình."
 			tile.water()
-			return "Đã tưới nước!"
+			return "Đã tưới nước! (Còn %d/%d gáo)" % [Inventory.water_level, Inventory.water_max]
 		"plant":
 			var sid := Inventory.selected_seed
 			if sid == "" or not GameState.has_crop(sid):

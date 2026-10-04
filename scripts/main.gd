@@ -1287,10 +1287,25 @@ func _nearest_interactable() -> Dictionary:
 	var best := {}
 	var best_d := INF
 	for it in interactables:
-		var d: float = player.position.distance_to(it.pos)
+		var it_pos: Vector2 = it.pos
+		var d: float = player.position.distance_to(it_pos)
 		if d <= float(it.r) and d < best_d:
 			best_d = d
-			best = it
+			best = it.duplicate()
+			if it_pos == FISH_SPOT_POS:
+				var active_t: String = str(Inventory.active_item.get("type", ""))
+				if active_t == "rod" and Inventory.total_casts() > 0:
+					best.label = "Câu cá (%d lượt)" % Inventory.total_casts()
+					best.cb = _start_fishing
+				elif Inventory.water_level < Inventory.water_max:
+					best.label = "Múc nước vào bình (%d/%d) 💧" % [Inventory.water_level, Inventory.water_max]
+					best.cb = _refill_water_can
+				elif Inventory.total_casts() > 0:
+					best.label = "Câu cá (%d lượt)" % Inventory.total_casts()
+					best.cb = _start_fishing
+				else:
+					best.label = "Bình nước đã đầy (20/20) 💧"
+					best.cb = func(): hud.toast("Bình nước đã đầy rồi (20/20)!")
 
 	# Kiểm tra khách NPC đang đứng chờ quanh sạp để người chơi có thể từ chối / báo hết hàng
 	for c in _stall_customers:
@@ -1340,6 +1355,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		var c := CropDB.get_crop(id)
 		if not c.is_empty():
 			hud.toast("Đổi hạt: %s" % c.name)
+	elif event is InputEventKey and event.pressed and not event.echo and mode == Mode.PLAY and not get_tree().paused:
+		if event.keycode >= KEY_1 and event.keycode <= KEY_9:
+			hud.select_slot_by_index(event.keycode - KEY_1)
+	elif event is InputEventMouseButton and event.pressed and mode == Mode.PLAY and not get_tree().paused:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			hud.cycle_slot(-1)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			hud.cycle_slot(1)
 
 
 # ---------------- hành động ----------------
@@ -1601,7 +1624,23 @@ func _do_sleep(forced: bool) -> void:
 	get_tree().paused = false
 
 
-# ---------------- câu cá ----------------
+# ---------------- múc nước từ ao & câu cá ----------------
+
+func _refill_water_can() -> void:
+	if Inventory.water_level >= Inventory.water_max:
+		hud.toast("Bình tưới đã đầy nước (%d/%d)!" % [Inventory.water_level, Inventory.water_max])
+		return
+	var _added: int = Inventory.refill_water()
+	player.facing = (POND_RECT.get_center() - player.position).normalized()
+	_spawn_effect("fx_water", player.position + player.facing * 18.0)
+	player.play_action_anim("water")
+	player.can_move = false
+	var act_time: float = player.get_action_duration("water")
+	await get_tree().create_timer(act_time).timeout
+	player.can_move = true
+	hud.rebuild_hotbar()
+	hud.toast("Đã múc nước từ ao! Bình tưới: %d/%d 💧" % [Inventory.water_level, Inventory.water_max], Color(0.4, 0.85, 1.0))
+
 
 func _start_fishing() -> void:
 	if fishing:
@@ -1704,6 +1743,9 @@ func continue_game() -> void:
 		"produce": d.get("produce", {}),
 		"sel": d.get("sel", ""),
 		"hoes": d.get("hoes", 0),
+		"water_level": d.get("water_level", 20),
+		"water_max": d.get("water_max", 20),
+		"active_item": d.get("active_item", {"type": "hoe"}),
 		"rods": d.get("rods", {}),
 		"fish": d.get("fish", {}),
 		"coops": d.get("coops", {}),
@@ -1942,6 +1984,18 @@ func _debug_grow() -> void:
 	print("HOETEST lần2: ", farm.perform_at(tb), " | cuốc còn=", Inventory.hoes)
 	tb.reset_tile()
 	print("HOETEST lần3 (hết cuốc): ", farm.perform_at(tb), " | cuốc còn=", Inventory.hoes)
+	# ---- test nước & múc nước ao ----
+	Inventory.water_level = 1
+	var twater = farm.tiles[Vector2i(6, 5)]
+	twater.reset_tile()
+	twater.till()
+	twater.plant("rice")
+	print("WATERTEST tưới lần1: ", farm.perform_at(twater), " | nước còn=", Inventory.water_level)
+	twater.watered = false
+	print("WATERTEST tưới lần2 (hết nước): ", farm.perform_at(twater), " | nước còn=", Inventory.water_level)
+	var added_w: int = Inventory.refill_water()
+	print("WATERTEST múc đầy ao: +%d | nước đầy=%d/%d" % [added_w, Inventory.water_level, Inventory.water_max])
+	twater.reset_tile()
 	# ---- test lượt câu ----
 	Inventory.rods = {"basic": 2}
 	print("FISHTEST cast1=", Inventory.take_cast(), " cast2=", Inventory.take_cast(),
@@ -2278,6 +2332,28 @@ func _clicktest_step() -> void:
 					" west_road_to_edge=", west_road_exists, " ground_is_grass=", (not stall_ground_has_road),
 					" minimap_poi=", poi_stall_exists)
 		995:
+			# Test kiểm thử tính năng mới: Bình nước có hạn + múc nước bờ ao + thanh hotbar Stardew Valley + hoe sprites
+			# 1. Hotbar slots
+			hud.select_slot_by_index(0)
+			var slot0_hoe: bool = (str(Inventory.active_item.get("type")) == "hoe")
+			hud.select_slot_by_index(1)
+			var slot1_water: bool = (str(Inventory.active_item.get("type")) == "watering_can")
+			hud.select_slot_by_index(2)
+			var slot2_rod: bool = (str(Inventory.active_item.get("type")) == "rod")
+			# 2. Ao nước & giới hạn nước
+			Inventory.water_level = 5
+			player.position = FISH_SPOT_POS + Vector2(-60, 0)
+			var near_pond: Dictionary = _nearest_interactable()
+			var pond_offers_water: bool = ("Múc nước" in str(near_pond.get("label", "")))
+			if near_pond.has("cb") and near_pond.cb is Callable:
+				near_pond.cb.call()
+			var water_refilled: bool = (Inventory.water_level == Inventory.water_max)
+			# 3. Sprite cuốc đất & biểu tượng
+			var hoe_tex_ok: bool = (TextureGen.hoe_icon() != null and TextureGen.watering_can_icon() != null)
+			var till_tex_ok: bool = (TextureGen.char_action_tex("down", "till", 3) != null and TextureGen.char_action_tex("side", "till", 3) != null)
+			print("WATER_HOTBAR_TEST slot_hoe=", slot0_hoe, " slot_water=", slot1_water, " slot_rod=", slot2_rod,
+					" pond_offers_water=", pond_offers_water, " water_refilled=", water_refilled,
+					" hoe_tex=", hoe_tex_ok, " till_tex=", till_tex_ok)
 			print("CLICKTEST_DONE")
 			get_tree().quit()
 
