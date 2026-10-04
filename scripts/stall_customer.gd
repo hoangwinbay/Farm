@@ -1,7 +1,10 @@
 extends Node2D
 # Dân làng NPC từ Stardew Valley ghé sạp mua hàng:
-# Hiện bong bóng x[số lượng] + hình ảnh món đồ cần mua.
-# Nếu sạp có hàng -> mua ngay. Nếu chưa có -> đứng chờ một lúc lâu. Nếu hết giờ chờ -> thất vọng rời đi.
+# - Hiện bong bóng [x3] + [icon món đồ cần mua].
+# - Nếu có hàng -> mua ngay.
+# - Nếu chưa có hàng -> 20% từ chối ngay, 80% đứng chờ & đi lại xung quanh sạp đến hết ngày.
+# - Người chơi có thể đến gần bấm [E] để báo hết hàng (từ chối).
+# - Khi về -> quay trở về đoạn đường ban đầu ở rìa trái màn hình.
 
 const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
@@ -17,10 +20,11 @@ var character_name: String = "Abigail"
 var display_name: String = "Bé Lan"
 
 var state: int = State.WALK_IN
-var speed: float = 35.0  # Bước đi chậm rãi, thư thái (35 px/s)
+var speed: float = 35.0         # Tốc độ đi bộ bình thường (35 px/s)
+var wander_speed: float = 22.0  # Tốc độ đi dạo thư thả khi đứng chờ
 var target_stall_pos := Vector2(184, 468)
-var exit_x: float = 430.0  # Đi tiếp dọc đại lộ về phía đông sau khi ghé sạp
-var stall_slots: Array = []  # Tham chiếu đến các ô sạp hàng của main
+var exit_pos := Vector2(-40.0, 468.0)  # Quay trở về đoạn đường ban đầu
+var stall_slots: Array = []     # Tham chiếu đến các ô sạp hàng của main
 
 # Nhu cầu mua sắm của khách
 var item_id: String = "wheat"
@@ -36,10 +40,14 @@ var _bubble_qty_label: Label
 var _bubble_icon: TextureRect
 var _anim_t: float = 0.0
 var _shop_timer: float = 0.0
-var _wait_timer: float = 0.0
-var _max_wait_time: float = 12.0  # Đứng chờ 12 giây nếu chưa có hàng
+var _check_restock_timer: float = 0.0
 var _purchased: bool = false
 var _disappointed: bool = false
+
+# AI đi lại xung quanh khi đứng chờ
+var _wander_target := Vector2.ZERO
+var _wander_wait_timer: float = 0.0
+var _is_wandering: bool = false
 
 
 func _ready() -> void:
@@ -95,17 +103,19 @@ func _process(delta: float) -> void:
 	match state:
 		State.WALK_IN:
 			var dx := target_stall_pos.x - position.x
-			if absf(dx) > 2.0:
-				position.x += signf(dx) * speed * delta
+			var dy := target_stall_pos.y - position.y
+			if absf(dx) > 2.0 or absf(dy) > 2.0:
+				var move_dir := Vector2(dx, dy).normalized()
+				position += move_dir * speed * delta
 				_anim_t += delta
-				_spr.flip_h = false
-				_spr.texture = TextureGen.sdv_char_tex(character_name, "right", int(_anim_t * 5.0) % 4)
+				var dir := "right" if move_dir.x >= 0 else "left"
+				if absf(move_dir.y) > absf(move_dir.x):
+					dir = "down" if move_dir.y > 0 else "up"
+				_spr.texture = TextureGen.sdv_char_tex(character_name, dir, int(_anim_t * 5.0) % 4)
 			else:
 				# Đã đến vị trí trước quầy sạp hàng
 				position = target_stall_pos
 				_anim_t = 0.0
-				_spr.flip_h = false
-				# Hướng mặt lên phía trên nhìn vào sạp gỗ
 				_spr.texture = TextureGen.sdv_char_tex(character_name, "up", 0)
 				arrived_at_stall.emit()
 
@@ -115,35 +125,67 @@ func _process(delta: float) -> void:
 					state = State.SHOPPING
 					_shop_timer = 0.0
 				else:
-					# Không có -> đứng chờ một lúc lâu
-					state = State.WAITING
-					_wait_timer = 0.0
+					# Không có món đồ mong muốn:
+					# 20% khả năng từ chối ngay và bỏ về, 80% khả năng đứng chờ & đi lại xung quanh đến hết ngày
+					if randf() < 0.20:
+						_show_disappointed_bubble()
+						state = State.WALK_OUT
+					else:
+						state = State.WAITING
+						_is_wandering = false
+						_wander_wait_timer = randf_range(2.0, 4.0)
 
 		State.WAITING:
-			_wait_timer += delta
+			# Trong lúc chờ, kiểm tra xem người chơi có vừa bày món hàng lên sạp không
+			_check_restock_timer += delta
+			if _check_restock_timer >= 0.3:
+				_check_restock_timer = 0.0
+				var match_slot := _find_matching_slot()
+				if match_slot >= 0:
+					# Phát hiện có hàng trên sạp! Lập tức chuyển sang mua sắm
+					state = State.SHOPPING
+					_shop_timer = 0.0
+					_is_wandering = false
+					return
 
-			# Trong lúc đứng chờ, kiểm tra xem người chơi có vừa bày hàng lên sạp không
-			var match_slot := _find_matching_slot()
-			if match_slot >= 0:
-				state = State.SHOPPING
-				_shop_timer = 0.0
-				return
-
-			# Hiệu ứng bong bóng nhấp nháy nhẹ khi đang đứng đợi
-			var pulse := 1.0 + 0.08 * sin(_wait_timer * 4.0)
-			_bubble.scale = Vector2(pulse, pulse)
-
-			# Nếu đã đứng chờ quá lâu (12s) mà sạp vẫn không có đồ -> thất vọng rời đi
-			if _wait_timer >= _max_wait_time:
-				_bubble.scale = Vector2.ONE
-				_show_disappointed_bubble()
-				state = State.WALK_OUT
+			# Đi lại xung quanh khu vực trước sạp hàng
+			if _is_wandering:
+				var d_vec := _wander_target - position
+				if d_vec.length() > 2.5:
+					var m_dir := d_vec.normalized()
+					position += m_dir * wander_speed * delta
+					_anim_t += delta
+					var dir := "right" if m_dir.x >= 0 else "left"
+					if absf(m_dir.y) > absf(m_dir.x):
+						dir = "down" if m_dir.y > 0 else "up"
+					_spr.texture = TextureGen.sdv_char_tex(character_name, dir, int(_anim_t * 4.0) % 4)
+				else:
+					_is_wandering = false
+					_wander_wait_timer = randf_range(2.5, 5.0)
+					_anim_t = 0.0
+					_spr.texture = TextureGen.sdv_char_tex(character_name, "up" if randf() < 0.6 else "down", 0)
+			else:
+				_wander_wait_timer -= delta
+				if _wander_wait_timer <= 0.0:
+					_wander_target = _pick_wander_spot()
+					_is_wandering = true
 
 		State.SHOPPING:
-			_bubble.scale = Vector2.ONE
-			_shop_timer += delta
+			# Nếu đang đứng cách quầy hàng do đi dạo, tiến nhanh về lại trước quầy
+			var dx := target_stall_pos.x - position.x
+			var dy := target_stall_pos.y - position.y
+			if absf(dx) > 4.0 or absf(dy) > 4.0:
+				var m_dir := Vector2(dx, dy).normalized()
+				position += m_dir * speed * 1.5 * delta
+				_anim_t += delta
+				_spr.texture = TextureGen.sdv_char_tex(character_name, "up", int(_anim_t * 5.0) % 4)
+				return
+			else:
+				position = target_stall_pos
+				_spr.texture = TextureGen.sdv_char_tex(character_name, "up", 0)
 
-			# Sau 0.8s đứng chọn hàng -> tiến hành mua
+			_shop_timer += delta
+			# Sau 0.8s ngắm nghía -> tiến hành mua hàng
 			if _shop_timer >= 0.8 and not _purchased:
 				_purchased = true
 				var match_slot := _find_matching_slot()
@@ -164,18 +206,25 @@ func _process(delta: float) -> void:
 					state = State.WALK_OUT
 					return
 
-			# Sau 2.2s mua xong -> cất bong bóng và đi tiếp
+			# Sau 2.2s mua xong -> cất bong bóng và quay trở về đoạn đường ban đầu
 			if _shop_timer >= 2.2:
 				_bubble.visible = false
 				state = State.WALK_OUT
 
 		State.WALK_OUT:
-			var dx := exit_x - position.x
+			# Khi về thì quay trở về đoạn đường ban đầu ở rìa trái màn hình (x <= -35, y = 468)
+			var target_x: float = exit_pos.x
+			var dx := target_x - position.x
+			var dy := exit_pos.y - position.y
+
+			# Đưa vị trí y về trục đường chính 468
+			if absf(dy) > 2.5 and position.x > 0.0:
+				position.y += signf(dy) * speed * delta
+
 			if absf(dx) > 3.0:
 				position.x += signf(dx) * speed * delta
 				_anim_t += delta
 				var dir := "right" if dx > 0 else "left"
-				_spr.flip_h = false
 				_spr.texture = TextureGen.sdv_char_tex(character_name, dir, int(_anim_t * 5.0) % 4)
 			else:
 				departed.emit()
@@ -189,6 +238,29 @@ func _find_matching_slot() -> int:
 			if str(slot.get("id", "")) == item_id and int(slot.get("count", 0)) > 0:
 				return i
 	return -1
+
+
+func _pick_wander_spot() -> Vector2:
+	# Khu vực quảng trường / đường cỏ mở rộng quanh sạp hàng
+	var rx := randf_range(110.0, 260.0)
+	var ry := randf_range(462.0, 505.0)
+	return Vector2(rx, ry)
+
+
+func decline() -> void:
+	if state == State.WALK_OUT:
+		return
+	_is_wandering = false
+	_show_disappointed_bubble()
+	state = State.WALK_OUT
+
+
+func dismiss_for_night() -> void:
+	if state == State.WALK_OUT:
+		return
+	_is_wandering = false
+	_bubble.visible = false
+	state = State.WALK_OUT
 
 
 func _show_coin_bubble() -> void:

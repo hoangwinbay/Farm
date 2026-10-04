@@ -45,11 +45,12 @@ const SDV_CUSTOMERS_DATA := [
 ]
 const SDV_CUSTOMERS := ["Abigail", "Haley", "Leah", "Penny", "Sam", "Alex", "Emily", "Harvey", "Maru", "Sebastian"]
 
-# Các vị trí đứng song song trước quầy sạp hàng để nhiều NPC ghé cùng lúc
+# Các vị trí đứng trước sạp hàng để tối đa 10 NPC ghé cùng lúc
 const STALL_COUNTER_SPOTS := [
-	Vector2(152, 468),
-	Vector2(184, 468),
-	Vector2(216, 468),
+	Vector2(146, 468), Vector2(165, 468), Vector2(184, 468),
+	Vector2(203, 468), Vector2(222, 468), Vector2(155, 482),
+	Vector2(174, 482), Vector2(193, 482), Vector2(212, 482),
+	Vector2(230, 482)
 ]
 
 const STALL_WISHLIST_ITEMS := [
@@ -1076,8 +1077,6 @@ func _process(delta: float) -> void:
 
 func _process_stall_customers(delta: float) -> void:
 	var t := GameState.clock
-	if t < 420.0 or t > 1140.0:
-		return
 
 	# Lọc danh sách khách hàng đang hoạt động
 	var alive: Array[Node2D] = []
@@ -1087,13 +1086,20 @@ func _process_stall_customers(delta: float) -> void:
 	_stall_customers = alive
 	_active_stall_customer = _stall_customers[0] if not _stall_customers.is_empty() else null
 
-	# Cho phép nhiều NPC ghé sạp cùng lúc (tối đa bằng số vị trí đứng STALL_COUNTER_SPOTS)
+	# Khi trời tối (sau 21:00 / 1260.0 hoặc trước 7:00 sáng / 420.0), dân làng đứng chờ sẽ chào và ra về
+	if t >= 1260.0 or t < 420.0:
+		for c in _stall_customers:
+			if is_instance_valid(c) and c.state == StallCustomerScript.State.WAITING:
+				c.dismiss_for_night()
+		return
+
+	# Cho phép tối đa 10 NPC xuất hiện và chờ cùng lúc
 	if _stall_customers.size() >= STALL_COUNTER_SPOTS.size():
 		return
 
 	_stall_customer_timer += delta
-	# Cứ mỗi 5-8s có một khách NPC mới ghé sạp
-	if _stall_customer_timer < 6.0:
+	# Cứ mỗi 3.5 - 5s có một khách mới ghé sạp nếu chưa đủ 10 người
+	if _stall_customer_timer < 4.0:
 		return
 	_stall_customer_timer = 0.0
 
@@ -1285,7 +1291,27 @@ func _nearest_interactable() -> Dictionary:
 		if d <= float(it.r) and d < best_d:
 			best_d = d
 			best = it
+
+	# Kiểm tra khách NPC đang đứng chờ quanh sạp để người chơi có thể từ chối / báo hết hàng
+	for c in _stall_customers:
+		if is_instance_valid(c) and c.state == StallCustomerScript.State.WAITING:
+			var d: float = player.position.distance_to(c.position)
+			if d <= 32.0 and d < best_d:
+				best_d = d
+				best = {
+					"pos": c.position,
+					"r": 32.0,
+					"label": "%s · [E] Báo hết hàng" % c.display_name,
+					"cb": func(): _decline_stall_customer(c)
+				}
 	return best
+
+
+func _decline_stall_customer(cust: Node2D) -> void:
+	if not is_instance_valid(cust) or cust.state != StallCustomerScript.State.WAITING:
+		return
+	cust.decline()
+	hud.toast("%s: Tiếc quá, hẹn hôm khác nhé! 👋" % cust.display_name, Color(1.0, 0.85, 0.5))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1530,6 +1556,12 @@ func _do_sleep(forced: bool) -> void:
 	await tw.finished
 	GameState.sleep_to_morning()
 	var ready_n: int = farm.ready_count()
+	# Dọn các khách NPC ngày hôm trước để ngày mới đón khách mới
+	for c in _stall_customers:
+		if is_instance_valid(c):
+			c.queue_free()
+	_stall_customers.clear()
+	_active_stall_customer = null
 	# Cây cối tự nhiên có tỉ lệ mọc thêm trên bề mặt cỏ qua đêm
 	if foliage_nodes.size() < 95 and randf() < 0.60:
 		_sprout_random_plant()
@@ -2176,6 +2208,13 @@ func _clicktest_step() -> void:
 			var cust2: Node2D = _spawn_stall_customer()
 			var multi_cust_ok: bool = (_stall_customers.size() >= 2 and cust2.target_stall_pos != cust1.target_stall_pos)
 			var diff_names_ok: bool = (cust2.display_name != cust1.display_name)
+			var wander_spot: Vector2 = cust2._pick_wander_spot()
+			var wander_ok: bool = (wander_spot.x >= 100.0 and wander_spot.x <= 270.0 and wander_spot.y >= 450.0 and wander_spot.y <= 515.0)
+
+			# Thử nghiệm từ chối NPC 2 (báo hết hàng) -> NPC 2 quay về đoạn đường ban đầu ở rìa trái
+			cust2.state = StallCustomerScript.State.WAITING
+			_decline_stall_customer(cust2)
+			var decline_ok: bool = (cust2.state == StallCustomerScript.State.WALK_OUT and cust2.exit_pos.x <= 0.0)
 
 			# Giả lập hoàn thành mua hàng 1 quả cà chua giá 18 xu
 			_on_stall_customer_purchased(0, "Cà chua", 1, 18, cust1.display_name)
@@ -2228,7 +2267,8 @@ func _clicktest_step() -> void:
 					" crate1_cleared=", crate1_cleared, " cust_spawned=", cust_spawned,
 					" cust_from_left=", cust_from_left, " cust_slow=", cust_slow,
 					" bubble_qty=", cust_bubble_has_qty, " multi_cust=", multi_cust_ok,
-					" diff_names=", diff_names_ok,
+					" diff_names=", diff_names_ok, " wander=", wander_ok,
+					" decline=", decline_ok,
 					" wallet_unchanged=", wallet_unchanged, " stall_rev_accumulated=", stall_rev_accumulated,
 					" badge_active=", badge_active, " slot0_dec=", slot0_count_decreased,
 					" collect_btn=", collect_btn_shows_18, " wallet_collected=", wallet_collected,
