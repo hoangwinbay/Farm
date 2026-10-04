@@ -26,6 +26,10 @@ const StoragePanelScript := preload("res://scripts/ui/storage_panel.gd")
 const CatHelperScript := preload("res://scripts/cat_helper.gd")
 const CatPanelScript := preload("res://scripts/ui/cat_panel.gd")
 const MineManagerScript := preload("res://scripts/mine_manager.gd")
+const WeatherManagerScript := preload("res://scripts/weather_manager.gd")
+const QuestManagerScript := preload("res://scripts/quest_manager.gd")
+const QuestPanelScript := preload("res://scripts/ui/quest_panel.gd")
+const QuestDB := preload("res://scripts/quest_db.gd")
 const OreDB := preload("res://scripts/ore_db.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
@@ -36,6 +40,7 @@ const HOUSE_POS := Vector2(641, 248)
 const SHED_POS := Vector2(505, 248)
 const TENT_POS := Vector2(766, 248)
 const MAILBOX_POS := Vector2(720, 246)
+const MAYOR_POS := Vector2(705, 270)
 const MARKET_STALL_POS := Vector2(584, 440) # sạp hàng nông sản tại ngã rẽ đại lộ
 const MINE_ENTRANCE_POS := Vector2(80, 440)  # cửa hầm mỏ đá ở rìa cực Tây (đi thẳng từ sạp hàng sang trái)
 const MINE_SIGN_POS := Vector2(140, 416)     # biển báo hầm mỏ
@@ -119,6 +124,8 @@ var npc: StaticBody2D
 var npc_hai: StaticBody2D
 var npc_tu: StaticBody2D
 var npc_leah: StaticBody2D
+var npc_mayor: StaticBody2D
+var quest_mgr: Node
 var mine_manager: Node2D
 var in_mine: bool = false
 var pen_node: Node2D
@@ -126,11 +133,13 @@ var cam: Camera2D
 var ground: Sprite2D
 var canvas_mod: CanvasModulate
 var highlight: Sprite2D
+var weather_mgr: CanvasLayer
 
 var hud: CanvasLayer
 var shop_panel: CanvasLayer
 var fish_shop: CanvasLayer
 var poultry_shop: CanvasLayer
+var quest_panel: CanvasLayer
 var stall_panel: CanvasLayer
 var stall_slots: Array = [{}, {}, {}, {}, {}, {}]
 var stall_crate_sprites: Array[Sprite2D] = []
@@ -159,6 +168,7 @@ var _npc_met := false
 var _npc_hai_met := false
 var _npc_tu_met := false
 var _leah_met := false
+var _mayor_met := false
 var _dialog_next := "shop"
 
 var foliage_nodes: Array = []
@@ -197,8 +207,16 @@ func _ready() -> void:
 	_build_world()
 	_build_ui()
 
-	GameState.money_changed.connect(func(v: int) -> void: hud.set_money(v))
+	GameState.money_changed.connect(func(v: int) -> void:
+		hud.set_money(v)
+		if quest_mgr != null:
+			quest_mgr.update_money_milestones(v)
+	)
 	GameState.crops_changed.connect(func() -> void: hud.rebuild_hotbar())
+	GameState.weather_changed.connect(func(w: String) -> void:
+		if is_instance_valid(hud):
+			hud.set_weather(w)
+	)
 	Inventory.changed.connect(hud.rebuild_hotbar)
 	shop_panel.feedback.connect(func(t: String) -> void: hud.toast(t, Color(1.0, 0.9, 0.5)))
 	shop_panel.closed.connect(_close_panels)
@@ -300,11 +318,37 @@ func _build_world() -> void:
 	mine_manager.exit_requested.connect(_on_exit_mine)
 	add_child(mine_manager)
 
+	# Quản lý Hệ Thống Nhiệm Vụ (Ngày, Tuần, Thành Tựu)
+	quest_mgr = QuestManagerScript.new()
+	quest_mgr.setup(self)
+	quest_mgr.quest_completed.connect(func(q: Dictionary):
+		hud.toast("🎉 Xong nhiệm vụ: %s! Nhận thưởng [Q] hoặc gặp Trưởng Thôn" % str(q.get("title", "")), Color(1.0, 0.85, 0.35))
+		_update_npc_mayor_indicator()
+	)
+	quest_mgr.quests_refreshed.connect(_update_npc_mayor_indicator)
+	quest_mgr.quest_claimed.connect(func(_q: Dictionary):
+		_update_npc_mayor_indicator()
+		_save_now()
+	)
+	add_child(quest_mgr)
+
 	# Chú mèo tam thể làm nông
 	cat_helper = CatHelperScript.new()
 	cat_helper.farm = farm
 	cat_helper.toast_requested.connect(func(txt: String, col: Color): hud.toast(txt, col))
+	cat_helper.action_performed.connect(func(act_type: String, target_id: String):
+		if quest_mgr != null:
+			quest_mgr.advance_progress(act_type, target_id)
+	)
 	world.add_child(cat_helper)
+
+	# Bác Trưởng Thôn đứng trước sân nhà chính
+	npc_mayor = NpcScript.new()
+	npc_mayor.npc_name = "Trưởng Thôn"
+	npc_mayor.position = MAYOR_POS
+	world.add_child(npc_mayor)
+	_update_npc_mayor_indicator()
+
 	cam = Camera2D.new()
 	cam.zoom = Vector2(2, 2)
 	cam.position_smoothing_enabled = true
@@ -317,6 +361,11 @@ func _build_world() -> void:
 	cam.make_current()
 	cam.reset_smoothing()
 
+	# Quản lý thời tiết & hiệu ứng hạt
+	weather_mgr = WeatherManagerScript.new()
+	add_child(weather_mgr)
+	weather_mgr.setup(self, player, farm)
+
 	# ao: hồ là ellipse — chặn đi xuống nước bằng tường ellipse, nhưng câu được ở mọi bờ
 	_add_ellipse_wall(POND_RECT.get_center(), 88, 48)
 
@@ -327,6 +376,7 @@ func _build_world() -> void:
 		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ", "cb": _ask_sleep},
 		{"pos": SHED_POS + Vector2(0, -6), "r": 50.0, "label": "Nhà kho 🏚️", "cb": _open_storage},
 		{"pos": MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": _open_mailbox},
+		{"pos": MAYOR_POS, "r": 50.0, "label": "Trưởng Thôn 📜", "cb": _talk_mayor},
 		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪", "cb": _open_market_stall},
 		{"pos": MINE_ENTRANCE_POS + Vector2(0, 10), "r": 45.0, "label": "Vào Hầm Mỏ ⛏️", "cb": _enter_mine},
 		{"pos": MINE_SIGN_POS, "r": 40.0, "label": "Biển báo Hầm Mỏ 📜", "cb": _read_mine_sign},
@@ -477,19 +527,14 @@ func _rebuild_pen() -> void:
 			for y in range(676, int(y_s), 32):
 				_add_sprite(fv, Vector2(cx, y) - org, pen_node)
 
-	# 5. Ô chuồng: biển tên từng loại, ô chưa dùng hiện "Trống"
-	var total_slots: int = rows * PEN_COL_X.size()
-	for i in total_slots:
+	# 5. Biển tên loài gia cầm trong từng ô chuồng
+	for i in species.size():
 		var cx: float = PEN_COL_X[i % PEN_COL_X.size()]
 		var cy := PEN_GRID_TOP + PEN_ROW_STEP * floori(i / float(PEN_COL_X.size()))
 		var badge := PanelContainer.new()
-		if i < species.size():
-			badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.18, 0.12, 0.06, 0.92), UIKit.COLOR_BORDER_GOLD, 4))
-			UIKit.label(badge, str(PoultryDB.get_animal(species[i]).name), 10, UIKit.COLOR_TEXT_TITLE)
-		else:
-			badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07, 0.8), Color(0.32, 0.26, 0.2), 4))
-			UIKit.label(badge, "Ô trống", 10, UIKit.COLOR_TEXT_MUTED)
-		badge.position = Vector2(cx - 120.0, cy - 560.0) + Vector2(2, 1)
+		badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.18, 0.12, 0.06, 0.92), UIKit.COLOR_BORDER_GOLD, 4))
+		UIKit.label(badge, str(PoultryDB.get_animal(species[i]).name), 10, UIKit.COLOR_TEXT_TITLE)
+		badge.position = Vector2(cx - org.x + 6.0, cy - org.y + 4.0)
 		pen_node.add_child(badge)
 
 	# 6. Con vật: mỗi loại đứng trong ô của nó
@@ -754,7 +799,7 @@ func _update_stall_crates_visual() -> void:
 
 func _on_stall_changed() -> void:
 	_update_stall_crates_visual()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 
 
 func _build_mine_entrance() -> void:
@@ -882,6 +927,10 @@ func _is_grass_surface(pos: Vector2) -> bool:
 
 	# 5. Hòm thư cạnh nhà
 	if pos.distance_to(MAILBOX_POS) < 36.0:
+		return false
+
+	# 5b. Vị trí Bác Trưởng Thôn đứng trước nhà
+	if pos.distance_to(MAYOR_POS) < 32.0:
 		return false
 
 	# 6. Bù nhìn rơm
@@ -1129,6 +1178,13 @@ func _build_ui() -> void:
 	add_child(cat_panel)
 	cat_panel.closed.connect(_close_panels)
 	cat_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
+	quest_panel = QuestPanelScript.new()
+	add_child(quest_panel)
+	quest_panel.setup(quest_mgr)
+	quest_panel.closed.connect(_close_panels)
+	quest_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
+	hud.setup_quests(quest_mgr)
+	hud.open_quests_requested.connect(_open_quest_panel)
 	pause_menu = PauseMenuScript.new()
 	add_child(pause_menu)
 	dialog_box = DialogueBoxScript.new()
@@ -1332,15 +1388,32 @@ func _on_stall_customer_purchased(slot_idx: int, item_name: String, qty: int, co
 	_update_stall_coin_badge()
 	var who := buyer_name if buyer_name != "" else "Khách"
 	hud.toast("%s ghé mua %d %s! Có %d xu chờ thu tại sạp 🏪" % [who, qty, item_name, stall_revenue], Color(1.0, 0.88, 0.4))
-	_spawn_effect("fx_harvest", Vector2(184, 432))
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+	if quest_mgr != null:
+		quest_mgr.advance_progress("stall_sell", "any", qty)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 
 
 func _tint() -> Color:
-	# 7:00 - 19:00 trời sáng; 19:00 - 7:00 đêm dịu (ruộng vẫn nhìn rõ màu nâu)
+	# 7:00 - 19:00 trời sáng; 19:00 - 7:00 đêm dịu
 	var t := GameState.clock
 	var night := Color(0.68, 0.72, 0.92)
 	var day := Color.WHITE
+
+	# Điều chỉnh tông màu môi trường theo thời tiết
+	match GameState.weather:
+		"drizzle":
+			day = Color(0.88, 0.92, 0.96)
+			night = Color(0.62, 0.66, 0.88)
+		"rain":
+			day = Color(0.74, 0.82, 0.94)
+			night = Color(0.55, 0.60, 0.82)
+		"storm":
+			day = Color(0.55, 0.60, 0.76)
+			night = Color(0.42, 0.46, 0.68)
+		"windy":
+			day = Color(0.96, 0.98, 0.94)
+			night = Color(0.65, 0.70, 0.90)
+
 	if t < 420:
 		# 0:00-6:00 đêm; 6:00-7:00 chuyển sáng
 		return night.lerp(day, clampf((t - 360) / 60.0, 0, 1))
@@ -1472,14 +1545,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().paused = true
 		elif pause_menu.visible:
 			_resume_from_pause()
-		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible):
+		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible) or (quest_panel != null and quest_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("interact"):
 		if mode == Mode.PLAY and not get_tree().paused:
 			_do_interact()
 		elif mode == Mode.DIALOG:
 			dialog_box.advance()
-		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible):
+		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible) or (quest_panel != null and quest_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("inventory"):
 		if mode == Mode.PLAY and not get_tree().paused:
@@ -1501,10 +1574,18 @@ func _unhandled_input(event: InputEvent) -> void:
 				_open_cat_panel()
 				get_viewport().set_input_as_handled()
 				return
+			elif event.keycode == KEY_Q:
+				if hud != null and hud.quest_drawer != null:
+					hud.quest_drawer.toggle_drawer()
+				else:
+					_open_quest_panel()
+				get_viewport().set_input_as_handled()
+				return
 			elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
 				hud.select_slot_by_index(event.keycode - KEY_1)
 		elif (storage_panel != null and storage_panel.visible and event.keycode == KEY_K) \
-			or (cat_panel != null and cat_panel.visible and event.keycode == KEY_M):
+			or (cat_panel != null and cat_panel.visible and event.keycode == KEY_M) \
+			or (quest_panel != null and quest_panel.visible and event.keycode == KEY_Q):
 			_close_panels()
 			get_viewport().set_input_as_handled()
 			return
@@ -1533,6 +1614,8 @@ func _do_interact() -> void:
 	if tile == null:
 		return
 	var info: Dictionary = farm.action_at(tile)
+	var crop_id_before: String = tile.crop_id if tile != null else ""
+	var selected_seed_before := Inventory.selected_seed
 	var msg: String = farm.perform_at(tile)
 	if msg == "":
 		return
@@ -1540,6 +1623,20 @@ func _do_interact() -> void:
 	var act := str(info.act)
 	if act != "none":
 		_spawn_effect("fx_" + act, farm.tile_center(tile.coord))
+
+	if quest_mgr != null:
+		match act:
+			"harvest":
+				quest_mgr.advance_progress("harvest", crop_id_before)
+			"plant":
+				quest_mgr.advance_progress("plant", selected_seed_before)
+			"water":
+				quest_mgr.advance_progress("water", "any")
+			"till":
+				quest_mgr.advance_progress("till", "any")
+			"catch_pest":
+				quest_mgr.advance_progress("catch_pest", "sau_bo")
+
 	player.play_action_anim(act)
 	player.can_move = false
 	var act_time: float = player.get_action_duration(act)
@@ -1594,6 +1691,23 @@ func _talk_hai() -> void:
 		_npc_hai_met = true
 
 
+func _talk_mayor() -> void:
+	mode = Mode.DIALOG
+	get_tree().paused = true
+	_dialog_next = "quests"
+	if _mayor_met:
+		dialog_box.start("Trưởng Thôn", ["Chào cháu! Hãy xem bảng nhiệm vụ hôm nay có việc gì giúp làng nhé!"])
+	else:
+		dialog_box.start("Trưởng Thôn", [
+			"Chào mừng cháu đến với làng! Bác là Trưởng Thôn nơi đây.",
+			"Mỗi ngày và mỗi tuần bác đều có các nhiệm vụ giúp làng phát triển nông nghiệp và khai khoáng.",
+			"Nhiệm vụ Ngày thưởng 100 vàng + 10 nguyên liệu cùng loại!",
+			"Nhiệm vụ Tuần thưởng 500 vàng + 50 nguyên liệu cùng loại, còn Nhiệm vụ Tổng thưởng 50 vàng mỗi mốc thành tựu!",
+			"Cháu có thể mở Bảng Nhiệm Vụ bằng phím [Q] hoặc bấm biểu tượng nhiệm vụ góc trên bất cứ lúc nào."
+		])
+		_mayor_met = true
+
+
 func _on_dialog_finished() -> void:
 	if _dialog_next == "none":
 		mode = Mode.PLAY
@@ -1609,6 +1723,8 @@ func _on_dialog_finished() -> void:
 		_open_fish_shop()
 	elif _dialog_next == "poultry":
 		_open_poultry_shop()
+	elif _dialog_next == "quests":
+		_open_quest_panel()
 	else:
 		_open_shop()
 
@@ -1716,7 +1832,7 @@ func _open_market_stall() -> void:
 func _on_stall_revenue_collected(_amt: int) -> void:
 	stall_revenue = 0
 	_update_stall_coin_badge()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 
 
 func _open_fish_shop() -> void:
@@ -1751,6 +1867,9 @@ func _collect_products() -> void:
 	var n: int = Inventory.collect_products()
 	if n > 0:
 		hud.toast("Đã thu %d sản phẩm chăn nuôi! Bán cho Cô Tư." % n, Color(1.0, 0.75, 0.5))
+		if quest_mgr != null:
+			quest_mgr.advance_progress("poultry", "any", n)
+			quest_mgr.advance_progress("poultry", "trung_ga", n)
 	else:
 		hud.toast("Chưa có sản phẩm nào chờ thu...", Color(0.8, 0.8, 0.8))
 
@@ -1779,10 +1898,27 @@ func _open_cat_panel() -> void:
 	cat_panel.open(cat_helper)
 
 
+func _open_quest_panel() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	quest_panel.open("daily")
+
+
+func _update_npc_mayor_indicator() -> void:
+	if npc_mayor == null or quest_mgr == null:
+		return
+	if quest_mgr.has_unclaimed_rewards():
+		npc_mayor.set_quest_indicator("question")
+	elif quest_mgr.has_active_quests():
+		npc_mayor.set_quest_indicator("exclamation")
+	else:
+		npc_mayor.set_quest_indicator("")
+
+
 func _on_mailbox_changed() -> void:
 	_update_mailbox_badge()
 	hud.rebuild_hotbar()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 
 
 func _close_panels() -> void:
@@ -1798,6 +1934,8 @@ func _close_panels() -> void:
 		mailbox_panel.visible = false
 	if stall_panel != null:
 		stall_panel.visible = false
+	if quest_panel != null:
+		quest_panel.visible = false
 	pause_menu.visible = false
 	get_tree().paused = false
 	if mode != Mode.TITLE:
@@ -1817,13 +1955,19 @@ func _cat_save_data() -> Dictionary:
 	return {}
 
 
+func _quest_save_data() -> Dictionary:
+	if is_instance_valid(quest_mgr):
+		return quest_mgr.get_save_data()
+	return {}
+
+
 func _save_now() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 	hud.toast("Đã lưu game!", Color(0.6, 1.0, 0.6))
 
 
 func _back_to_title() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 	_close_panels()
 	mode = Mode.TITLE
 	dialog_box.force_close()
@@ -1867,6 +2011,13 @@ func _do_sleep(forced: bool) -> void:
 		cam.limit_right = int(WORLD_SIZE.x)
 		cam.limit_bottom = int(WORLD_SIZE.y)
 	GameState.sleep_to_morning()
+	var next_w: String = WeatherManagerScript.roll_weather(GameState.day)
+	GameState.weather = next_w
+	if is_instance_valid(weather_mgr):
+		weather_mgr.set_weather(next_w)
+	if is_instance_valid(hud):
+		hud.set_weather(next_w)
+
 	var ready_n: int = farm.ready_count()
 	# Dọn các khách NPC ngày hôm trước để ngày mới đón khách mới
 	for c in _stall_customers:
@@ -1881,18 +2032,23 @@ func _do_sleep(forced: bool) -> void:
 		cat_helper.position = CatHelperScript.TENT_SLEEP_POS
 		cat_helper.state = CatHelperScript.State.IDLE
 		cat_helper._hide_bubble()
+	# Cập nhật nhiệm vụ theo thời gian thực
+	if is_instance_valid(quest_mgr):
+		quest_mgr.check_real_time_refresh()
+		_update_npc_mayor_indicator()
 	# Cây cối tự nhiên có tỉ lệ mọc thêm trên bề mặt cỏ qua đêm
 	if foliage_nodes.size() < 95 and randf() < 0.60:
 		_sprout_random_plant()
-	# Sâu bọ có thể xuất hiện trên các luống cây đang lớn qua đêm
+	# Sâu bọ có thể xuất hiện trên các luống cây đang lớn qua đêm (trời mưa dông không sinh sâu)
 	var new_pests := 0
-	for t in farm.tiles.values():
-		if t.tstate == FarmTileScript.TState.PLANTED and not t.is_ready() and not t.has_pest and t.growth > 3.0:
-			if randf() < 0.15:
-				t.spawn_pest()
-				new_pests += 1
+	if not (next_w in [WeatherManagerScript.RAIN, WeatherManagerScript.STORM]):
+		for t in farm.tiles.values():
+			if t.tstate == FarmTileScript.TState.PLANTED and not t.is_ready() and not t.has_pest and t.growth > 3.0:
+				if randf() < 0.15:
+					t.spawn_pest()
+					new_pests += 1
 	# Hàng hoá trên sạp được giữ nguyên qua đêm (không bán qua đêm)
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	if forced:
@@ -1935,7 +2091,12 @@ func _start_fishing() -> void:
 		return
 	var rod := FishDB.get_rod(tier)
 	fishing = true
-	fishing_left = FishDB.FISH_TIME
+	var fish_time: float = FishDB.FISH_TIME
+	if GameState.weather in [WeatherManagerScript.RAIN, WeatherManagerScript.STORM]:
+		fish_time = 9.0
+	elif GameState.weather == WeatherManagerScript.DRIZZLE:
+		fish_time = 12.0
+	fishing_left = fish_time
 	player.can_move = false
 	hud.toast("Đã thả câu (%s — còn %d lượt)" % [rod.name, Inventory.total_casts()], Color(0.6, 0.9, 1.0))
 	# animation: cần câu trên tay + phao nhấp nhô trên mặt nước
@@ -1976,6 +2137,8 @@ func _finish_fishing() -> void:
 		hud.toast("Túi đồ đã đầy! Không thể giữ %s... Hãy cất bớt đồ vào nhà kho 🏚️" % f.name, Color(1.0, 0.5, 0.4))
 		return
 	Inventory.add_fish(fid, 1)
+	if quest_mgr != null:
+		quest_mgr.advance_progress("fish", fid, 1)
 	if str(f.tier) == "legend":
 		hud.toast("HUYỀN THOẠI! Bắt được %s!!!" % f.name, Color(1.0, 0.85, 0.3))
 	elif str(f.tier) == "rare":
@@ -1988,6 +2151,10 @@ func _finish_fishing() -> void:
 
 func start_new_game() -> void:
 	GameState.reset_new_game()
+	if is_instance_valid(weather_mgr):
+		weather_mgr.set_weather(WeatherManagerScript.SUNNY)
+	if is_instance_valid(hud):
+		hud.set_weather(WeatherManagerScript.SUNNY)
 	Inventory.reset()
 	Inventory.selected_seed = "rice"
 	Inventory.add_hoes(2)
@@ -2010,12 +2177,20 @@ func start_new_game() -> void:
 		cat_helper.state = CatHelperScript.State.ARRIVING
 		cat_helper.waypoints = [CatHelperScript.ROAD_JUNCTION_POS, Vector2(CatHelperScript.ROAD_JUNCTION_POS.x, CatHelperScript.WAITING_POS.y), CatHelperScript.WAITING_POS]
 		cat_helper._show_bubble_text("...")
+	if is_instance_valid(quest_mgr):
+		var cur_day: int = QuestManagerScript.get_real_day_id()
+		var cur_week: int = QuestManagerScript.get_real_week_id()
+		quest_mgr.refresh_daily_quests(cur_day)
+		quest_mgr.refresh_weekly_quests(cur_week)
+		quest_mgr.lifetime_quests = QuestDB.init_lifetime_quests()
+		quest_mgr.quests_refreshed.emit()
+	_update_npc_mayor_indicator()
 	dialog_box.force_close()
 	title_screen.hide_me()
 	get_tree().paused = false
 	mode = Mode.PLAY
 	hud.toast("Chào mừng đến Nông Trại Việt!", Color(1.0, 0.87, 0.35))
-	hud.toast("WASD: di chuyển · E: tương tác · I: kho đồ")
+	hud.toast("WASD: di chuyển · E: tương tác · I: kho đồ · Q: nhiệm vụ")
 
 
 func continue_game() -> void:
@@ -2026,6 +2201,11 @@ func continue_game() -> void:
 	GameState.money = int(d.get("money", 100))
 	GameState.day = int(d.get("day", 1))
 	GameState.clock = float(d.get("clock", GameState.DAY_START))
+	GameState.weather = str(d.get("weather", "sunny"))
+	if is_instance_valid(weather_mgr):
+		weather_mgr.set_weather(GameState.weather)
+	if is_instance_valid(hud):
+		hud.set_weather(GameState.weather)
 	var unl: Array = []
 	for id in d.get("unlocked", ["rice"]):
 		unl.append(str(id))
@@ -2073,6 +2253,9 @@ func continue_game() -> void:
 		_populate_random_foliage(75)
 	if d.has("cat") and is_instance_valid(cat_helper):
 		cat_helper.load_save_dict(d["cat"])
+	if d.has("quests") and is_instance_valid(quest_mgr):
+		quest_mgr.load_save_data(d["quests"])
+	_update_npc_mayor_indicator()
 	title_screen.hide_me()
 	get_tree().paused = false
 	mode = Mode.PLAY
@@ -2857,6 +3040,35 @@ func _clicktest_step() -> void:
 					" job_till=", job_till_ok, " tilled_by_cat=", tile_tilled_by_cat,
 					" hoe_dec=", cat_hoes_decremented, " take_hoe=", (take_hoe_ok and hoes_retrieved),
 					" save_hoes=", save_hoes_ok)
+
+			# 9. Kiểm thử Hệ thống Thời tiết (Weather System)
+			# A. Khởi tạo & hiển thị HUD
+			weather_mgr.set_weather(WeatherManagerScript.SUNNY)
+			var w_sunny_ok: bool = (GameState.weather == "sunny" and hud.weather_label.text.begins_with("☀️"))
+			# B. Chuyển sang Mưa rào & Tự động tưới đất
+			plant_tile.tstate = FarmTileScript.TState.PLANTED
+			plant_tile.watered = false
+			weather_mgr.set_weather(WeatherManagerScript.RAIN)
+			weather_mgr._auto_water_farm_crops()
+			var w_rain_watered: bool = (plant_tile.watered and hud.weather_label.text.begins_with("🌧️"))
+			# C. Chuyển sang Mưa dông & Rơi quặng sấm sét
+			weather_mgr.set_weather(WeatherManagerScript.STORM)
+			weather_mgr._trigger_lightning_strike()
+			var w_storm_ok: bool = (hud.weather_label.text.begins_with("⛈️") and weather_mgr._lightning_alpha > 0.0)
+			# D. Chuyển sang Gió lộng & Mưa nhỏ
+			weather_mgr.set_weather(WeatherManagerScript.WINDY)
+			var w_windy_ok: bool = (hud.weather_label.text.begins_with("🍃") and weather_mgr._leaves.size() > 0)
+			weather_mgr.set_weather(WeatherManagerScript.DRIZZLE)
+			var w_drizzle_ok: bool = (hud.weather_label.text.begins_with("🌦️") and weather_mgr._rain_drops.size() > 0)
+
+			# E. Lưu & tải thời tiết
+			SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+			var sd_weather: Dictionary = SaveSystem.load_data()
+			var w_saved_ok: bool = (str(sd_weather.get("weather", "")) == "drizzle")
+
+			print("WEATHER_SYSTEM_TEST sunny=", w_sunny_ok, " rain_water=", w_rain_watered,
+					" storm=", w_storm_ok, " windy=", w_windy_ok, " drizzle=", w_drizzle_ok,
+					" saved=", w_saved_ok)
 
 			print("CLICKTEST_DONE")
 			get_tree().quit()

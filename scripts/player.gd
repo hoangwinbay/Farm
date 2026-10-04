@@ -66,7 +66,10 @@ func _physics_process(delta: float) -> void:
 			_update_tex(0)
 		return
 	var v := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	velocity = v * SPEED
+	var spd := SPEED
+	if GameState.weather == "windy" and v.x > 0:
+		spd *= 1.18
+	velocity = v * spd
 	move_and_slide()
 	if v.length() > 0.01:
 		if absf(v.x) >= absf(v.y):

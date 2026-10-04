@@ -2498,6 +2498,100 @@ static func npc_tex(npc_type: String) -> ImageTexture:
 			rect(img, 2, 19, 3, 2, skin_d)
 			rect(img, 13, 19, 3, 2, skin_d)
 
+		"truong_thon":
+			# Bác Trưởng Thôn: Phong thái phúc hậu, mũ nan thanh lịch, râu ria mép hiền từ, áo ký giả vàng nâu sang trọng
+			var skin := Color(0.86, 0.68, 0.50)
+			var skin_d := Color(0.74, 0.56, 0.38)
+			var hair_grey := Color(0.55, 0.55, 0.58)
+			var hat_brim := Color(0.45, 0.32, 0.18)
+			var hat_top := Color(0.60, 0.45, 0.28)
+			var hat_band := Color(0.85, 0.25, 0.20)
+			var coat := Color(0.58, 0.42, 0.22)
+			var coat_l := Color(0.72, 0.54, 0.32)
+			var coat_d := Color(0.40, 0.28, 0.14)
+			var shirt_in := Color(0.92, 0.90, 0.85)
+			var eye := Color(0.15, 0.12, 0.10)
+
+			# Mũ nan rộng vành phong cách trưởng làng
+			rect(img, 2, 3, 14, 2, hat_brim)
+			rect(img, 5, 0, 8, 3, hat_top)
+			rect(img, 5, 2, 8, 1, hat_band)
+			px(img, 5, 1, Color(0.75, 0.60, 0.40))
+
+			# Tóc mai hoa râm hai bên
+			px(img, 4, 4, hair_grey)
+			px(img, 4, 5, hair_grey)
+			px(img, 13, 4, hair_grey)
+			px(img, 13, 5, hair_grey)
+
+			# Gương mặt phúc hậu
+			rect(img, 5, 4, 8, 7, skin)
+			px(img, 6, 6, eye)
+			px(img, 11, 6, eye)
+			px(img, 6, 5, hair_grey) # lông mày rậm
+			px(img, 11, 5, hair_grey)
+
+			# Bộ ria mép xồm xoàm đáng kính
+			rect(img, 6, 8, 6, 2, hair_grey)
+			px(img, 5, 9, hair_grey)
+			px(img, 12, 9, hair_grey)
+			px(img, 8, 10, Color(0.8, 0.4, 0.4)) # miệng cười mỉm
+
+			# Áo ký giả vàng nâu đĩnh đạc
+			rect(img, 4, 11, 10, 10, coat)
+			rect(img, 4, 11, 1, 10, coat_l)
+			rect(img, 13, 11, 1, 10, coat_d)
+			# Cổ áo sơ mi trắng bên trong & cravat / khăn quàng nhỏ
+			rect(img, 8, 11, 2, 3, shirt_in)
+			px(img, 8, 12, Color(0.85, 0.2, 0.2)) # caravat đỏ
+			px(img, 8, 13, Color(0.85, 0.2, 0.2))
+
+			# Cúc áo mạ đồng & túi áo trước ngực
+			px(img, 8, 15, Color(0.95, 0.85, 0.3))
+			px(img, 8, 18, Color(0.95, 0.85, 0.3))
+			rect(img, 10, 13, 3, 2, coat_d)
+
+			# Tay áo
+			rect(img, 2, 12, 2, 7, coat)
+			rect(img, 14, 12, 2, 7, coat)
+			rect(img, 2, 19, 2, 2, skin)
+			rect(img, 14, 19, 2, 2, skin)
+
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func quest_mark_tex(type: String) -> ImageTexture:
+	var key := "quest_mark_%s" % type
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var bg_circle := Color(0.12, 0.08, 0.04, 0.85)
+	circle(img, 8, 8, 7, bg_circle)
+
+	if type == "exclamation": # Dấu ! vàng rực rỡ khi có nhiệm vụ mới
+		var gold := Color(1.0, 0.85, 0.15)
+		var bright := Color(1.0, 1.0, 0.70)
+		var border := Color(0.65, 0.45, 0.05)
+		circle(img, 8, 8, 6, border)
+		rect(img, 7, 3, 2, 6, gold)
+		rect(img, 7, 3, 1, 6, bright)
+		rect(img, 7, 10, 2, 2, gold)
+		px(img, 7, 10, bright)
+	else: # Dấu ? vàng xanh lấp lánh khi có thưởng chờ nhận
+		var green := Color(0.35, 0.95, 0.45)
+		var bright := Color(0.85, 1.0, 0.85)
+		var border := Color(0.10, 0.55, 0.20)
+		circle(img, 8, 8, 6, border)
+		rect(img, 6, 3, 4, 2, green)
+		rect(img, 9, 4, 2, 3, green)
+		rect(img, 7, 6, 3, 2, green)
+		rect(img, 7, 7, 2, 2, green)
+		rect(img, 7, 10, 2, 2, green)
+		px(img, 7, 3, bright)
+		px(img, 7, 10, bright)
+
 	var tex := _tex(img)
 	_cache[key] = tex
 	return tex

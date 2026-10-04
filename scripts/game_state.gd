@@ -3,6 +3,7 @@ extends Node
 
 signal money_changed(value: int)
 signal crops_changed
+signal weather_changed(weather_id: String)
 
 const CropDB := preload("res://scripts/crop_db.gd")
 
@@ -15,6 +16,7 @@ var money := 100
 var day := 1
 var unlocked: Array = ["rice"]
 var clock: float = DAY_START  # phải là float — kiểu int sẽ làm đồng hồ không chạy
+var weather: String = "sunny"
 
 
 func reset_new_game() -> void:
@@ -22,8 +24,10 @@ func reset_new_game() -> void:
 	day = 1
 	clock = DAY_START
 	unlocked = ["rice"]
+	weather = "sunny"
 	money_changed.emit(money)
 	crops_changed.emit()
+	weather_changed.emit(weather)
 
 
 func add_money(v: int) -> void:

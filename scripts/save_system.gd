@@ -8,12 +8,13 @@ func has_save() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
 
 
-func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: Dictionary = {}, foliage: Array = [], stall: Array = [], stall_revenue: int = 0, cat: Dictionary = {}) -> void:
+func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: Dictionary = {}, foliage: Array = [], stall: Array = [], stall_revenue: int = 0, cat: Dictionary = {}, quests: Dictionary = {}) -> void:
 	var data := {
 		"v": 2,
 		"money": GameState.money,
 		"day": GameState.day,
 		"clock": GameState.clock,
+		"weather": GameState.weather,
 		"unlocked": GameState.unlocked.duplicate(),
 		"seeds": Inventory.seeds.duplicate(),
 		"produce": Inventory.produce.duplicate(),
@@ -38,6 +39,7 @@ func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: D
 		"stall": stall.duplicate(true),
 		"stall_revenue": stall_revenue,
 		"cat": cat.duplicate(true),
+		"quests": quests.duplicate(true),
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:

@@ -355,3 +355,6 @@ func _break_rock(rock_data: Dictionary) -> void:
 
 	if gained_text != "" and main_game != null and main_game.hud != null:
 		main_game.hud.toast(gained_text.strip_edges(), Color(0.75, 0.95, 1.0))
+
+	if main_game != null and "quest_mgr" in main_game and main_game.quest_mgr != null:
+		main_game.quest_mgr.advance_progress("mine", ore_type)

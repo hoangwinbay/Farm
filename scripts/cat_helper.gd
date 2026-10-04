@@ -16,6 +16,7 @@ const CropDB := preload("res://scripts/crop_db.gd")
 
 signal toast_requested(text: String, color: Color)
 signal hired
+signal action_performed(act_type: String, target_id: String)
 
 enum State {
 	ARRIVING,
@@ -526,6 +527,7 @@ func _complete_job() -> void:
 				_target_tile.clear_pest()
 				harvest_bag["sau_bo"] = int(harvest_bag.get("sau_bo", 0)) + 1
 				toast_requested.emit("Mèo đã bắt được 1 con sâu bọ! 🐛", Color(0.6, 0.9, 0.4))
+				action_performed.emit("catch_pest", "sau_bo")
 
 		"harvest":
 			if _target_tile.is_ready():
@@ -535,6 +537,7 @@ func _complete_job() -> void:
 					var cdata := CropDB.get_crop(cid)
 					var cname := str(cdata.get("name", "nông sản"))
 					toast_requested.emit("Mèo đã thu hoạch %s! 🌾" % cname, Color(0.65, 1.0, 0.6))
+					action_performed.emit("harvest", cid)
 
 		"till":
 			if assigned_hoes > 0 and (_target_tile.tstate == FarmTileScript.TState.HARVESTED or _target_tile.tstate == FarmTileScript.TState.GRASS):
@@ -546,6 +549,7 @@ func _complete_job() -> void:
 			if not _target_tile.watered:
 				_target_tile.water()
 				water_level = maxi(0, water_level - 1)
+				action_performed.emit("water", "")
 
 		"plant":
 			var sid: String = str(current_job.get("seed_id", ""))
@@ -555,6 +559,7 @@ func _complete_job() -> void:
 					assigned_seeds[sid] = int(assigned_seeds.get(sid, 0)) - 1
 					if assigned_seeds[sid] <= 0:
 						assigned_seeds.erase(sid)
+					action_performed.emit("plant", sid)
 
 	current_job.clear()
 	_target_tile = null
