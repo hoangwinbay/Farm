@@ -1685,6 +1685,9 @@ static func _scarecrow() -> ImageTexture:
 
 
 static func _coop() -> ImageTexture:
+	var loaded := _load_picture("res://picture/coop.png")
+	if loaded != null:
+		return _tex(loaded)
 	var img := _img(64, 52)
 	# Bóng đổ chân chuồng
 	ellipse(img, 32, 48, 28, 4, Color(0.12, 0.18, 0.10, 0.45))
@@ -1807,8 +1810,11 @@ static func _pen_bedding() -> ImageTexture:
 	return _tex(img)
 
 
-# Máng ăn gỗ đựng hạt ngô vàng (32x14)
+# Máng ăn gỗ đựng thức ăn (22x8)
 static func _trough() -> ImageTexture:
+	var loaded := _load_picture("res://picture/trough.png")
+	if loaded != null:
+		return _tex(loaded)
 	var img := _img(32, 14)
 	var wood_d := Color(0.38, 0.24, 0.12)
 	var wood_m := Color(0.55, 0.36, 0.20)
@@ -1833,8 +1839,11 @@ static func _trough() -> ImageTexture:
 	return _tex(img)
 
 
-# Máng nước gỗ trong xanh (28x14)
+# Máng nước trong xanh (18x8)
 static func _water_trough() -> ImageTexture:
+	var loaded := _load_picture("res://picture/water_trough.png")
+	if loaded != null:
+		return _tex(loaded)
 	var img := _img(28, 14)
 	var wood_d := Color(0.36, 0.22, 0.12)
 	var wood_m := Color(0.50, 0.32, 0.18)

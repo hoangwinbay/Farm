@@ -423,9 +423,9 @@ func _rebuild_pen() -> void:
 	coop.add_child(coop_spr)
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	shape.size = Vector2(50, 28)
+	shape.size = Vector2(44, 26)
 	col.shape = shape
-	col.position = Vector2(0, 4)
+	col.position = Vector2(0, -2)
 	coop.add_child(col)
 	pen_node.add_child(coop)
 	_add_sprite(TextureGen.get_tex("hay_bale"), Vector2(234, 82), pen_node)
@@ -2594,6 +2594,13 @@ func _clicktest_step() -> void:
 					" job_harvest=", job_harvest_ok, " bag_crop=", cat_bag_has_crop,
 					" shed_stored=", (shed_has_wheat and shed_has_worm), " bag_cleared=", cat_bag_empty,
 					" wage_paid=", wage_paid_ok, " cat_sleeping=", cat_sleeping_ok)
+
+			# 6. Kiểm thử Máng ăn, Máng nước & Chuồng mới từ ảnh người dùng cung cấp
+			var new_coop_ok: bool = (TextureGen.get_tex("coop") != null and TextureGen.get_tex("coop").get_width() == 48 and TextureGen.get_tex("coop").get_height() == 48)
+			var new_trough_ok: bool = (TextureGen.get_tex("trough") != null and TextureGen.get_tex("trough").get_width() == 22 and TextureGen.get_tex("trough").get_height() == 8)
+			var new_water_trough_ok: bool = (TextureGen.get_tex("water_trough") != null and TextureGen.get_tex("water_trough").get_width() == 18 and TextureGen.get_tex("water_trough").get_height() == 8)
+			print("NEW_COOP_TROUGH_TEST coop=", new_coop_ok, " trough=", new_trough_ok, " water_trough=", new_water_trough_ok)
+
 			print("CLICKTEST_DONE")
 			get_tree().quit()
 
