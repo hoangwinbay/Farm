@@ -2634,6 +2634,36 @@ func _clicktest_step() -> void:
 					" up_bag=", (cat_up_bag and cat_bag_lvl2), " save_upgrades=", save_upgrades_ok,
 					" overnight_unsold=", overnight_unsold)
 
+			# 8. Kiểm thử Đất đen sau thu hoạch + Giao cuốc cho Mèo + Mèo tự cày đất đen
+			# A. Đất sau thu hoạch ở trạng thái HARVESTED và có texture đen SDV
+			var harvested_state_ok: bool = (plant_tile.tstate == FarmTileScript.TState.HARVESTED)
+			var dark_tex_ok: bool = (TextureGen.get_tex("tilled_dark_isolated") != null and TextureGen.get_tex("tilled_dark_mid") != null)
+			# B. Người chơi có thể tự cuốc lại đất đen
+			var dark_action: Dictionary = farm.action_at(plant_tile)
+			var dark_action_ok: bool = (str(dark_action.get("act")) == "till")
+			# C. Giao cuốc cho mèo
+			Inventory.hoes = 5
+			var give_hoe_ok: bool = cat_helper.give_hoes(3)
+			var cat_has_hoes: bool = (cat_helper.assigned_hoes == 3 and Inventory.hoes == 2)
+			# D. Mèo tự tìm việc cuốc đất đen sau thu hoạch
+			cat_helper._find_next_job()
+			var job_till_ok: bool = (str(cat_helper.current_job.get("type")) == "till")
+			cat_helper._complete_job()
+			var tile_tilled_by_cat: bool = (plant_tile.tstate == FarmTileScript.TState.TILLED)
+			var cat_hoes_decremented: bool = (cat_helper.assigned_hoes == 2)
+			# E. Lấy lại cuốc từ mèo
+			var take_hoe_ok: bool = cat_helper.take_back_hoes(1)
+			var hoes_retrieved: bool = (cat_helper.assigned_hoes == 1 and Inventory.hoes == 3)
+			# F. Lưu/Tải số cuốc của mèo
+			var cat_save: Dictionary = cat_helper.get_save_dict()
+			var save_hoes_ok: bool = (int(cat_save.get("assigned_hoes", 0)) == 1)
+
+			print("HARVEST_DARK_DIRT_AND_HOE_TEST dark_state=", harvested_state_ok, " dark_tex=", dark_tex_ok,
+					" dark_act=", dark_action_ok, " give_hoe=", (give_hoe_ok and cat_has_hoes),
+					" job_till=", job_till_ok, " tilled_by_cat=", tile_tilled_by_cat,
+					" hoe_dec=", cat_hoes_decremented, " take_hoe=", (take_hoe_ok and hoes_retrieved),
+					" save_hoes=", save_hoes_ok)
+
 			print("CLICKTEST_DONE")
 			get_tree().quit()
 

@@ -68,6 +68,8 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _tilled_variant("isolated", false)
 		"tilled_wet":
 			tex = _tilled_variant("isolated", true)
+		"tilled_dark":
+			tex = _tilled_variant("isolated", false, true)
 		"tilled_isolated":
 			tex = _tilled_variant("isolated", false)
 		"tilled_left":
@@ -84,6 +86,14 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _tilled_variant("mid", true)
 		"tilled_wet_right":
 			tex = _tilled_variant("right", true)
+		"tilled_dark_isolated":
+			tex = _tilled_variant("isolated", false, true)
+		"tilled_dark_left":
+			tex = _tilled_variant("left", false, true)
+		"tilled_dark_mid":
+			tex = _tilled_variant("mid", false, true)
+		"tilled_dark_right":
+			tex = _tilled_variant("right", false, true)
 		"highlight":
 			tex = _highlight()
 		"tree":
@@ -603,21 +613,21 @@ static func _field() -> ImageTexture:
 	return _tex(img)
 
 
-static func _tilled_variant(type: String, wet: bool) -> ImageTexture:
-	var prefix := "hoe_dirt_wet" if wet else "hoe_dirt"
+static func _tilled_variant(type: String, wet: bool, dark: bool = false) -> ImageTexture:
+	var prefix := "hoe_dirt_dark" if dark else ("hoe_dirt_wet" if wet else "hoe_dirt")
 	var loaded := _load_picture("res://picture/%s_%s.png" % [prefix, type])
 	if loaded != null:
 		return _tex(loaded)
-	return _tilled(wet)
+	return _tilled(wet, dark)
 
 
-static func _tilled(wet: bool) -> ImageTexture:
+static func _tilled(wet: bool, dark: bool = false) -> ImageTexture:
 	var img := _img(32, 32)
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 7 if wet else 13
-	var base := Color(0.40, 0.26, 0.15) if wet else Color(0.55, 0.36, 0.20)
-	var furrow := Color(0.31, 0.20, 0.11) if wet else Color(0.44, 0.28, 0.15)
-	var ridge := Color(0.47, 0.31, 0.18) if wet else Color(0.63, 0.43, 0.26)
+	rng.seed = 7 if (wet or dark) else 13
+	var base := Color(0.24, 0.16, 0.08) if dark else (Color(0.40, 0.26, 0.15) if wet else Color(0.55, 0.36, 0.20))
+	var furrow := Color(0.18, 0.11, 0.05) if dark else (Color(0.31, 0.20, 0.11) if wet else Color(0.44, 0.28, 0.15))
+	var ridge := Color(0.30, 0.20, 0.10) if dark else (Color(0.47, 0.31, 0.18) if wet else Color(0.63, 0.43, 0.26))
 	img.fill(base)
 	for y in range(2, 32, 5):
 		for x in 32:
@@ -626,7 +636,7 @@ static func _tilled(wet: bool) -> ImageTexture:
 	for i in 26:
 		px(img, rng.randi_range(1, 30), rng.randi_range(1, 30), furrow)
 	# viền ô cho dễ nhìn
-	var edge := Color(0.35, 0.23, 0.12) if wet else Color(0.48, 0.31, 0.17)
+	var edge := Color(0.20, 0.13, 0.06) if dark else (Color(0.35, 0.23, 0.12) if wet else Color(0.48, 0.31, 0.17))
 	for x in 32:
 		px(img, x, 0, edge)
 		px(img, x, 31, edge)

@@ -45,6 +45,8 @@ func action_at(tile) -> Dictionary:
 		return {"act": "none", "label": "", "ok": false}
 	if tile.tstate == FarmTileScript.TState.GRASS:
 		return {"act": "till", "label": "Cày đất (cần cuốc — đang có ×%d)" % Inventory.hoes, "ok": Inventory.hoes > 0}
+	if tile.tstate == FarmTileScript.TState.HARVESTED:
+		return {"act": "till", "label": "Cuốc lại đất đen sau thu hoạch (cần cuốc — đang có ×%d)" % Inventory.hoes, "ok": Inventory.hoes > 0}
 	if tile.tstate == FarmTileScript.TState.PLANTED and tile.has_pest:
 		return {"act": "catch_pest", "label": "Bắt sâu bọ 🐛 (Đang cắn phá cây!)", "ok": true}
 	if tile.tstate == FarmTileScript.TState.PLANTED and tile.is_ready():
@@ -83,7 +85,10 @@ func perform_at(tile) -> String:
 		"till":
 			if not Inventory.take_hoe():
 				return "Cần CUỐC để cày đất! Mua ở cửa hàng Bác Tư (20 xu)."
+			var was_harvested: bool = (tile.tstate == FarmTileScript.TState.HARVESTED)
 			tile.till()
+			if was_harvested:
+				return "Đã cuốc xới lại đất đen sau thu hoạch! (Còn %d cuốc)" % Inventory.hoes
 			return "Đã cày đất! (Còn %d cuốc)" % Inventory.hoes
 		"water":
 			if tile.tstate != FarmTileScript.TState.PLANTED:

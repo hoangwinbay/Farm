@@ -26,10 +26,16 @@ var _seeds_in_bag_box: VBoxContainer
 var _active_tab: int = 0
 var _tab_seeds_btn: Button
 var _tab_upgrades_btn: Button
-var _tab_seeds_container: HBoxContainer
+var _tab_seeds_container: VBoxContainer
 var _tab_upgrades_container: VBoxContainer
 var _upgrade_cards_box: VBoxContainer
 var _wallet_label: Label
+
+var _hoe_info_label: Label
+var _give_hoe_1_btn: Button
+var _give_hoe_all_btn: Button
+var _take_hoe_btn: Button
+var _take_hoe_all_btn: Button
 
 
 func _ready() -> void:
@@ -162,6 +168,7 @@ func _build_hire_view() -> void:
 	UIKit.label(task_v, "🐛 Bắt sạch sâu bọ cắn phá cây trồng", 12, Color(0.85, 0.85, 0.80))
 	UIKit.label(task_v, "💧 Tưới nước cho cây (hết nước tự ra ao múc)", 12, Color(0.85, 0.85, 0.80))
 	UIKit.label(task_v, "🌱 Gieo hạt giống (khi bạn giao hạt vào túi Mèo)", 12, Color(0.85, 0.85, 0.80))
+	UIKit.label(task_v, "⛏️ Cuốc xới đất đen sau thu hoạch (khi bạn giao cuốc)", 12, Color(0.85, 0.85, 0.80))
 	UIKit.label(task_v, "🏚️ Cất toàn bộ hoa màu và sâu bọ vào Nhà Kho", 12, Color(0.85, 0.85, 0.80))
 	UIKit.label(task_v, "⛺ Đến tối Mèo sẽ vào lều riêng để ngủ", 12, Color(0.85, 0.85, 0.80))
 	UIKit.label(task_v, "⭐ Dùng tiền nâng cấp Tốc độ, Năng suất & Túi đồ cho Mèo", 12, Color(1.0, 0.9, 0.5))
@@ -235,22 +242,69 @@ func _build_manage_view() -> void:
 
 	_manage_view.add_child(status_card)
 
-	# Thanh chuyển Tab: [🌾 Giao nhận hạt giống] [⭐ Nâng cấp Mèo]
+	# Thanh chuyển Tab: [🌾 Hạt giống & Cuốc đất] [⭐ Nâng cấp Mèo]
 	var tab_bar := HBoxContainer.new()
 	tab_bar.add_theme_constant_override("separation", 8)
 	_manage_view.add_child(tab_bar)
 
-	_tab_seeds_btn = UIKit.styled_button(tab_bar, "🌾 Giao nhận hạt giống", 13, "gold")
+	_tab_seeds_btn = UIKit.styled_button(tab_bar, "🌾 Hạt giống & Cuốc đất", 13, "gold")
 	_tab_seeds_btn.pressed.connect(func(): _switch_tab(0))
 
 	_tab_upgrades_btn = UIKit.styled_button(tab_bar, "⭐ Nâng cấp Mèo (Tốc độ / Giờ làm / Túi)", 13, "neutral")
 	_tab_upgrades_btn.pressed.connect(func(): _switch_tab(1))
 
-	# TAB 1: 2 Cột giao nhận hạt giống
-	_tab_seeds_container = HBoxContainer.new()
+	# TAB 1: Giao nhận hạt giống & cuốc đất
+	_tab_seeds_container = VBoxContainer.new()
 	_tab_seeds_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_tab_seeds_container.add_theme_constant_override("separation", 12)
+	_tab_seeds_container.add_theme_constant_override("separation", 8)
 	_manage_view.add_child(_tab_seeds_container)
+
+	# Khung giao nhận Cuốc cày đất cho Mèo
+	var hoe_card := PanelContainer.new()
+	hoe_card.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.15, 0.10), UIKit.COLOR_BORDER_GOLD, 6))
+	var hh := HBoxContainer.new()
+	hh.add_theme_constant_override("separation", 8)
+	hoe_card.add_child(hh)
+
+	var hic := TextureRect.new()
+	hic.texture = TextureGen.hoe_icon()
+	hic.custom_minimum_size = Vector2(24, 24)
+	hic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	hh.add_child(hic)
+
+	_hoe_info_label = UIKit.label(hh, "⛏️ Cuốc làm đất: Mèo đang giữ ×0 · Balo của bạn: ×0", 12, UIKit.COLOR_TEXT_GOLD)
+	_hoe_info_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	_give_hoe_1_btn = UIKit.styled_button(hh, "Giao 1", 11, "gold")
+	_give_hoe_1_btn.pressed.connect(func():
+		if cat != null and cat.give_hoes(1):
+			_refresh_manage_data()
+	)
+
+	_give_hoe_all_btn = UIKit.styled_button(hh, "Giao hết", 11, "green")
+	_give_hoe_all_btn.pressed.connect(func():
+		if cat != null and cat.give_hoes(Inventory.hoes):
+			_refresh_manage_data()
+	)
+
+	_take_hoe_btn = UIKit.styled_button(hh, "Lấy lại 1", 11, "neutral")
+	_take_hoe_btn.pressed.connect(func():
+		if cat != null and cat.take_back_hoes(1):
+			_refresh_manage_data()
+	)
+
+	_take_hoe_all_btn = UIKit.styled_button(hh, "Lấy hết", 11, "neutral")
+	_take_hoe_all_btn.pressed.connect(func():
+		if cat != null and cat.take_back_hoes(-1):
+			_refresh_manage_data()
+	)
+
+	_tab_seeds_container.add_child(hoe_card)
+
+	var seeds_hbox := HBoxContainer.new()
+	seeds_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	seeds_hbox.add_theme_constant_override("separation", 12)
+	_tab_seeds_container.add_child(seeds_hbox)
 
 	# Cột trái: Hạt giống Mèo đang giữ
 	var left_box := PanelContainer.new()
@@ -266,7 +320,7 @@ func _build_manage_view() -> void:
 	_seeds_in_cat_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left_scroll.add_child(_seeds_in_cat_box)
 	left_v.add_child(left_scroll)
-	_tab_seeds_container.add_child(left_box)
+	seeds_hbox.add_child(left_box)
 
 	# Cột phải: Hạt giống trong balo người chơi để giao
 	var right_box := PanelContainer.new()
@@ -282,7 +336,7 @@ func _build_manage_view() -> void:
 	_seeds_in_bag_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_scroll.add_child(_seeds_in_bag_box)
 	right_v.add_child(right_scroll)
-	_tab_seeds_container.add_child(right_box)
+	seeds_hbox.add_child(right_box)
 
 	# TAB 2: Nâng cấp Mèo
 	_tab_upgrades_container = VBoxContainer.new()
@@ -340,6 +394,7 @@ func _refresh_manage_data() -> void:
 				"pest": state_str = "Đang đi bắt sâu bọ 🐛"
 				"harvest": state_str = "Đang đi thu hoạch hoa màu 🌾"
 				"water": state_str = "Đang tưới nước cho luống cây 💧"
+				"till": state_str = "Đang đi cuốc xới đất ⛏️"
 				"plant": state_str = "Đang gieo hạt giống vào đất 🌱"
 				_: state_str = "Đang làm việc đồng áng"
 		CatHelperScript.State.WALKING_TO_POND, CatHelperScript.State.REFILLING:
@@ -353,6 +408,20 @@ func _refresh_manage_data() -> void:
 	_water_label.text = "Bình nước: %d/%d 💧 | Đã trả lương hôm nay: %s" % [
 		cat.water_level, cat.water_capacity, "Đã trả 💰" if cat.wage_paid_today else "Chờ lúc 19:00"
 	]
+
+	# Cập nhật thông tin Cuốc cày
+	if _hoe_info_label != null:
+		var cat_h: int = int(cat.assigned_hoes)
+		var bag_h: int = int(Inventory.hoes)
+		_hoe_info_label.text = "⛏️ Cuốc làm đất: Mèo đang giữ ×%d cuốc · Balo của bạn: ×%d cuốc" % [cat_h, bag_h]
+		if _give_hoe_1_btn != null:
+			_give_hoe_1_btn.disabled = (bag_h <= 0)
+		if _give_hoe_all_btn != null:
+			_give_hoe_all_btn.disabled = (bag_h <= 0)
+		if _take_hoe_btn != null:
+			_take_hoe_btn.disabled = (cat_h <= 0)
+		if _take_hoe_all_btn != null:
+			_take_hoe_all_btn.disabled = (cat_h <= 0)
 
 	# Cập nhật danh sách hạt giống Mèo đang giữ
 	for child in _seeds_in_cat_box.get_children():

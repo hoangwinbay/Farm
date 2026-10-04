@@ -54,6 +54,7 @@ const MAX_UPGRADE_LEVEL := 5
 
 var water_capacity: int = 15
 var water_level: int = 15
+var assigned_hoes: int = 0
 var assigned_seeds: Dictionary = {}  # seed_id -> count
 var harvest_bag: Dictionary = {}     # item_id -> count
 var daily_wage: int = 50
@@ -463,7 +464,16 @@ func _find_next_job() -> void:
 		_start_tile_job("water", dry_tile, "💧")
 		return
 
-	# ƯU TIÊN 4: Gieo hạt giống người chơi giao vào đất đã cày
+	# ƯU TIÊN 4: Cuốc đất đen sau thu hoạch (nếu được giao cuốc)
+	if assigned_hoes > 0:
+		var harvested_tile: Node = _find_nearest_tile(func(t):
+			return t.tstate == FarmTileScript.TState.HARVESTED
+		)
+		if harvested_tile != null:
+			_start_tile_job("till", harvested_tile, "⛏️")
+			return
+
+	# ƯU TIÊN 5: Gieo hạt giống người chơi giao vào đất đã cày
 	var seed_id := _get_available_seed()
 	if seed_id != "":
 		var tilled_tile: Node = _find_nearest_tile(func(t):
@@ -478,7 +488,16 @@ func _find_next_job() -> void:
 			_show_bubble_text("🌱")
 			return
 
-	# ƯU TIÊN 5: Nếu còn đồ trong túi thu hoạch thì đem cất kho
+	# ƯU TIÊN 6: Cày thêm đất cỏ nếu còn cuốc
+	if assigned_hoes > 0:
+		var grass_tile: Node = _find_nearest_tile(func(t):
+			return t.tstate == FarmTileScript.TState.GRASS
+		)
+		if grass_tile != null:
+			_start_tile_job("till", grass_tile, "⛏️")
+			return
+
+	# ƯU TIÊN 7: Nếu còn đồ trong túi thu hoạch thì đem cất kho
 	if bag_count > 0:
 		state = State.WALKING_TO_SHED
 		_set_destination(SHED_DOOR_POS)
@@ -516,6 +535,12 @@ func _complete_job() -> void:
 					var cdata := CropDB.get_crop(cid)
 					var cname := str(cdata.get("name", "nông sản"))
 					toast_requested.emit("Mèo đã thu hoạch %s! 🌾" % cname, Color(0.65, 1.0, 0.6))
+
+		"till":
+			if assigned_hoes > 0 and (_target_tile.tstate == FarmTileScript.TState.HARVESTED or _target_tile.tstate == FarmTileScript.TState.GRASS):
+				_target_tile.till()
+				assigned_hoes -= 1
+				toast_requested.emit("Mèo đã cuốc xới đất xong! ⛏️ (Còn %d cuốc)" % assigned_hoes, Color(0.9, 0.8, 0.5))
 
 		"water":
 			if not _target_tile.watered:
@@ -608,7 +633,27 @@ func _pay_daily_wage() -> void:
 		toast_requested.emit("Hôm nay không đủ tiền trả lương cho Chú Mèo! 😿", Color(1.0, 0.5, 0.4))
 
 
-# ---------- Giao nhận hạt giống ----------
+# ---------- Giao nhận hạt giống & công cụ ----------
+
+func give_hoes(amount: int) -> bool:
+	if amount <= 0:
+		return false
+	if Inventory.hoes < amount:
+		return false
+	Inventory.hoes -= amount
+	Inventory.changed.emit()
+	assigned_hoes += amount
+	return true
+
+
+func take_back_hoes(amount: int = -1) -> bool:
+	if assigned_hoes <= 0:
+		return false
+	var take_n := assigned_hoes if amount < 0 else mini(assigned_hoes, amount)
+	assigned_hoes -= take_n
+	Inventory.add_hoes(take_n)
+	return true
+
 
 func give_seeds(seed_id: String, amount: int) -> bool:
 	if amount <= 0:
@@ -678,6 +723,7 @@ func get_save_dict() -> Dictionary:
 	return {
 		"is_hired": is_hired,
 		"water_level": water_level,
+		"assigned_hoes": assigned_hoes,
 		"assigned_seeds": assigned_seeds.duplicate(),
 		"harvest_bag": harvest_bag.duplicate(),
 		"wage_paid_today": wage_paid_today,
@@ -698,6 +744,7 @@ func load_save_dict(d: Dictionary) -> void:
 	speed = get_speed_for_level(speed_level)
 	water_capacity = get_water_capacity_for_level(bag_level)
 	water_level = int(d.get("water_level", water_capacity))
+	assigned_hoes = int(d.get("assigned_hoes", 0))
 	assigned_seeds = d.get("assigned_seeds", {}).duplicate()
 	harvest_bag = d.get("harvest_bag", {}).duplicate()
 	wage_paid_today = bool(d.get("wage_paid_today", false))

@@ -7,7 +7,7 @@ const CropDB := preload("res://scripts/crop_db.gd")
 
 const DRY_SEC := 240.0  # đất đủ ẩm kéo dài bao lâu (giây thật) trước khi khô
 
-enum TState { GRASS, TILLED, PLANTED }
+enum TState { GRASS, TILLED, PLANTED, HARVESTED }
 
 var tstate: int = TState.GRASS
 var crop_id := ""
@@ -141,7 +141,7 @@ func harvest() -> String:
 	watered = false
 	_wet_time = 0.0
 	clear_pest()
-	tstate = TState.TILLED
+	tstate = TState.HARVESTED
 	refresh()
 	return id
 
@@ -175,6 +175,12 @@ func refresh() -> void:
 		dir_type = "mid"
 	elif w and not e:
 		dir_type = "right"
+
+	if tstate == TState.HARVESTED:
+		var tex_key := "tilled_dark_%s" % dir_type
+		_soil.texture = TextureGen.get_tex(tex_key)
+		_crop_spr.visible = false
+		return
 
 	var tex_key := "tilled_wet_%s" % dir_type if watered else "tilled_%s" % dir_type
 	_soil.texture = TextureGen.get_tex(tex_key)
