@@ -29,6 +29,7 @@ const FARM_TILES := Vector2i(14, 9)
 const HOUSE_POS := Vector2(241, 248)
 const MAILBOX_POS := Vector2(320, 246)
 const MARKET_STALL_POS := Vector2(184, 440) # sạp hàng nông sản tại góc rẽ trái
+const SDV_CUSTOMERS := ["Abigail", "Haley", "Leah", "Penny", "Sam"]
 const STAND_POS := Vector2(1180, 416)       # quầy Bác Tư
 const STAND_HAI_POS := Vector2(1350, 416)   # quầy Chú Hai
 const STAND_TU_POS := Vector2(1010, 416)    # quầy Cô Tư
@@ -1070,13 +1071,13 @@ func _spawn_stall_customer(available_indices: Array[int]) -> void:
 	var slot: Dictionary = stall_slots[idx]
 
 	var cust: Node2D = StallCustomerScript.new()
+	cust.character_name = SDV_CUSTOMERS[randi() % SDV_CUSTOMERS.size()]
 	cust.target_slot_idx = idx
 	cust.item_id = str(slot.get("id", ""))
 	cust.item_type = str(slot.get("type", "crop"))
 	cust.item_name = str(slot.get("name", "Nông sản"))
 	cust.unit_price = int(slot.get("price", 10))
 	cust.buy_qty = mini(int(slot.get("count", 1)), (1 if randf() < 0.65 else 2))
-	cust.spawn_side = "west" if randf() < 0.5 else "east"
 
 	cust.purchase_completed.connect(_on_stall_customer_purchased)
 	cust.departed.connect(func(): _active_stall_customer = null)
@@ -1085,7 +1086,7 @@ func _spawn_stall_customer(available_indices: Array[int]) -> void:
 	world.add_child(cust)
 
 
-func _on_stall_customer_purchased(slot_idx: int, item_name: String, qty: int, coins: int) -> void:
+func _on_stall_customer_purchased(slot_idx: int, item_name: String, qty: int, coins: int, buyer_name: String = "") -> void:
 	if slot_idx >= 0 and slot_idx < stall_slots.size():
 		var slot: Dictionary = stall_slots[slot_idx]
 		if not slot.is_empty():
@@ -1103,7 +1104,8 @@ func _on_stall_customer_purchased(slot_idx: int, item_name: String, qty: int, co
 	# Tiền bán tích lũy tại sạp để người chơi tự đến nhận, không tự cộng vào ví
 	stall_revenue += coins
 	_update_stall_coin_badge()
-	hud.toast("Khách mua %d %s! Có %d xu chờ thu tại sạp 🏪" % [qty, item_name, stall_revenue], Color(1.0, 0.88, 0.4))
+	var who := buyer_name if buyer_name != "" else "Khách"
+	hud.toast("%s ghé mua %d %s! Có %d xu chờ thu tại sạp 🏪" % [who, qty, item_name, stall_revenue], Color(1.0, 0.88, 0.4))
 	_spawn_effect("fx_harvest", Vector2(184, 432))
 	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
 
@@ -2057,9 +2059,11 @@ func _clicktest_step() -> void:
 			var wallet_before: int = GameState.money
 			var rev_before: int = stall_revenue
 			_spawn_stall_customer([0])
-			var cust_spawned: bool = (_active_stall_customer != null)
+			var cust_spawned: bool = (_active_stall_customer != null and _active_stall_customer.character_name in SDV_CUSTOMERS)
+			var cust_from_left: bool = (_active_stall_customer.position.x < 0.0)
+			var cust_slow: bool = (_active_stall_customer.speed <= 40.0)
 			# Giả lập hoàn thành mua hàng 1 quả cà chua giá 18 xu
-			_on_stall_customer_purchased(0, "Cà chua", 1, 18)
+			_on_stall_customer_purchased(0, "Cà chua", 1, 18, _active_stall_customer.character_name)
 			var wallet_unchanged: bool = (GameState.money == wallet_before)
 			var stall_rev_accumulated: bool = (stall_revenue == rev_before + 18)
 			var badge_active: bool = (stall_coin_badge.visible and stall_coin_label.text == "18 xu")
@@ -2105,6 +2109,7 @@ func _clicktest_step() -> void:
 					" slot0_filled=", slot0_filled, " crate0_visual=", crate0_visible,
 					" slot1_filled=", slot1_filled, " crate1_visual=", crate1_visible,
 					" crate1_cleared=", crate1_cleared, " cust_spawned=", cust_spawned,
+					" cust_from_left=", cust_from_left, " cust_slow=", cust_slow,
 					" wallet_unchanged=", wallet_unchanged, " stall_rev_accumulated=", stall_rev_accumulated,
 					" badge_active=", badge_active, " slot0_dec=", slot0_count_decreased,
 					" collect_btn=", collect_btn_shows_18, " wallet_collected=", wallet_collected,

@@ -1977,6 +1977,54 @@ static func _fence_corner_dir(dir: String) -> ImageTexture:
 	return _fence_corner()
 
 
+# ---------- NHÂN VẬT DÂN LÀNG STARDEW VALLEY (NPC) ----------
+const SDV_CHARACTERS := ["Abigail", "Haley", "Leah", "Penny", "Sam"]
+
+static func sdv_char_tex(char_name: String, dir: String, frame_idx: int) -> Texture2D:
+	var cname := char_name if char_name != "" else "Abigail"
+	var row := 0
+	match dir:
+		"down":
+			row = 0
+		"right", "side":
+			row = 1
+		"up":
+			row = 2
+		"left":
+			row = 3
+		_:
+			row = 0
+
+	var col := absi(frame_idx) % 4
+	var key := "sdv_char_%s_%d_%d" % [cname, row, col]
+	if _cache.has(key):
+		return _cache[key]
+
+	var sheet_key := "sdv_sheet_" + cname
+	var sheet: Texture2D = null
+	if _cache.has(sheet_key):
+		sheet = _cache[sheet_key]
+	else:
+		var path := "res://Content (unpacked)/Characters/%s.png" % cname
+		if ResourceLoader.exists(path):
+			sheet = ResourceLoader.load(path) as Texture2D
+		if sheet == null:
+			var img := _load_picture(path)
+			if img != null:
+				sheet = _tex(img)
+		if sheet != null:
+			_cache[sheet_key] = sheet
+
+	if sheet != null:
+		var atlas := AtlasTexture.new()
+		atlas.atlas = sheet
+		atlas.region = Rect2(col * 16, row * 32, 16, 32)
+		_cache[key] = atlas
+		return atlas
+
+	return char_tex(dir, frame_idx, true)
+
+
 # ---------- nhân vật (nón lá!) ----------
 
 static func char_tex(dir: String, frame: int, npc: bool = false) -> ImageTexture:
