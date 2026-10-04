@@ -6,6 +6,9 @@ const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 signal open_inventory_requested
+signal open_storage_requested
+signal open_cat_requested
+signal open_stall_requested
 
 var clock_label: Label
 var day_label: Label
@@ -129,6 +132,37 @@ func _ready() -> void:
 	w_ic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	h_w.add_child(w_ic)
 	water_label = UIKit.label(h_w, "Nước 20/20", 14, Color(0.70, 0.90, 1.0))
+
+	# --- 1b. THANH CÔNG CỤ NHANH CẠNH MÀN HÌNH (Quick Access Dock) ---
+	# Quản lý Mèo [M], Nhà kho [K], Balo/Túi đồ [I], Khay sạp hàng [P]
+	var quick_dock := PanelContainer.new()
+	quick_dock.add_theme_stylebox_override("panel", UIKit.wood_frame(8, 2, UIKit.COLOR_WOOD_DARK, UIKit.COLOR_BORDER_GOLD))
+	quick_dock.position = Vector2(16, 96)
+	root.add_child(quick_dock)
+
+	var qv := VBoxContainer.new()
+	qv.add_theme_constant_override("separation", 6)
+	quick_dock.add_child(qv)
+
+	# 1. Nút Quản lý Mèo [M]
+	_make_quick_btn(qv, "M", TextureGen.cat_char_tex("down", 0), "Quản lý & Nâng cấp Mèo làm nông [M]", func():
+		open_cat_requested.emit()
+	)
+
+	# 2. Nút Nhà kho [K]
+	_make_quick_btn(qv, "K", TextureGen.get_tex("shed"), "Nhà kho lưu trữ nông sản [K]", func():
+		open_storage_requested.emit()
+	)
+
+	# 3. Nút Túi đồ / Balo [I]
+	_make_quick_btn(qv, "I", TextureGen.backpack_icon(), "Túi đồ cá nhân / Balo [I]", func():
+		open_inventory_requested.emit()
+	)
+
+	# 4. Nút Khay sạp hàng [P]
+	_make_quick_btn(qv, "P", TextureGen.get_tex("market_stall"), "Khay sạp hàng nông sản [P]", func():
+		open_stall_requested.emit()
+	)
 
 	# --- 2. THÔNG BÁO CUỘN GIẤY PHẢI PHÍA DƯỚI BẢN ĐỒ NHỎ ---
 	var tr := MarginContainer.new()
@@ -528,3 +562,37 @@ func toast(text: String, color := Color.WHITE) -> void:
 	tw.tween_interval(2.8)
 	tw.tween_property(p, "modulate:a", 0.0, 0.4)
 	tw.tween_callback(p.queue_free)
+
+
+func _make_quick_btn(parent: Control, shortcut_text: String, icon_tex: Texture2D, tooltip: String, on_click: Callable) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(44, 44)
+	btn.tooltip_text = tooltip
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.add_theme_stylebox_override("normal", UIKit.slot_box(false))
+	btn.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.32, 0.22, 0.14), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
+	btn.add_theme_stylebox_override("pressed", UIKit.slot_box(true))
+
+	if icon_tex != null:
+		var ic := TextureRect.new()
+		ic.texture = icon_tex
+		ic.position = Vector2(6, 6)
+		ic.size = Vector2(32, 32)
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(ic)
+
+	var k := Label.new()
+	k.text = shortcut_text
+	k.position = Vector2(3, 1)
+	k.add_theme_font_size_override("font_size", 10)
+	k.add_theme_color_override("font_color", Color(1.0, 0.92, 0.65, 0.95))
+	k.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.95))
+	k.add_theme_constant_override("outline_size", 2)
+	k.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(k)
+
+	btn.pressed.connect(on_click)
+	parent.add_child(btn)
+	return btn
+

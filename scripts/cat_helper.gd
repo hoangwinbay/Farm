@@ -47,6 +47,11 @@ var work_timer: float = 0.0
 var anim_t: float = 0.0
 var facing_dir: String = "down"
 
+var speed_level: int = 1
+var work_level: int = 1
+var bag_level: int = 1
+const MAX_UPGRADE_LEVEL := 5
+
 var water_capacity: int = 15
 var water_level: int = 15
 var assigned_seeds: Dictionary = {}  # seed_id -> count
@@ -58,6 +63,129 @@ var farm: Node2D = null
 var current_job: Dictionary = {}
 var waypoints: Array = []
 var _target_tile: Node = null
+
+
+func get_speed_for_level(lvl: int) -> float:
+	match lvl:
+		1: return 42.0
+		2: return 65.0
+		3: return 92.0
+		4: return 120.0
+		5: return 155.0
+		_: return 155.0
+
+
+func get_work_duration() -> float:
+	match work_level:
+		1: return 0.70
+		2: return 0.50
+		3: return 0.38
+		4: return 0.28
+		5: return 0.20
+		_: return 0.20
+
+
+func get_refill_duration() -> float:
+	match work_level:
+		1: return 1.00
+		2: return 0.75
+		3: return 0.55
+		4: return 0.40
+		5: return 0.25
+		_: return 0.25
+
+
+func get_deposit_duration() -> float:
+	match work_level:
+		1: return 0.80
+		2: return 0.60
+		3: return 0.45
+		4: return 0.35
+		5: return 0.25
+		_: return 0.25
+
+
+func get_sleep_clock() -> float:
+	return get_sleep_clock_for_level(work_level)
+
+
+func get_sleep_clock_for_level(lvl: int) -> float:
+	match lvl:
+		1: return 1140.0 # 19:00
+		2: return 1200.0 # 20:00
+		3: return 1260.0 # 21:00
+		4: return 1320.0 # 22:00
+		5: return 1380.0 # 23:00
+		_: return 1380.0
+
+
+func get_max_bag() -> int:
+	return get_max_bag_for_level(bag_level)
+
+
+func get_max_bag_for_level(lvl: int) -> int:
+	match lvl:
+		1: return 5
+		2: return 10
+		3: return 18
+		4: return 28
+		5: return 45
+		_: return 45
+
+
+func get_water_capacity_for_level(lvl: int) -> int:
+	match lvl:
+		1: return 15
+		2: return 25
+		3: return 40
+		4: return 60
+		5: return 90
+		_: return 90
+
+
+func get_upgrade_cost(type: String, cur_lvl: int) -> int:
+	if cur_lvl >= MAX_UPGRADE_LEVEL:
+		return -1
+	match type:
+		"speed":
+			var costs := [80, 180, 320, 500]
+			return costs[cur_lvl - 1]
+		"work":
+			var costs := [100, 220, 380, 550]
+			return costs[cur_lvl - 1]
+		"bag":
+			var costs := [90, 200, 350, 500]
+			return costs[cur_lvl - 1]
+		_:
+			return 100
+
+
+func upgrade(type: String) -> bool:
+	var cur_lvl := 1
+	match type:
+		"speed": cur_lvl = speed_level
+		"work": cur_lvl = work_level
+		"bag": cur_lvl = bag_level
+	if cur_lvl >= MAX_UPGRADE_LEVEL:
+		return false
+	var cost := get_upgrade_cost(type, cur_lvl)
+	if cost <= 0 or not GameState.try_spend(cost):
+		return false
+	match type:
+		"speed":
+			speed_level += 1
+			speed = get_speed_for_level(speed_level)
+			toast_requested.emit("Nâng cấp Tốc độ Mèo lên Cấp %d! ⚡ (%.0f px/s)" % [speed_level, speed], Color(1.0, 0.85, 0.35))
+		"work":
+			work_level += 1
+			var sleep_hr := int(get_sleep_clock() / 60.0)
+			toast_requested.emit("Nâng cấp Năng suất Mèo lên Cấp %d! ⏱️ (Làm việc đến %02d:00)" % [work_level, sleep_hr], Color(0.65, 1.0, 0.65))
+		"bag":
+			bag_level += 1
+			water_capacity = get_water_capacity_for_level(bag_level)
+			water_level = water_capacity
+			toast_requested.emit("Nâng cấp Túi đồ Mèo lên Cấp %d! 🎒 (Túi %d món, Bình %d giọt)" % [bag_level, get_max_bag(), water_capacity], Color(0.4, 0.85, 1.0))
+	return true
 
 var _spr: Sprite2D
 var _shadow: Sprite2D
@@ -129,8 +257,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	# Kiểm tra giờ đi ngủ vào buổi tối (19:00 = 1140 phút)
-	if is_hired and GameState.clock >= 1140.0:
+	# Kiểm tra giờ đi ngủ vào buổi tối (dựa trên cấp độ thời gian làm việc)
+	if is_hired and GameState.clock >= get_sleep_clock():
 		if state != State.WALKING_TO_TENT and state != State.SLEEPING:
 			_pay_daily_wage()
 			state = State.WALKING_TO_TENT
@@ -138,7 +266,7 @@ func _process(delta: float) -> void:
 			_show_bubble_text("😴")
 
 	# Kiểm tra trời sáng (từ 7:00 sáng)
-	if state == State.SLEEPING and GameState.clock < 1140.0 and GameState.clock >= GameState.DAY_START:
+	if state == State.SLEEPING and GameState.clock < get_sleep_clock() and GameState.clock >= GameState.DAY_START:
 		wage_paid_today = false
 		state = State.IDLE
 		_hide_bubble()
@@ -174,7 +302,7 @@ func _process(delta: float) -> void:
 		State.WORKING:
 			work_timer += delta
 			_spr.texture = TextureGen.cat_char_tex("act", 0)
-			if work_timer >= 0.7:
+			if work_timer >= get_work_duration():
 				_complete_job()
 				state = State.IDLE
 				_hide_bubble()
@@ -190,11 +318,11 @@ func _process(delta: float) -> void:
 		State.REFILLING:
 			work_timer += delta
 			_spr.texture = TextureGen.cat_char_tex("act", 0)
-			if work_timer >= 1.0:
+			if work_timer >= get_refill_duration():
 				water_level = water_capacity
 				state = State.IDLE
 				_hide_bubble()
-				toast_requested.emit("Mèo đã múc đầy bình nước từ ao! 💧 (15/15)", Color(0.4, 0.85, 1.0))
+				toast_requested.emit("Mèo đã múc đầy bình nước từ ao! 💧 (%d/%d)" % [water_level, water_capacity], Color(0.4, 0.85, 1.0))
 
 		State.WALKING_TO_SHED:
 			_process_walk(delta, func():
@@ -206,7 +334,7 @@ func _process(delta: float) -> void:
 
 		State.DEPOSITING:
 			work_timer += delta
-			if work_timer >= 0.8:
+			if work_timer >= get_deposit_duration():
 				_deposit_items_to_shed()
 				state = State.IDLE
 				_hide_bubble()
@@ -299,7 +427,7 @@ func _find_next_job() -> void:
 
 	# Nếu đã gom được kha khá nông sản hoặc không còn việc gấp, đem cất vào Nhà Kho
 	var bag_count := _total_bag_items()
-	if bag_count >= 5:
+	if bag_count >= get_max_bag():
 		state = State.WALKING_TO_SHED
 		_set_destination(SHED_DOOR_POS)
 		_show_bubble_text("📦")
@@ -555,13 +683,21 @@ func get_save_dict() -> Dictionary:
 		"wage_paid_today": wage_paid_today,
 		"x": position.x,
 		"y": position.y,
-		"state": state
+		"state": state,
+		"speed_level": speed_level,
+		"work_level": work_level,
+		"bag_level": bag_level
 	}
 
 
 func load_save_dict(d: Dictionary) -> void:
 	is_hired = bool(d.get("is_hired", false))
-	water_level = int(d.get("water_level", 15))
+	speed_level = int(d.get("speed_level", 1))
+	work_level = int(d.get("work_level", 1))
+	bag_level = int(d.get("bag_level", 1))
+	speed = get_speed_for_level(speed_level)
+	water_capacity = get_water_capacity_for_level(bag_level)
+	water_level = int(d.get("water_level", water_capacity))
 	assigned_seeds = d.get("assigned_seeds", {}).duplicate()
 	harvest_bag = d.get("harvest_bag", {}).duplicate()
 	wage_paid_today = bool(d.get("wage_paid_today", false))

@@ -1038,6 +1038,9 @@ func _build_ui() -> void:
 	hud = HudScript.new()
 	add_child(hud)
 	hud.open_inventory_requested.connect(_open_inventory)
+	hud.open_storage_requested.connect(_open_storage)
+	hud.open_cat_requested.connect(_open_cat_panel)
+	hud.open_stall_requested.connect(_open_market_stall)
 	shop_panel = ShopPanelScript.new()
 	add_child(shop_panel)
 	fish_shop = FishShopScript.new()
@@ -1410,9 +1413,28 @@ func _unhandled_input(event: InputEvent) -> void:
 		var c := CropDB.get_crop(id)
 		if not c.is_empty():
 			hud.toast("Đổi hạt: %s" % c.name)
-	elif event is InputEventKey and event.pressed and not event.echo and mode == Mode.PLAY and not get_tree().paused:
-		if event.keycode >= KEY_1 and event.keycode <= KEY_9:
-			hud.select_slot_by_index(event.keycode - KEY_1)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if mode == Mode.PLAY and not get_tree().paused:
+			if event.keycode == KEY_K:
+				_open_storage()
+				get_viewport().set_input_as_handled()
+				return
+			elif event.keycode == KEY_M:
+				_open_cat_panel()
+				get_viewport().set_input_as_handled()
+				return
+			elif event.keycode == KEY_P:
+				_open_market_stall()
+				get_viewport().set_input_as_handled()
+				return
+			elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
+				hud.select_slot_by_index(event.keycode - KEY_1)
+		elif (storage_panel != null and storage_panel.visible and event.keycode == KEY_K) \
+			or (cat_panel != null and cat_panel.visible and event.keycode == KEY_M) \
+			or (stall_panel != null and stall_panel.visible and event.keycode == KEY_P):
+			_close_panels()
+			get_viewport().set_input_as_handled()
+			return
 	elif event is InputEventMouseButton and event.pressed and mode == Mode.PLAY and not get_tree().paused:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			hud.cycle_slot(-1)
@@ -1680,32 +1702,12 @@ func _do_sleep(forced: bool) -> void:
 			if randf() < 0.15:
 				t.spawn_pest()
 				new_pests += 1
-	# Dân làng mua hàng qua đêm tại sạp nông sản
-	var total_overnight_coins := 0
-	var total_overnight_items := 0
-	for i in stall_slots.size():
-		var slot = stall_slots[i]
-		if typeof(slot) == TYPE_DICTIONARY and not slot.is_empty() and int(slot.get("count", 0)) > 0:
-			var cur_count: int = int(slot.get("count", 0))
-			var u_price: int = int(slot.get("price", 10))
-			var sell_count: int = mini(cur_count, maxi(1, int(round(float(cur_count) * randf_range(0.5, 0.8)))))
-			var earned: int = u_price * sell_count
-			total_overnight_coins += earned
-			total_overnight_items += sell_count
-			slot["count"] = cur_count - sell_count
-			if int(slot["count"]) <= 0:
-				stall_slots[i] = {}
-	if total_overnight_items > 0:
-		stall_revenue += total_overnight_coins
-		_update_stall_crates_visual()
-		_update_stall_coin_badge()
+	# Hàng hoá trên sạp được giữ nguyên qua đêm (không bán qua đêm)
 	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	if forced:
 		hud.toast("Bạn gục ngã vì kiệt sức...", Color(1.0, 0.55, 0.45))
-	if total_overnight_items > 0:
-		hud.toast("Sạp bán được %d món qua đêm! Có %d xu chờ thu tại sạp 🏪" % [total_overnight_items, stall_revenue], Color(1.0, 0.9, 0.45))
 	if new_pests > 0:
 		hud.toast("⚠️ Có %d cây bị sâu cắn phá! Hãy bắt sâu bọ để cây lớn tiếp 🐛" % new_pests, Color(1.0, 0.65, 0.4))
 	hud.toast("Ngày mới! %d cây đã chín chờ thu hoạch." % ready_n, Color(0.65, 1.0, 0.6))
@@ -2604,6 +2606,45 @@ func _clicktest_step() -> void:
 			var new_trough_ok: bool = (TextureGen.get_tex("trough") != null and TextureGen.get_tex("trough").get_width() == 22 and TextureGen.get_tex("trough").get_height() == 8)
 			var new_water_trough_ok: bool = (TextureGen.get_tex("water_trough") != null and TextureGen.get_tex("water_trough").get_width() == 18 and TextureGen.get_tex("water_trough").get_height() == 8)
 			print("NEW_COOP_TROUGH_TEST coop=", new_coop_ok, " trough=", new_trough_ok, " water_trough=", new_water_trough_ok)
+
+			# 7. Kiểm thử các nút tắt cạnh màn hình + Nâng cấp Mèo + Sạp không bán qua đêm
+			# A. Thử mở các panel qua nút tắt cạnh màn hình (HUD signals)
+			_close_panels()
+			hud.open_cat_requested.emit()
+			var quick_cat_open: bool = (cat_panel != null and cat_panel.visible)
+			_close_panels()
+			hud.open_storage_requested.emit()
+			var quick_storage_open: bool = (storage_panel != null and storage_panel.visible)
+			_close_panels()
+			hud.open_inventory_requested.emit()
+			var quick_inv_open: bool = (inv_panel != null and inv_panel.visible)
+			_close_panels()
+			hud.open_stall_requested.emit()
+			var quick_stall_open: bool = (stall_panel != null and stall_panel.visible)
+			_close_panels()
+
+			# B. Kiểm thử Nâng cấp chú mèo bằng tiền
+			GameState.money = 1000
+			var cat_up_spd: bool = cat_helper.upgrade("speed")
+			var cat_spd_lvl2: bool = (cat_helper.speed_level == 2 and cat_helper.speed > 60.0)
+			var cat_up_work: bool = cat_helper.upgrade("work")
+			var cat_work_lvl2: bool = (cat_helper.work_level == 2)
+			var cat_up_bag: bool = cat_helper.upgrade("bag")
+			var cat_bag_lvl2: bool = (cat_helper.bag_level == 2 and cat_helper.water_capacity > 15)
+
+			var save_dict: Dictionary = cat_helper.get_save_dict()
+			var save_upgrades_ok: bool = (int(save_dict.get("speed_level", 0)) == 2 and int(save_dict.get("work_level", 0)) == 2 and int(save_dict.get("bag_level", 0)) == 2)
+
+			# C. Kiểm thử hàng trên sạp không bị bán qua đêm
+			stall_slots[0] = {"id": "tomato", "name": "Cà chua", "count": 10, "price": 25}
+			_do_sleep(false)
+			var overnight_unsold: bool = (int(stall_slots[0].get("count", 0)) == 10)
+
+			print("QUICK_DOCK_CAT_UPGRADE_TEST quick_cat=", quick_cat_open, " quick_storage=", quick_storage_open,
+					" quick_inv=", quick_inv_open, " quick_stall=", quick_stall_open,
+					" up_spd=", (cat_up_spd and cat_spd_lvl2), " up_work=", (cat_up_work and cat_work_lvl2),
+					" up_bag=", (cat_up_bag and cat_bag_lvl2), " save_upgrades=", save_upgrades_ok,
+					" overnight_unsold=", overnight_unsold)
 
 			print("CLICKTEST_DONE")
 			get_tree().quit()

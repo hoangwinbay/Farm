@@ -23,6 +23,14 @@ var _water_label: Label
 var _seeds_in_cat_box: VBoxContainer
 var _seeds_in_bag_box: VBoxContainer
 
+var _active_tab: int = 0
+var _tab_seeds_btn: Button
+var _tab_upgrades_btn: Button
+var _tab_seeds_container: HBoxContainer
+var _tab_upgrades_container: VBoxContainer
+var _upgrade_cards_box: VBoxContainer
+var _wallet_label: Label
+
 
 func _ready() -> void:
 	layer = 20
@@ -155,7 +163,8 @@ func _build_hire_view() -> void:
 	UIKit.label(task_v, "💧 Tưới nước cho cây (hết nước tự ra ao múc)", 12, Color(0.85, 0.85, 0.80))
 	UIKit.label(task_v, "🌱 Gieo hạt giống (khi bạn giao hạt vào túi Mèo)", 12, Color(0.85, 0.85, 0.80))
 	UIKit.label(task_v, "🏚️ Cất toàn bộ hoa màu và sâu bọ vào Nhà Kho", 12, Color(0.85, 0.85, 0.80))
-	UIKit.label(task_v, "⛺ Đến tối (19:00) Mèo sẽ vào lều riêng để ngủ", 12, Color(0.85, 0.85, 0.80))
+	UIKit.label(task_v, "⛺ Đến tối Mèo sẽ vào lều riêng để ngủ", 12, Color(0.85, 0.85, 0.80))
+	UIKit.label(task_v, "⭐ Dùng tiền nâng cấp Tốc độ, Năng suất & Túi đồ cho Mèo", 12, Color(1.0, 0.9, 0.5))
 	desc_v.add_child(task_box)
 
 	var wage_info := UIKit.label(desc_v, "💰 Tiền công: 50 xu / ngày (trả tự động vào cuối ngày lúc 19:00 hoặc khi bạn đi ngủ).", 13, Color(1.0, 0.85, 0.4))
@@ -226,11 +235,22 @@ func _build_manage_view() -> void:
 
 	_manage_view.add_child(status_card)
 
-	# 2 Cột: Túi hạt của mèo (Trái) & Balo hạt giống của người chơi (Phải)
-	var lists_h := HBoxContainer.new()
-	lists_h.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	lists_h.add_theme_constant_override("separation", 12)
-	_manage_view.add_child(lists_h)
+	# Thanh chuyển Tab: [🌾 Giao nhận hạt giống] [⭐ Nâng cấp Mèo]
+	var tab_bar := HBoxContainer.new()
+	tab_bar.add_theme_constant_override("separation", 8)
+	_manage_view.add_child(tab_bar)
+
+	_tab_seeds_btn = UIKit.styled_button(tab_bar, "🌾 Giao nhận hạt giống", 13, "gold")
+	_tab_seeds_btn.pressed.connect(func(): _switch_tab(0))
+
+	_tab_upgrades_btn = UIKit.styled_button(tab_bar, "⭐ Nâng cấp Mèo (Tốc độ / Giờ làm / Túi)", 13, "neutral")
+	_tab_upgrades_btn.pressed.connect(func(): _switch_tab(1))
+
+	# TAB 1: 2 Cột giao nhận hạt giống
+	_tab_seeds_container = HBoxContainer.new()
+	_tab_seeds_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_tab_seeds_container.add_theme_constant_override("separation", 12)
+	_manage_view.add_child(_tab_seeds_container)
 
 	# Cột trái: Hạt giống Mèo đang giữ
 	var left_box := PanelContainer.new()
@@ -246,7 +266,7 @@ func _build_manage_view() -> void:
 	_seeds_in_cat_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left_scroll.add_child(_seeds_in_cat_box)
 	left_v.add_child(left_scroll)
-	lists_h.add_child(left_box)
+	_tab_seeds_container.add_child(left_box)
 
 	# Cột phải: Hạt giống trong balo người chơi để giao
 	var right_box := PanelContainer.new()
@@ -262,7 +282,47 @@ func _build_manage_view() -> void:
 	_seeds_in_bag_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_scroll.add_child(_seeds_in_bag_box)
 	right_v.add_child(right_scroll)
-	lists_h.add_child(right_box)
+	_tab_seeds_container.add_child(right_box)
+
+	# TAB 2: Nâng cấp Mèo
+	_tab_upgrades_container = VBoxContainer.new()
+	_tab_upgrades_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_tab_upgrades_container.add_theme_constant_override("separation", 8)
+	_tab_upgrades_container.visible = false
+	_manage_view.add_child(_tab_upgrades_container)
+
+	var wallet_bar := PanelContainer.new()
+	wallet_bar.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.17, 0.08), UIKit.COLOR_BORDER_GOLD, 6))
+	_tab_upgrades_container.add_child(wallet_bar)
+	var wh := HBoxContainer.new()
+	wh.add_theme_constant_override("separation", 6)
+	wallet_bar.add_child(wh)
+	var wic := TextureRect.new()
+	wic.texture = TextureGen.coin_icon()
+	wic.custom_minimum_size = Vector2(16, 16)
+	wic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	wh.add_child(wic)
+	_wallet_label = UIKit.label(wh, "Tiền hiện có trong túi của bạn: 0 xu", 13, UIKit.COLOR_TEXT_GOLD)
+
+	_upgrade_cards_box = VBoxContainer.new()
+	_upgrade_cards_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_upgrade_cards_box.add_theme_constant_override("separation", 8)
+	_tab_upgrades_container.add_child(_upgrade_cards_box)
+
+
+func _switch_tab(idx: int) -> void:
+	_active_tab = idx
+	if _tab_seeds_container != null and _tab_upgrades_container != null:
+		_tab_seeds_container.visible = (_active_tab == 0)
+		_tab_upgrades_container.visible = (_active_tab == 1)
+	if _tab_seeds_btn != null and _tab_upgrades_btn != null:
+		if _active_tab == 0:
+			_tab_seeds_btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.38, 0.26, 0.12), UIKit.COLOR_BORDER_GOLD, 6, 2))
+			_tab_upgrades_btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.24, 0.18, 0.12), UIKit.COLOR_BORDER_WOOD, 6, 1))
+		else:
+			_tab_seeds_btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.24, 0.18, 0.12), UIKit.COLOR_BORDER_WOOD, 6, 1))
+			_tab_upgrades_btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.38, 0.26, 0.12), UIKit.COLOR_BORDER_GOLD, 6, 2))
+	_refresh_manage_data()
 
 
 func _refresh_manage_data() -> void:
@@ -273,7 +333,7 @@ func _refresh_manage_data() -> void:
 	var state_str := "Đang nghỉ ngơi"
 	match cat.state:
 		CatHelperScript.State.ARRIVING, CatHelperScript.State.WAITING_HIRE:
-			state_str = "Đang đứng chờ cửa nhà"
+			state_str = "Đang đứng chờ ở sân"
 		CatHelperScript.State.WALKING_TO_JOB, CatHelperScript.State.WORKING:
 			var jtype: String = str(cat.current_job.get("type", ""))
 			match jtype:
@@ -367,3 +427,79 @@ func _refresh_manage_data() -> void:
 	if not has_any:
 		var empty_lbl := UIKit.label(_seeds_in_bag_box, "(Balo của bạn không có hạt giống nào để giao)", 12, Color(0.6, 0.55, 0.5))
 		empty_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	# Cập nhật giao diện Nâng cấp
+	if _wallet_label != null:
+		_wallet_label.text = "Tiền hiện có trong túi của bạn: %d xu" % GameState.money
+
+	if _upgrade_cards_box != null:
+		for c in _upgrade_cards_box.get_children():
+			c.queue_free()
+
+		# 1. Thẻ Tốc độ di chuyển
+		var next_spd_str: String = "%.0f px/s" % float(cat.get_speed_for_level(cat.speed_level + 1))
+		_build_upgrade_card(_upgrade_cards_box, "speed", "⚡ Tốc độ di chuyển",
+			"Vận tốc mèo đi lại trên nông trại",
+			cat.speed_level, "%.0f px/s" % float(cat.speed),
+			next_spd_str
+		)
+
+		# 2. Thẻ Năng suất & Giờ làm việc
+		var sleep_hr: int = int(float(cat.get_sleep_clock()) / 60.0)
+		var next_sleep_hr: int = int(float(cat.get_sleep_clock_for_level(cat.work_level + 1)) / 60.0)
+		_build_upgrade_card(_upgrade_cards_box, "work", "⏱️ Năng suất & Giờ làm việc",
+			"Thao tác nhanh %.2fs/việc · Tan ca lúc %02d:00 tối" % [float(cat.get_work_duration()), sleep_hr],
+			cat.work_level, "Thao tác %.2fs · Đến %02d:00" % [float(cat.get_work_duration()), sleep_hr],
+			"Làm việc chăm chỉ đến %02d:00 đêm" % next_sleep_hr
+		)
+
+		# 3. Thẻ Sức chứa Túi đồ & Bình nước
+		var next_bag: int = int(cat.get_max_bag_for_level(cat.bag_level + 1))
+		var next_water: int = int(cat.get_water_capacity_for_level(cat.bag_level + 1))
+		_build_upgrade_card(_upgrade_cards_box, "bag", "🎒 Sức chứa Túi đồ & Bình nước",
+			"Túi gom nông sản: %d món · Bình nước: %d giọt" % [int(cat.get_max_bag()), int(cat.water_capacity)],
+			cat.bag_level, "Túi %d món · Bình %d giọt" % [int(cat.get_max_bag()), int(cat.water_capacity)],
+			"Túi %d món · Bình nước %d giọt" % [next_bag, next_water]
+		)
+
+
+func _build_upgrade_card(parent: Control, type: String, title: String, desc: String, cur_lvl: int, cur_stat: String, next_stat: String) -> void:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.18, 0.13, 0.08), UIKit.COLOR_BORDER_WOOD, 6))
+	parent.add_child(card)
+
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 12)
+	card.add_child(h)
+
+	var v := VBoxContainer.new()
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_theme_constant_override("separation", 2)
+	h.add_child(v)
+
+	var title_txt := "%s  (Cấp %d/%d)" % [title, cur_lvl, CatHelperScript.MAX_UPGRADE_LEVEL]
+	UIKit.label(v, title_txt, 13, UIKit.COLOR_TEXT_GOLD)
+	UIKit.label(v, "%s  [Hiện tại: %s]" % [desc, cur_stat], 11, Color(0.85, 0.85, 0.80))
+	if cur_lvl < CatHelperScript.MAX_UPGRADE_LEVEL:
+		UIKit.label(v, "➜ Cấp kế tiếp: %s" % next_stat, 11, Color(0.55, 0.95, 0.55))
+	else:
+		UIKit.label(v, "⭐ Đã đạt mức tối đa! Mèo đã thuần thục kỹ năng này.", 11, Color(1.0, 0.85, 0.35))
+
+	var is_max: bool = (cur_lvl >= CatHelperScript.MAX_UPGRADE_LEVEL)
+	var cost: int = cat.get_upgrade_cost(type, cur_lvl)
+
+	if is_max:
+		var max_btn := UIKit.styled_button(h, "⭐ Tối đa", 12, "neutral")
+		max_btn.disabled = true
+	else:
+		var can_afford: bool = (GameState.money >= cost)
+		var btn_style_type := "gold" if can_afford else "neutral"
+		var up_btn := UIKit.styled_button(h, "Nâng cấp (%d xu)" % cost, 12, btn_style_type)
+		up_btn.pressed.connect(func():
+			if GameState.money < cost:
+				feedback.emit("Không đủ tiền! Bạn cần %d xu để nâng cấp kỹ năng này." % cost, Color(1.0, 0.5, 0.4))
+				return
+			if cat.upgrade(type):
+				_refresh_manage_data()
+		)
+
