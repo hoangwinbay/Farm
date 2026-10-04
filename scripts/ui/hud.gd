@@ -329,7 +329,24 @@ func rebuild_hotbar() -> void:
 			Inventory.select_tool("rod")
 	})
 
-	# Các ô tiếp theo: Hạt giống (hotkey 4..9)
+	# Ô 4: Cúp đào mỏ (nếu đã nhận cúp từ Leah)
+	var seed_start_idx := 4
+	if Inventory.has_pickaxe():
+		var pick_active: bool = (act_t == "pickaxe")
+		_slots_cache.append({
+			"key": "4",
+			"type": "pickaxe",
+			"name": "Cúp",
+			"qty": Inventory.get_pickaxe_power(),
+			"tooltip": "Cúp khai mỏ (Cấp %d)" % Inventory.get_pickaxe_power(),
+			"icon": TextureGen.pickaxe_icon(Inventory.pickaxe),
+			"active": pick_active,
+			"action": func():
+				Inventory.select_tool("pickaxe")
+		})
+		seed_start_idx = 5
+
+	# Các ô tiếp theo: Hạt giống (hotkey 4..9 hoặc 5..9)
 	var ids: Array = Inventory.owned_seed_ids()
 	if ids.is_empty():
 		ids = GameState.unlocked.duplicate()
@@ -343,7 +360,7 @@ func rebuild_hotbar() -> void:
 			continue
 		var is_seed_active: bool = (act_t == "seed" and Inventory.selected_seed == sid)
 		_slots_cache.append({
-			"key": str(4 + i),
+			"key": str(seed_start_idx + i),
 			"type": "seed",
 			"id": sid,
 			"name": str(crop.name),
@@ -485,6 +502,9 @@ func _update_active_label() -> void:
 		"rod":
 			active_label.text = "🎣 Cần câu (%d lượt)" % Inventory.total_casts()
 			active_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.4))
+		"pickaxe":
+			active_label.text = "⛏️ Cúp khai mỏ (Cấp %d)" % Inventory.get_pickaxe_power()
+			active_label.add_theme_color_override("font_color", Color(0.85, 0.90, 1.0))
 		"seed":
 			var sid := Inventory.selected_seed
 			var c := CropDB.get_crop(sid)

@@ -22,8 +22,8 @@ var display_name: String = "Bé Lan"
 var state: int = State.WALK_IN
 var speed: float = 35.0         # Tốc độ đi bộ bình thường (35 px/s)
 var wander_speed: float = 22.0  # Tốc độ đi dạo thư thả khi đứng chờ
-var target_stall_pos := Vector2(184, 468)
-var exit_pos := Vector2(-40.0, 468.0)  # Quay trở về đoạn đường ban đầu
+var target_stall_pos := Vector2(584, 468)
+var exit_pos := Vector2(1950.0, 468.0)  # Quay trở về phía thị trấn bên phải (Đông)
 var stall_slots: Array = []     # Tham chiếu đến các ô sạp hàng của main
 
 # Nhu cầu mua sắm của khách
@@ -64,7 +64,7 @@ func _ready() -> void:
 	_spr = Sprite2D.new()
 	_spr.scale = Vector2(1.25, 1.25)
 	_spr.offset = Vector2(0, -16)
-	_spr.texture = TextureGen.sdv_char_tex(character_name, "right", 0)
+	_spr.texture = TextureGen.sdv_char_tex(character_name, "left", 0)
 	add_child(_spr)
 
 	# 3. Bong bóng nhỏ tròn, màu trắng lơ lửng phía trên đầu (không che mất đầu)
@@ -98,8 +98,8 @@ func _ready() -> void:
 
 	add_child(_bubble)
 
-	# Xuất phát từ đoạn đường bên trái màn hình
-	position = Vector2(-25 - randf_range(0, 20), target_stall_pos.y)
+	# Xuất phát từ đoạn đường phía thị trấn bên phải (Đông)
+	position = Vector2(1920 + randf_range(0, 30), target_stall_pos.y)
 	_spr.flip_h = false
 
 
@@ -222,7 +222,7 @@ func _process(delta: float) -> void:
 			var dy := exit_pos.y - position.y
 
 			# Đưa vị trí y về trục đường chính 468
-			if absf(dy) > 2.5 and position.x > 0.0:
+			if absf(dy) > 2.5:
 				position.y += signf(dy) * speed * delta
 
 			if absf(dx) > 3.0:
@@ -246,8 +246,8 @@ func _find_matching_slot() -> int:
 
 func _pick_wander_spot() -> Vector2:
 	# Khu vực quảng trường / đường cỏ mở rộng quanh sạp hàng
-	var rx := randf_range(110.0, 260.0)
-	var ry := randf_range(462.0, 505.0)
+	var rx := randf_range(target_stall_pos.x - 55.0, target_stall_pos.x + 55.0)
+	var ry := randf_range(462.0, 498.0)
 	return Vector2(rx, ry)
 
 

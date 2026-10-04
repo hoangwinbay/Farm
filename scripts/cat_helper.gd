@@ -31,14 +31,14 @@ enum State {
 	SLEEPING
 }
 
-const WAITING_POS := Vector2(218, 305)
-const DOORSTEP_POS := Vector2(256, 260)
-const ROAD_JUNCTION_POS := Vector2(256, 472)
-const SPAWN_POS := Vector2(-30, 472)
-const TENT_SLEEP_POS := Vector2(366, 246)
-const SHED_DOOR_POS := Vector2(105, 258)
-const POND_REFILL_POS := Vector2(1010, 750)
-const FARM_GATE_WEST := Vector2(424, 472)
+const WAITING_POS := Vector2(618, 305)
+const DOORSTEP_POS := Vector2(656, 260)
+const ROAD_JUNCTION_POS := Vector2(656, 472)
+const SPAWN_POS := Vector2(370, 472)
+const TENT_SLEEP_POS := Vector2(766, 246)
+const SHED_DOOR_POS := Vector2(505, 258)
+const POND_REFILL_POS := Vector2(1410, 750)
+const FARM_GATE_WEST := Vector2(824, 472)
 
 var state: int = State.ARRIVING
 var is_hired: bool = false

@@ -4,37 +4,39 @@ extends CanvasLayer
 
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
-const WORLD_SIZE := Vector2(1500, 1000)
+const WORLD_SIZE := Vector2(1900, 1000)
 const SMALL_W := 272.0
 const DOT_SPACING := 26.0
 
 # Đồ thị nút giao nằm trên mạng lối đi PATHS (xem main.gd) — dùng tính đường đi.
 const NODES := {
-	"shed": Vector2(105, 250),
-	"house": Vector2(250, 250),
-	"tent": Vector2(366, 250),
-	"j_house": Vector2(250, 470),
-	"j_tent": Vector2(366, 470),
-	"stall": Vector2(184, 440),
-	"j_stall": Vector2(184, 470),
-	"west_edge": Vector2(16, 470),
-	"j_pen": Vector2(304, 470),
-	"pen": Vector2(304, 574),
-	"farm_w": Vector2(408, 470),
-	"farm": Vector2(648, 470),
-	"j_tu": Vector2(1010, 470),
-	"tu": Vector2(1010, 430),
-	"j_pond": Vector2(1030, 470),
-	"pond": Vector2(1030, 748),
-	"j_batu": Vector2(1180, 470),
-	"batu": Vector2(1180, 430),
-	"j_hai": Vector2(1350, 470),
-	"hai": Vector2(1350, 430),
+	"mine": Vector2(80, 470),
+	"west_edge": Vector2(120, 470),
+	"j_stall": Vector2(584, 470),
+	"stall": Vector2(584, 440),
+	"shed": Vector2(505, 250),
+	"house": Vector2(650, 250),
+	"tent": Vector2(766, 250),
+	"j_house": Vector2(650, 470),
+	"j_tent": Vector2(766, 470),
+	"j_pen": Vector2(704, 470),
+	"pen": Vector2(704, 574),
+	"farm_w": Vector2(808, 470),
+	"farm": Vector2(1048, 470),
+	"j_tu": Vector2(1410, 470),
+	"tu": Vector2(1410, 430),
+	"j_pond": Vector2(1430, 470),
+	"pond": Vector2(1430, 748),
+	"j_batu": Vector2(1580, 470),
+	"batu": Vector2(1580, 430),
+	"j_hai": Vector2(1750, 470),
+	"hai": Vector2(1750, 430),
 }
 const EDGES := [
+	["mine", "west_edge"], ["west_edge", "j_stall"],
 	["shed", "house"], ["house", "tent"],
 	["house", "j_house"], ["tent", "j_tent"],
-	["stall", "j_stall"], ["west_edge", "j_stall"], ["j_stall", "j_house"],
+	["stall", "j_stall"], ["j_stall", "j_house"],
 	["j_house", "j_pen"], ["j_pen", "pen"],
 	["j_pen", "j_tent"], ["j_tent", "farm_w"], ["farm_w", "farm"],
 	["farm_w", "j_tu"], ["j_tu", "tu"],
@@ -46,16 +48,17 @@ const EDGES := [
 # Địa điểm bấm được trên bản đồ (id trùng với nút đích trong NODES).
 # "mlabel" là tên ngắn vẽ trên bản đồ; "mlab_above" đẩy nhãn lên trên điểm.
 const POIS := [
-	{"id": "shed", "name": "Nhà kho (cất đồ)", "mlabel": "Nhà kho", "pos": Vector2(105, 250), "color": Color(0.75, 0.55, 0.35), "letter": "K"},
-	{"id": "house", "name": "Nhà (ngủ & lưu game)", "mlabel": "Nhà (ngủ & lưu)", "pos": Vector2(250, 250), "color": Color(0.98, 0.62, 0.45), "letter": "N"},
-	{"id": "tent", "name": "Lều của Mèo (ngủ đêm)", "mlabel": "Lều Mèo", "pos": Vector2(366, 250), "color": Color(0.95, 0.78, 0.42), "letter": "M"},
-	{"id": "stall", "name": "Sạp hàng nông sản", "mlabel": "Sạp hàng", "mlab_above": true, "pos": Vector2(184, 440), "color": Color(0.95, 0.45, 0.35), "letter": "S"},
-	{"id": "farm", "name": "Nông trại", "mlabel": "Nông trại", "pos": Vector2(648, 470), "color": Color(0.55, 0.88, 0.42), "letter": "R"},
-	{"id": "pen", "name": "Chuồng gia cầm", "mlabel": "Chuồng gia cầm", "pos": Vector2(304, 574), "color": Color(0.85, 0.65, 0.35), "letter": "C"},
-	{"id": "tu", "name": "Quầy Cô Tư (gia cầm)", "mlabel": "Cô Tư — gia cầm", "mlab_above": true, "pos": Vector2(1010, 430), "color": Color(1.0, 0.68, 0.3), "letter": "T"},
-	{"id": "batu", "name": "Quầy Bác Tư (hạt giống)", "mlabel": "Bác Tư — hạt giống", "pos": Vector2(1180, 430), "color": Color(1.0, 0.86, 0.3), "letter": "B"},
-	{"id": "hai", "name": "Quầy Chú Hai (cần & cá)", "mlabel": "Chú Hai — cá", "mlab_above": true, "pos": Vector2(1350, 430), "color": Color(0.45, 0.82, 0.95), "letter": "H"},
-	{"id": "pond", "name": "Ao câu cá", "mlabel": "Ao câu cá", "pos": Vector2(1030, 748), "color": Color(0.35, 0.6, 0.95), "letter": "A"},
+	{"id": "mine", "name": "Hầm mỏ (khai thác quặng)", "mlabel": "Hầm mỏ", "mlab_above": true, "pos": Vector2(80, 440), "color": Color(0.70, 0.70, 0.85), "letter": "M"},
+	{"id": "shed", "name": "Nhà kho (cất đồ)", "mlabel": "Nhà kho", "pos": Vector2(505, 250), "color": Color(0.75, 0.55, 0.35), "letter": "K"},
+	{"id": "house", "name": "Nhà (ngủ & lưu game)", "mlabel": "Nhà (ngủ & lưu)", "pos": Vector2(650, 250), "color": Color(0.98, 0.62, 0.45), "letter": "N"},
+	{"id": "tent", "name": "Lều của Mèo (ngủ đêm)", "mlabel": "Lều Mèo", "pos": Vector2(766, 250), "color": Color(0.95, 0.78, 0.42), "letter": "L"},
+	{"id": "stall", "name": "Sạp hàng nông sản", "mlabel": "Sạp hàng", "mlab_above": true, "pos": Vector2(584, 440), "color": Color(0.95, 0.45, 0.35), "letter": "S"},
+	{"id": "farm", "name": "Nông trại", "mlabel": "Nông trại", "pos": Vector2(1048, 470), "color": Color(0.55, 0.88, 0.42), "letter": "R"},
+	{"id": "pen", "name": "Chuồng gia cầm", "mlabel": "Chuồng gia cầm", "pos": Vector2(704, 574), "color": Color(0.85, 0.65, 0.35), "letter": "C"},
+	{"id": "tu", "name": "Quầy Cô Tư (gia cầm)", "mlabel": "Cô Tư — gia cầm", "mlab_above": true, "pos": Vector2(1410, 430), "color": Color(1.0, 0.68, 0.3), "letter": "T"},
+	{"id": "batu", "name": "Quầy Bác Tư (hạt giống)", "mlabel": "Bác Tư — hạt giống", "pos": Vector2(1580, 430), "color": Color(1.0, 0.86, 0.3), "letter": "B"},
+	{"id": "hai", "name": "Quầy Chú Hai (cần & cá)", "mlabel": "Chú Hai — cá", "mlab_above": true, "pos": Vector2(1750, 430), "color": Color(0.45, 0.82, 0.95), "letter": "H"},
+	{"id": "pond", "name": "Ao câu cá", "mlabel": "Ao câu cá", "pos": Vector2(1430, 748), "color": Color(0.35, 0.6, 0.95), "letter": "A"},
 ]
 
 var toast_cb := Callable()  # main gán: hud.toast(text, color)

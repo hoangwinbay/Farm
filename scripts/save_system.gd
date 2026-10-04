@@ -21,6 +21,8 @@ func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: D
 		"hoes": Inventory.hoes,
 		"water_level": Inventory.water_level,
 		"water_max": Inventory.water_max,
+		"pickaxe": Inventory.pickaxe,
+		"ores": Inventory.ores.duplicate(),
 		"active_item": Inventory.active_item.duplicate(),
 		"rods": Inventory.rods.duplicate(),
 		"fish": Inventory.fish.duplicate(),

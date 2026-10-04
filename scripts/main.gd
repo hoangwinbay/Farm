@@ -25,22 +25,26 @@ const MailboxPanelScript := preload("res://scripts/ui/mailbox_panel.gd")
 const StoragePanelScript := preload("res://scripts/ui/storage_panel.gd")
 const CatHelperScript := preload("res://scripts/cat_helper.gd")
 const CatPanelScript := preload("res://scripts/ui/cat_panel.gd")
+const MineManagerScript := preload("res://scripts/mine_manager.gd")
+const OreDB := preload("res://scripts/ore_db.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
-const WORLD_SIZE := Vector2(1500, 1000)
-const FARM_ORIGIN := Vector2(424, 384)
+const WORLD_SIZE := Vector2(1900, 1000)
+const FARM_ORIGIN := Vector2(824, 384)
 const FARM_TILES := Vector2i(14, 9)
-const HOUSE_POS := Vector2(241, 248)
-const SHED_POS := Vector2(105, 248)
-const TENT_POS := Vector2(366, 248)
-const MAILBOX_POS := Vector2(320, 246)
-const MARKET_STALL_POS := Vector2(184, 440) # sạp hàng nông sản tại góc rẽ trái
+const HOUSE_POS := Vector2(641, 248)
+const SHED_POS := Vector2(505, 248)
+const TENT_POS := Vector2(766, 248)
+const MAILBOX_POS := Vector2(720, 246)
+const MARKET_STALL_POS := Vector2(584, 440) # sạp hàng nông sản tại ngã rẽ đại lộ
+const MINE_ENTRANCE_POS := Vector2(80, 440)  # cửa hầm mỏ đá ở rìa cực Tây (đi thẳng từ sạp hàng sang trái)
+const MINE_SIGN_POS := Vector2(140, 416)     # biển báo hầm mỏ
+const LEAH_MINER_POS := Vector2(140, 465)    # Leah đứng cạnh cửa mỏ hướng dẫn người chơi
 
-# 10 nhân vật Stardew Valley với tên Việt Nam thân thiện
+# Các nhân vật Stardew Valley ghé sạp mua hàng (Leah là NPC quản lý mỏ riêng)
 const SDV_CUSTOMERS_DATA := [
 	{"name": "Bé Lan", "asset": "Abigail"},
 	{"name": "Cô Mai", "asset": "Haley"},
-	{"name": "Chị Thảo", "asset": "Leah"},
 	{"name": "Em Cúc", "asset": "Penny"},
 	{"name": "Anh Nam", "asset": "Sam"},
 	{"name": "Anh Dũng", "asset": "Alex"},
@@ -49,14 +53,14 @@ const SDV_CUSTOMERS_DATA := [
 	{"name": "Bé Linh", "asset": "Maru"},
 	{"name": "Anh Phong", "asset": "Sebastian"},
 ]
-const SDV_CUSTOMERS := ["Abigail", "Haley", "Leah", "Penny", "Sam", "Alex", "Emily", "Harvey", "Maru", "Sebastian"]
+const SDV_CUSTOMERS := ["Abigail", "Haley", "Penny", "Sam", "Alex", "Emily", "Harvey", "Maru", "Sebastian"]
 
 # Các vị trí đứng trước sạp hàng để tối đa 10 NPC ghé cùng lúc
 const STALL_COUNTER_SPOTS := [
-	Vector2(146, 468), Vector2(165, 468), Vector2(184, 468),
-	Vector2(203, 468), Vector2(222, 468), Vector2(155, 482),
-	Vector2(174, 482), Vector2(193, 482), Vector2(212, 482),
-	Vector2(230, 482)
+	Vector2(546, 468), Vector2(565, 468), Vector2(584, 468),
+	Vector2(603, 468), Vector2(622, 468), Vector2(555, 482),
+	Vector2(574, 482), Vector2(593, 482), Vector2(612, 482),
+	Vector2(630, 482)
 ]
 
 const STALL_WISHLIST_ITEMS := [
@@ -72,20 +76,20 @@ const STALL_WISHLIST_ITEMS := [
 	{"id": "trung_ga", "type": "poultry", "name": "Trứng gà", "base_price": 30},
 	{"id": "trung_vit", "type": "poultry", "name": "Trứng vịt", "base_price": 45},
 ]
-const STAND_POS := Vector2(1180, 416)       # quầy Bác Tư
-const STAND_HAI_POS := Vector2(1350, 416)   # quầy Chú Hai
-const STAND_TU_POS := Vector2(1010, 416)    # quầy Cô Tư
-const NPC_POS := Vector2(1180, 430)         # điểm tương tác Bác Tư
-const CHU_HAI_POS := Vector2(1350, 430)     # điểm tương tác Chú Hai
-const COTU_POS := Vector2(1010, 430)        # điểm tương tác Cô Tư
-const SCARECROW_POS := Vector2(648, 528)
-const PLAYER_START := Vector2(250, 470)
-const POND_RECT := Rect2(940, 760, 180, 100)
-const FISH_SPOT_POS := Vector2(1030, 810)   # tâm hồ — câu được ở MỌI bờ
+const STAND_POS := Vector2(1580, 416)       # quầy Bác Tư
+const STAND_HAI_POS := Vector2(1750, 416)   # quầy Chú Hai
+const STAND_TU_POS := Vector2(1410, 416)    # quầy Cô Tư
+const NPC_POS := Vector2(1580, 430)         # điểm tương tác Bác Tư
+const CHU_HAI_POS := Vector2(1750, 430)     # điểm tương tác Chú Hai
+const COTU_POS := Vector2(1410, 430)        # điểm tương tác Cô Tư
+const SCARECROW_POS := Vector2(1048, 528)
+const PLAYER_START := Vector2(650, 470)
+const POND_RECT := Rect2(1340, 760, 180, 100)
+const FISH_SPOT_POS := Vector2(1430, 810)   # tâm hồ — câu được ở MỌI bờ
 # Khu chuồng: sân trong (y 560..660) + lưới ô chuồng 3 cột bên dưới.
 # Mỗi LOẠI gia cầm một ô riêng; chuồng co/giãn theo số loại đang nuôi.
-const PEN_RECT := Rect2(120, 560, 272, 108)
-const PEN_COL_X := [128.0, 216.0, 304.0]  # mép trái 3 cột ô
+const PEN_RECT := Rect2(520, 560, 272, 108)
+const PEN_COL_X := [528.0, 616.0, 704.0]  # mép trái 3 cột ô
 const PEN_CELL := Vector2(80, 64)         # cỡ 1 ô chuồng
 const PEN_GRID_TOP := 668.0               # mép trên hàng ô đầu tiên
 const PEN_ROW_STEP := 72.0                # 64 ô + 8 divider
@@ -97,11 +101,11 @@ const PEN_SPOTS := [                      # chỗ đứng con vật trong ô (so
 # Mạng lối đi lát đất chuẩn Stardew Valley (lưới 16px).
 # Đại lộ đông-tây (48px = 3 ô) + các nhánh lối đi (32px = 2 ô).
 const PATHS := [
-	Rect2(240, 240, 32, 224),    # từ cửa nhà xuống đại lộ (x: 240..272, y: 240..464)
-	Rect2(0, 448, 1408, 48),     # đại lộ đông - tây qua 2 cổng ruộng, kéo dài hết map sang trái (x: 0..1408, y: 448..496)
-	Rect2(944, 352, 464, 96),    # khuôn viên chợ quê 3 quầy hàng liền sát đại lộ (x: 944..1408, y: 352..448)
-	Rect2(288, 480, 32, 96),     # nhánh tới cổng chuồng gia cầm (x: 288..320, y: 480..576)
-	Rect2(1024, 480, 32, 272),   # nhánh xuống bờ ao câu cá (x: 1024..1056, y: 480..752)
+	Rect2(640, 240, 32, 224),    # từ cửa nhà xuống đại lộ (x: 640..672, y: 240..464)
+	Rect2(0, 448, 1850, 48),     # đại lộ đông - tây xuyên suốt từ hầm mỏ qua sạp hàng và 2 cổng ruộng (x: 0..1850, y: 448..496)
+	Rect2(1344, 352, 464, 96),   # khuôn viên chợ quê 3 quầy hàng liền sát đại lộ (x: 1344..1808, y: 352..448)
+	Rect2(688, 480, 32, 96),     # nhánh tới cổng chuồng gia cầm (x: 688..720, y: 480..576)
+	Rect2(1424, 480, 32, 272),   # nhánh xuống bờ ao câu cá (x: 1424..1456, y: 480..752)
 ]
 
 enum Mode { TITLE, PLAY, DIALOG, PANEL }
@@ -114,6 +118,9 @@ var farm: Node2D
 var npc: StaticBody2D
 var npc_hai: StaticBody2D
 var npc_tu: StaticBody2D
+var npc_leah: StaticBody2D
+var mine_manager: Node2D
+var in_mine: bool = false
 var pen_node: Node2D
 var cam: Camera2D
 var ground: Sprite2D
@@ -151,6 +158,7 @@ var interactables: Array = []
 var _npc_met := false
 var _npc_hai_met := false
 var _npc_tu_met := false
+var _leah_met := false
 var _dialog_next := "shop"
 
 var foliage_nodes: Array = []
@@ -257,6 +265,8 @@ func _build_world() -> void:
 	_add_decor(TextureGen.get_tex("scarecrow"), SCARECROW_POS, 1.5, Rect2(-6, -10, 12, 10))
 	# sạp hàng nông sản Stardew Valley tại góc rẽ trái (kèm bóng đổ mềm mại trên nền cỏ)
 	_build_market_stall()
+	# Khu vực cửa hầm mỏ đá & Leah phía Tây Bắc
+	_build_mine_entrance()
 	# Hệ thống thực vật & cây cối mọc ngẫu nhiên trên bề mặt cỏ tự nhiên (Stardew Valley)
 	_populate_random_foliage(75)
 
@@ -282,6 +292,13 @@ func _build_world() -> void:
 	player = PlayerScript.new()
 	player.position = PLAYER_START
 	world.add_child(player)
+
+	# Quản lý hầm mỏ khai thác quặng
+	mine_manager = MineManagerScript.new()
+	mine_manager.visible = false
+	mine_manager.setup(self, player)
+	mine_manager.exit_requested.connect(_on_exit_mine)
+	add_child(mine_manager)
 
 	# Chú mèo tam thể làm nông
 	cat_helper = CatHelperScript.new()
@@ -311,6 +328,9 @@ func _build_world() -> void:
 		{"pos": SHED_POS + Vector2(0, -6), "r": 50.0, "label": "Nhà kho 🏚️", "cb": _open_storage},
 		{"pos": MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": _open_mailbox},
 		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪", "cb": _open_market_stall},
+		{"pos": MINE_ENTRANCE_POS + Vector2(0, 10), "r": 45.0, "label": "Vào Hầm Mỏ ⛏️", "cb": _enter_mine},
+		{"pos": MINE_SIGN_POS, "r": 40.0, "label": "Biển báo Hầm Mỏ 📜", "cb": _read_mine_sign},
+		{"pos": LEAH_MINER_POS, "r": 45.0, "label": "Leah ⛏️", "cb": _talk_leah},
 		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư", "cb": _talk_npc},
 		{"pos": CHU_HAI_POS, "r": 60.0, "label": "Chú Hai", "cb": _talk_hai},
 		{"pos": COTU_POS, "r": 60.0, "label": "Cô Tư", "cb": _talk_tu},
@@ -365,7 +385,7 @@ func _add_ellipse_wall(center: Vector2, rx: float, ry: float) -> void:
 func _build_pen() -> void:
 	pen_node = Node2D.new()
 	pen_node.name = "Pen"
-	pen_node.position = Vector2(120, 560)
+	pen_node.position = PEN_RECT.position
 	world.add_child(pen_node)
 	_rebuild_pen()
 
@@ -381,7 +401,7 @@ func _rebuild_pen() -> void:
 	var fh := TextureGen.get_tex("fence_h")
 	var fv := TextureGen.get_tex("fence_v")
 	var fc := TextureGen.get_tex("fence_corner")
-	var org := Vector2(120, 560)  # mọi toạ độ con là toạ độ thế giới trừ org
+	var org := PEN_RECT.position  # mọi toạ độ con là toạ độ thế giới trừ org
 
 	# Các loại đang nuôi, xếp theo thứ tự DB để ô không đổi chỗ khi mua/bán
 	var species: Array = []
@@ -393,27 +413,27 @@ func _rebuild_pen() -> void:
 	var rows: int = int(ceil(species.size() / float(PEN_COL_X.size())))
 	var y_s := 660.0 + PEN_ROW_STEP * rows  # mép trên dải rào đóng đáy chuồng
 
-	# 1. Nền rơm phủ toàn khu chuồng
+	# 1. Nền rơm phủ toàn khu chuồng bên trong hàng rào
 	var bedding := Sprite2D.new()
 	bedding.texture = TextureGen.get_tex("pen_bedding")
-	bedding.position = Vector2(136.0, (y_s - 552.0) / 2.0)
-	bedding.scale = Vector2(272.0 / 224.0, (y_s - 552.0) / 128.0)
+	bedding.position = Vector2(136.0, (y_s - 560.0) / 2.0 + 8.0)
+	bedding.scale = Vector2(252.0 / 224.0, (y_s - 568.0) / 128.0)
 	bedding.z_index = -1
 	pen_node.add_child(bedding)
 
-	# 2. Hàng rào ngoại vi — cổng giữ nguyên ở x 280..328
-	for x in [136, 168, 200, 232, 264, 344, 376]:
+	# 2. Hàng rào ngoại vi — cổng ở trục đường nhánh
+	for x in [org.x + 16, org.x + 48, org.x + 80, org.x + 112, org.x + 144, org.x + 224, org.x + 256]:
 		_add_sprite(fh, Vector2(x, 560.0) - org, pen_node)
-	_add_sprite(TextureGen.get_tex("gate_coop"), Vector2(304, 560.0) - org, pen_node)
+	_add_sprite(TextureGen.get_tex("gate_coop"), Vector2(org.x + 184, 560.0) - org, pen_node)
 	for y in range(576, int(y_s) + 8, 32):
-		_add_sprite(fv, Vector2(120.0, y) - org, pen_node)
-		_add_sprite(fv, Vector2(392.0, y) - org, pen_node)
-	for x in [136, 168, 200, 232, 264, 296, 328, 360, 376]:
+		_add_sprite(fv, Vector2(org.x, y) - org, pen_node)
+		_add_sprite(fv, Vector2(org.x + 272.0, y) - org, pen_node)
+	for x in [org.x + 16, org.x + 48, org.x + 80, org.x + 112, org.x + 144, org.x + 176, org.x + 208, org.x + 240, org.x + 256]:
 		_add_sprite(fh, Vector2(x, y_s + 8.0) - org, pen_node)
-	_add_sprite(TextureGen.get_tex("fence_corner_tl"), Vector2(120, 560) - org, pen_node)
-	_add_sprite(TextureGen.get_tex("fence_corner_tr"), Vector2(392, 560) - org, pen_node)
-	_add_sprite(TextureGen.get_tex("fence_corner_bl"), Vector2(120, y_s + 8) - org, pen_node)
-	_add_sprite(TextureGen.get_tex("fence_corner_br"), Vector2(392, y_s + 8) - org, pen_node)
+	_add_sprite(TextureGen.get_tex("fence_corner_tl"), Vector2(org.x, 560) - org, pen_node)
+	_add_sprite(TextureGen.get_tex("fence_corner_tr"), Vector2(org.x + 272, 560) - org, pen_node)
+	_add_sprite(TextureGen.get_tex("fence_corner_bl"), Vector2(org.x, y_s + 8) - org, pen_node)
+	_add_sprite(TextureGen.get_tex("fence_corner_br"), Vector2(org.x + 272, y_s + 8) - org, pen_node)
 
 	# 3. Sân trong: nhà chuồng, máng ăn/nước, ổ đẻ, đống rơm
 	var coop := StaticBody2D.new()
@@ -436,24 +456,24 @@ func _rebuild_pen() -> void:
 	# 4. Va chạm: ngoại vi + dải ngang trước từng hàng ô (chừa lỗ 32px giữa mỗi cột)
 	var pwall := func(center: Vector2, size: Vector2) -> void:
 		_wall(center - org, size, pen_node)
-	pwall.call(Vector2(200, 564), Vector2(160, 8))
-	pwall.call(Vector2(360, 564), Vector2(64, 8))
-	pwall.call(Vector2(120, (568.0 + y_s) / 2.0), Vector2(8, y_s - 552.0))
-	pwall.call(Vector2(392, (568.0 + y_s) / 2.0), Vector2(8, y_s - 552.0))
-	pwall.call(Vector2(256, y_s + 4.0), Vector2(272, 8))
+	pwall.call(Vector2(org.x + 80, 564), Vector2(160, 8))
+	pwall.call(Vector2(org.x + 240, 564), Vector2(64, 8))
+	pwall.call(Vector2(org.x, (568.0 + y_s) / 2.0), Vector2(8, y_s - 552.0))
+	pwall.call(Vector2(org.x + 272, (568.0 + y_s) / 2.0), Vector2(8, y_s - 552.0))
+	pwall.call(Vector2(org.x + 136, y_s + 4.0), Vector2(272, 8))
 	for r in rows:
 		var yb := 660.0 + PEN_ROW_STEP * r + 4.0
-		pwall.call(Vector2(136, yb), Vector2(32, 8))
-		pwall.call(Vector2(212, yb), Vector2(56, 8))
-		pwall.call(Vector2(300, yb), Vector2(56, 8))
-		pwall.call(Vector2(376, yb), Vector2(32, 8))
-		for x in [136, 212, 300, 376]:
+		pwall.call(Vector2(org.x + 16, yb), Vector2(32, 8))
+		pwall.call(Vector2(org.x + 92, yb), Vector2(56, 8))
+		pwall.call(Vector2(org.x + 180, yb), Vector2(56, 8))
+		pwall.call(Vector2(org.x + 256, yb), Vector2(32, 8))
+		for x in [org.x + 16, org.x + 92, org.x + 180, org.x + 256]:
 			_add_sprite(fh, Vector2(x, 664.0 + PEN_ROW_STEP * r) - org, pen_node)
 	if rows > 0:
 		var colh := y_s - 668.0
-		pwall.call(Vector2(212, 668.0 + colh / 2.0), Vector2(8, colh))
-		pwall.call(Vector2(300, 668.0 + colh / 2.0), Vector2(8, colh))
-		for cx in [212.0, 300.0]:
+		pwall.call(Vector2(org.x + 92, 668.0 + colh / 2.0), Vector2(8, colh))
+		pwall.call(Vector2(org.x + 180, 668.0 + colh / 2.0), Vector2(8, colh))
+		for cx in [org.x + 92.0, org.x + 180.0]:
 			for y in range(676, int(y_s), 32):
 				_add_sprite(fv, Vector2(cx, y) - org, pen_node)
 
@@ -737,6 +757,47 @@ func _on_stall_changed() -> void:
 	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
 
 
+func _build_mine_entrance() -> void:
+	# 1. Cửa hang đá khoét vào vách núi ở rìa Tây
+	var cave_spr := Sprite2D.new()
+	cave_spr.texture = TextureGen.get_tex("cave_entrance")
+	cave_spr.position = MINE_ENTRANCE_POS
+	world.add_child(cave_spr)
+
+	# Va chạm vách núi bao quanh cửa hang
+	_wall(MINE_ENTRANCE_POS + Vector2(-32, 0), Vector2(32, 48))
+	_wall(MINE_ENTRANCE_POS + Vector2(32, 0), Vector2(32, 48))
+	_wall(MINE_ENTRANCE_POS + Vector2(0, -26), Vector2(96, 24))
+
+	# 2. Biển báo gỗ cạnh hang
+	var sign_spr := Sprite2D.new()
+	sign_spr.texture = TextureGen.get_tex("mine_sign")
+	sign_spr.position = MINE_SIGN_POS
+	world.add_child(sign_spr)
+
+	# 3. NPC Leah đứng trước cửa mỏ hướng dẫn người chơi
+	npc_leah = StaticBody2D.new()
+	npc_leah.position = LEAH_MINER_POS
+	var l_spr := Sprite2D.new()
+	l_spr.texture = TextureGen.sdv_char_tex("Leah", "down", 0)
+	l_spr.scale = Vector2(1.2, 1.2)
+	l_spr.offset = Vector2(0, -14)
+	npc_leah.add_child(l_spr)
+
+	var l_col := CollisionShape2D.new()
+	var l_shape := CircleShape2D.new()
+	l_shape.radius = 6.0
+	l_col.shape = l_shape
+	npc_leah.add_child(l_col)
+
+	# Nhịp thở tự nhiên cho Leah
+	var tw := l_spr.create_tween().set_loops()
+	tw.tween_property(l_spr, "scale:y", 1.23, 1.2).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(l_spr, "scale:y", 1.2, 1.2).set_trans(Tween.TRANS_SINE)
+
+	world.add_child(npc_leah)
+
+
 func _add_decor(tex: Texture2D, pos: Vector2, scl: float, collide: Rect2) -> StaticBody2D:
 	var body := StaticBody2D.new()
 	body.position = pos
@@ -832,7 +893,7 @@ func _is_grass_surface(pos: Vector2) -> bool:
 		return false
 
 	# 8. Khu chuồng nuôi gia cầm & lối đi xung quanh
-	var pen_box := Rect2(90.0, 530.0, 320.0, 230.0)
+	var pen_box := Rect2(PEN_RECT.position.x - 30.0, 530.0, 320.0, 230.0)
 	if pen_box.has_point(pos):
 		return false
 
@@ -841,13 +902,18 @@ func _is_grass_surface(pos: Vector2) -> bool:
 		return false
 
 	# 10. Ba quầy hàng chợ quê & khoảng đất mua bán
-	var market_box := Rect2(920.0, 330.0, 500.0, 130.0)
+	var market_box := Rect2(STAND_TU_POS.x - 90.0, 330.0, 500.0, 130.0)
 	if market_box.has_point(pos):
 		return false
 
 	# 10b. Sạp hàng nông sản ở góc rẽ trái
 	var stall_box := Rect2(MARKET_STALL_POS.x - 65.0, MARKET_STALL_POS.y - 75.0, 130.0, 95.0)
 	if stall_box.has_point(pos):
+		return false
+
+	# 10c. Khu vực cửa hầm mỏ đá, biển báo và NPC Leah (trống hoàn toàn không bị cây che)
+	var mine_box := Rect2(0.0, 360.0, 240.0, 200.0)
+	if mine_box.has_point(pos):
 		return false
 
 	# 11. Các vạt đất trống (dirt patches) tự nhiên trên mặt đất
@@ -963,18 +1029,18 @@ func _sprout_random_plant() -> void:
 func _build_fences() -> void:
 	var fh: Texture2D = TextureGen.get_tex("fence_h")
 	var fv: Texture2D = TextureGen.get_tex("fence_v")
-	var y_top := 370
-	var y_bot := 672
-	var x_left := 408
-	var x_right := 888
+	var y_top := int(FARM_ORIGIN.y - 14)
+	var y_bot := int(FARM_ORIGIN.y + FARM_TILES.y * 32 + 14)
+	var x_left := int(FARM_ORIGIN.x - 16)
+	var x_right := int(FARM_ORIGIN.x + FARM_TILES.x * 32 + 16)
 
-	# 1. Hàng ngang trên + dưới liền kín (14 sprite 32px nối liền kín khít từ cọc góc này sang cọc góc kia)
-	for x in range(440, 857, 32):
+	# 1. Hàng ngang trên + dưới liền kín
+	for x in range(x_left + 32, x_right, 32):
 		_add_sprite(fh, Vector2(x, y_top))
 		_add_sprite(fh, Vector2(x, y_bot))
 
 	# 2. Hai cột dọc — Tây và Đông chừa cửa đi qua ở đại lộ (tâm 472), rào nối khít vào cổng không khe hở
-	for y in [398, 430, 514, 546, 578, 610, 642]:
+	for y in [398, 430, 514, 546, 578, 610, 642, 674]:
 		_add_sprite(fv, Vector2(x_left, y))
 		_add_sprite(fv, Vector2(x_right, y))
 
@@ -987,8 +1053,8 @@ func _build_fences() -> void:
 	# Va chạm: tây/đông mở cửa giữa (y: 440..504), nam/bắc liền kín
 	var door_y1 := 440
 	var door_y2 := 504
-	var farm_mid_x := (x_left + x_right) / 2.0  # 648.0
-	var farm_width := float(x_right - x_left)   # 480.0
+	var farm_mid_x := (x_left + x_right) / 2.0
+	var farm_width := float(x_right - x_left)
 	_wall(Vector2(farm_mid_x, y_top), Vector2(farm_width, 10))
 	_wall(Vector2(farm_mid_x, y_bot), Vector2(farm_width, 10))
 	_wall(Vector2(x_left, (y_top - 6 + door_y1) / 2.0), Vector2(10, door_y1 - y_top + 6))
@@ -1100,7 +1166,7 @@ func _process(delta: float) -> void:
 		_debug_step()
 	if _clicktest != "":
 		_clicktest_step()
-	minimap.visible = mode == Mode.PLAY
+	minimap.visible = (mode == Mode.PLAY) and (not in_mine)
 	if touch_ui != null:
 		touch_ui.visible = mode == Mode.PLAY
 	if mode != Mode.PLAY or get_tree().paused:
@@ -1287,6 +1353,15 @@ func _tint() -> Color:
 
 
 func _update_hint_and_highlight() -> void:
+	if in_mine:
+		highlight.visible = false
+		var near_m: Dictionary = mine_manager.get_interactable_near(player.position) if mine_manager else {}
+		if not near_m.is_empty():
+			hud.set_hint("E: " + str(near_m.get("label", "")))
+		else:
+			hud.set_hint("")
+		return
+
 	var near := _nearest_interactable()
 	if not near.is_empty():
 		highlight.visible = false
@@ -1330,6 +1405,9 @@ func _update_hint_and_highlight() -> void:
 
 
 func _nearest_interactable() -> Dictionary:
+	if in_mine and mine_manager != null:
+		return mine_manager.get_interactable_near(player.position)
+
 	var best := {}
 	var best_d := INF
 	for it in interactables:
@@ -1442,6 +1520,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func _do_interact() -> void:
 	if fishing:
 		return
+	if in_mine and mine_manager != null:
+		var near_m: Dictionary = mine_manager.get_interactable_near(player.position)
+		if not near_m.is_empty() and near_m.has("cb") and near_m.cb is Callable:
+			near_m.cb.call()
+		return
 	var near := _nearest_interactable()
 	if not near.is_empty():
 		near.cb.call()
@@ -1512,12 +1595,110 @@ func _talk_hai() -> void:
 
 
 func _on_dialog_finished() -> void:
-	if _dialog_next == "fish":
+	if _dialog_next == "none":
+		mode = Mode.PLAY
+		get_tree().paused = false
+		return
+	elif _dialog_next == "leah_gift":
+		mode = Mode.PLAY
+		get_tree().paused = false
+		Inventory.add_pickaxe("basic")
+		hud.toast("Nhận được Cúp khai mỏ sơ cấp từ Leah! ⛏️", Color(0.7, 1.0, 0.7))
+		return
+	elif _dialog_next == "fish":
 		_open_fish_shop()
 	elif _dialog_next == "poultry":
 		_open_poultry_shop()
 	else:
 		_open_shop()
+
+
+func _talk_leah() -> void:
+	mode = Mode.DIALOG
+	get_tree().paused = true
+	if not Inventory.has_pickaxe():
+		_dialog_next = "leah_gift"
+		dialog_box.start("Leah", [
+			"Chào bạn! Mình là Leah.",
+			"Đây là hầm mỏ bỏ hoang của làng, dưới lòng đất ẩn chứa rất nhiều khoáng sản quý giá như Đồng, Sắt, Vàng và Đá quý hiếm.",
+			"Mình tặng bạn chiếc Cúp sơ cấp này nhé! Hãy cầm Cúp và xuống mỏ thử vận may nào!"
+		])
+		_leah_met = true
+	else:
+		_dialog_next = "none"
+		dialog_box.start("Leah", [
+			"Chào bạn! Càng xuống sâu, các tầng mỏ sẽ càng có nhiều quặng quý hiếm.",
+			"Chúc bạn một ngày khai thác được thật nhiều quặng vàng và đá quý nhé!"
+		])
+
+
+func _read_mine_sign() -> void:
+	mode = Mode.DIALOG
+	get_tree().paused = true
+	_dialog_next = "none"
+	dialog_box.start("📜 Biển Báo Hầm Mỏ", [
+		"• Tầng 1 - 2: Nhiều Đá cuội, Than đá & Quặng Đồng.",
+		"• Tầng 3 - 5: Xuất hiện Quặng Sắt & Hồng Ngọc (Ruby).",
+		"• Tầng 6+: Quặng Vàng & Kim Cương quý hiếm.",
+		"⚠️ Hướng dẫn: Đứng gần khối quặng và bấm E để đập bằng Cúp. Bấm E tại cầu thang để chuyển tầng!"
+	])
+
+
+func _fade_transition(on_mid: Callable) -> void:
+	if fade_rect == null:
+		if on_mid.is_valid():
+			on_mid.call()
+		return
+	player.can_move = false
+	var tw := create_tween()
+	tw.tween_property(fade_rect, "modulate:a", 1.0, 0.35)
+	tw.tween_callback(func():
+		if on_mid.is_valid():
+			on_mid.call()
+	)
+	tw.tween_interval(0.1)
+	tw.tween_property(fade_rect, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(func():
+		player.can_move = true
+	)
+
+
+func _enter_mine() -> void:
+	if not Inventory.has_pickaxe():
+		hud.toast("Hãy nói chuyện với Leah để nhận Cúp trước khi vào mỏ! ⛏️", Color(1.0, 0.85, 0.5))
+		return
+	_fade_transition(func():
+		in_mine = true
+		player.reparent(mine_manager)
+		world.process_mode = Node.PROCESS_MODE_DISABLED
+		world.visible = false
+		mine_manager.process_mode = Node.PROCESS_MODE_PAUSABLE
+		mine_manager.enter_mine(1)
+		cam.limit_left = 0
+		cam.limit_top = 0
+		cam.limit_right = mine_manager.MINE_TILES.x * mine_manager.TILE
+		cam.limit_bottom = mine_manager.MINE_TILES.y * mine_manager.TILE
+		hud.toast("Đã tiến vào Hầm Mỏ — Tầng 1! ⛏️", Color(0.8, 0.9, 1.0))
+	)
+
+
+func _on_exit_mine() -> void:
+	if not in_mine:
+		return
+	_fade_transition(func():
+		in_mine = false
+		player.reparent(world)
+		mine_manager.process_mode = Node.PROCESS_MODE_DISABLED
+		mine_manager.visible = false
+		world.process_mode = Node.PROCESS_MODE_PAUSABLE
+		world.visible = true
+		player.position = MINE_ENTRANCE_POS + Vector2(32, 28)
+		cam.limit_left = 0
+		cam.limit_top = 0
+		cam.limit_right = int(WORLD_SIZE.x)
+		cam.limit_bottom = int(WORLD_SIZE.y)
+		hud.toast("Đã trở lại mặt đất! 🌄")
+	)
 
 
 func _open_shop() -> void:
@@ -1672,6 +1853,19 @@ func _do_sleep(forced: bool) -> void:
 	var tw := create_tween()
 	tw.tween_property(fade_rect, "modulate:a", 1.0, 0.45)
 	await tw.finished
+	if in_mine:
+		in_mine = false
+		player.reparent(world)
+		if mine_manager != null:
+			mine_manager.process_mode = Node.PROCESS_MODE_DISABLED
+			mine_manager.visible = false
+		world.process_mode = Node.PROCESS_MODE_PAUSABLE
+		world.visible = true
+		player.position = HOUSE_POS + Vector2(15, 10)
+		cam.limit_left = 0
+		cam.limit_top = 0
+		cam.limit_right = int(WORLD_SIZE.x)
+		cam.limit_bottom = int(WORLD_SIZE.y)
 	GameState.sleep_to_morning()
 	var ready_n: int = farm.ready_count()
 	# Dọn các khách NPC ngày hôm trước để ngày mới đón khách mới
