@@ -13,6 +13,7 @@ const ShopPanelScript := preload("res://scripts/ui/shop_panel.gd")
 const FishShopScript := preload("res://scripts/ui/fish_shop.gd")
 const PoultryShopScript := preload("res://scripts/ui/poultry_shop.gd")
 const StallPanelScript := preload("res://scripts/ui/stall_panel.gd")
+const StallCustomerScript := preload("res://scripts/stall_customer.gd")
 const InventoryPanelScript := preload("res://scripts/ui/inventory_panel.gd")
 const DialogueBoxScript := preload("res://scripts/ui/dialogue_box.gd")
 const TitleScreenScript := preload("res://scripts/ui/title_screen.gd")
@@ -83,7 +84,11 @@ var poultry_shop: CanvasLayer
 var stall_panel: CanvasLayer
 var stall_slots: Array = [{}, {}, {}, {}, {}, {}]
 var stall_crate_sprites: Array[Sprite2D] = []
+var stall_revenue: int = 0
+var stall_coin_badge: PanelContainer
+var stall_coin_label: Label
 var _stall_customer_timer: float = 0.0
+var _active_stall_customer: Node2D = null
 var inv_panel: CanvasLayer
 var mailbox_panel: CanvasLayer
 var mailbox_badge: PanelContainer
@@ -149,6 +154,7 @@ func _ready() -> void:
 	stall_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
 	stall_panel.closed.connect(_close_panels)
 	stall_panel.stall_changed.connect(_on_stall_changed)
+	stall_panel.revenue_collected.connect(_on_stall_revenue_collected)
 	Inventory.changed.connect(_rebuild_pen)
 	inv_panel.closed.connect(_close_panels)
 	dialog_box.finished.connect(_on_dialog_finished)
@@ -608,7 +614,27 @@ func _build_market_stall() -> void:
 		body.add_child(cs)
 		stall_crate_sprites.append(cs)
 
-	# 4. Va chạm (chân cột và quầy hàng)
+	# 4. Huy hiệu tiền bán hàng nổi phía trên sạp (khi có tiền chưa thu)
+	stall_coin_badge = PanelContainer.new()
+	stall_coin_badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.16, 0.08, 0.95), UIKit.COLOR_BORDER_GOLD, 6))
+	var ch := HBoxContainer.new()
+	ch.add_theme_constant_override("separation", 4)
+	stall_coin_badge.add_child(ch)
+	var mic := TextureRect.new()
+	mic.texture = TextureGen.coin_icon()
+	mic.custom_minimum_size = Vector2(14, 14)
+	mic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	ch.add_child(mic)
+	stall_coin_label = UIKit.label(ch, "0 xu", 11, UIKit.COLOR_TEXT_GOLD)
+	stall_coin_badge.position = Vector2(8, -52)
+	stall_coin_badge.visible = false
+	body.add_child(stall_coin_badge)
+
+	var ctw := create_tween().set_loops()
+	ctw.tween_property(stall_coin_badge, "position:y", -55.0, 0.7).set_trans(Tween.TRANS_SINE)
+	ctw.tween_property(stall_coin_badge, "position:y", -49.0, 0.7).set_trans(Tween.TRANS_SINE)
+
+	# 5. Va chạm (chân cột và quầy hàng)
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(104, 24)
@@ -618,6 +644,15 @@ func _build_market_stall() -> void:
 
 	world.add_child(body)
 	_update_stall_crates_visual()
+	_update_stall_coin_badge()
+
+
+func _update_stall_coin_badge() -> void:
+	if stall_coin_badge == null:
+		return
+	stall_coin_badge.visible = stall_revenue > 0
+	if stall_coin_label != null:
+		stall_coin_label.text = "%d xu" % stall_revenue
 
 
 func _update_stall_crates_visual() -> void:
@@ -641,7 +676,7 @@ func _update_stall_crates_visual() -> void:
 
 func _on_stall_changed() -> void:
 	_update_stall_crates_visual()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
 
 
 func _add_decor(tex: Texture2D, pos: Vector2, scl: float, collide: Rect2) -> StaticBody2D:
@@ -1009,6 +1044,9 @@ func _process_stall_customers(delta: float) -> void:
 	if t < 420.0 or t > 1140.0:
 		return
 
+	if _active_stall_customer != null and is_instance_valid(_active_stall_customer):
+		return
+
 	var available_indices: Array[int] = []
 	for i in stall_slots.size():
 		var slot = stall_slots[i]
@@ -1019,27 +1057,55 @@ func _process_stall_customers(delta: float) -> void:
 		return
 
 	_stall_customer_timer += delta
-	if _stall_customer_timer < 20.0:
+	# Cứ mỗi 10-15s có một khách NPC đi bộ ghé sạp mua hàng
+	if _stall_customer_timer < 10.0:
 		return
 	_stall_customer_timer = 0.0
 
+	_spawn_stall_customer(available_indices)
+
+
+func _spawn_stall_customer(available_indices: Array[int]) -> void:
 	var idx: int = available_indices[randi() % available_indices.size()]
 	var slot: Dictionary = stall_slots[idx]
-	var item_name: String = str(slot.get("name", "Nông sản"))
-	var unit_price: int = int(slot.get("price", 10))
-	var count: int = int(slot.get("count", 0))
-	var qty_buy: int = mini(count, (1 if randf() < 0.7 else 2))
-	var total_earned: int = unit_price * qty_buy
 
-	GameState.add_money(total_earned)
-	slot["count"] = count - qty_buy
-	if int(slot["count"]) <= 0:
-		stall_slots[idx] = {}
+	var cust: Node2D = StallCustomerScript.new()
+	cust.target_slot_idx = idx
+	cust.item_id = str(slot.get("id", ""))
+	cust.item_type = str(slot.get("type", "crop"))
+	cust.item_name = str(slot.get("name", "Nông sản"))
+	cust.unit_price = int(slot.get("price", 10))
+	cust.buy_qty = mini(int(slot.get("count", 1)), (1 if randf() < 0.65 else 2))
+	cust.spawn_side = "west" if randf() < 0.5 else "east"
 
-	_update_stall_crates_visual()
-	if stall_panel != null and stall_panel.visible:
-		stall_panel._refresh_ui()
-	hud.toast("Dân làng vừa ghé sạp mua %d %s! +%d xu 🪙" % [qty_buy, item_name, total_earned], Color(1.0, 0.88, 0.4))
+	cust.purchase_completed.connect(_on_stall_customer_purchased)
+	cust.departed.connect(func(): _active_stall_customer = null)
+
+	_active_stall_customer = cust
+	world.add_child(cust)
+
+
+func _on_stall_customer_purchased(slot_idx: int, item_name: String, qty: int, coins: int) -> void:
+	if slot_idx >= 0 and slot_idx < stall_slots.size():
+		var slot: Dictionary = stall_slots[slot_idx]
+		if not slot.is_empty():
+			var cur: int = int(slot.get("count", 0))
+			var actual_qty: int = mini(cur, qty)
+			slot["count"] = cur - actual_qty
+			if int(slot["count"]) <= 0:
+				stall_slots[slot_idx] = {}
+			_update_stall_crates_visual()
+			if stall_panel != null and stall_panel.visible:
+				stall_panel.stall_slots = stall_slots
+				stall_panel.stall_revenue = stall_revenue + coins
+				stall_panel._refresh_ui()
+
+	# Tiền bán tích lũy tại sạp để người chơi tự đến nhận, không tự cộng vào ví
+	stall_revenue += coins
+	_update_stall_coin_badge()
+	hud.toast("Khách mua %d %s! Có %d xu chờ thu tại sạp 🏪" % [qty, item_name, stall_revenue], Color(1.0, 0.88, 0.4))
+	_spawn_effect("fx_harvest", Vector2(184, 432))
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
 
 
 func _tint() -> Color:
@@ -1231,7 +1297,13 @@ func _open_shop() -> void:
 func _open_market_stall() -> void:
 	mode = Mode.PANEL
 	get_tree().paused = true
-	stall_panel.open(stall_slots)
+	stall_panel.open(stall_slots, stall_revenue)
+
+
+func _on_stall_revenue_collected(_amt: int) -> void:
+	stall_revenue = 0
+	_update_stall_coin_badge()
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
 
 
 func _open_fish_shop() -> void:
@@ -1285,7 +1357,7 @@ func _open_mailbox() -> void:
 func _on_mailbox_changed() -> void:
 	_update_mailbox_badge()
 	hud.rebuild_hotbar()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
 
 
 func _close_panels() -> void:
@@ -1311,12 +1383,12 @@ func _resume_from_pause() -> void:
 
 
 func _save_now() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
 	hud.toast("Đã lưu game!", Color(0.6, 1.0, 0.6))
 
 
 func _back_to_title() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
 	_close_panels()
 	mode = Mode.TITLE
 	dialog_box.force_close()
@@ -1367,15 +1439,16 @@ func _do_sleep(forced: bool) -> void:
 			if int(slot["count"]) <= 0:
 				stall_slots[i] = {}
 	if total_overnight_items > 0:
-		GameState.add_money(total_overnight_coins)
+		stall_revenue += total_overnight_coins
 		_update_stall_crates_visual()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots)
+		_update_stall_coin_badge()
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	if forced:
 		hud.toast("Bạn gục ngã vì kiệt sức...", Color(1.0, 0.55, 0.45))
 	if total_overnight_items > 0:
-		hud.toast("Sạp hàng bán được %d món qua đêm, thu về +%d xu! 🏪" % [total_overnight_items, total_overnight_coins], Color(1.0, 0.9, 0.45))
+		hud.toast("Sạp bán được %d món qua đêm! Có %d xu chờ thu tại sạp 🏪" % [total_overnight_items, stall_revenue], Color(1.0, 0.9, 0.45))
 	hud.toast("Ngày mới! %d cây đã chín chờ thu hoạch." % ready_n, Color(0.65, 1.0, 0.6))
 	var tw2 := create_tween()
 	tw2.tween_property(fade_rect, "modulate:a", 0.0, 0.6)
@@ -1452,7 +1525,9 @@ func start_new_game() -> void:
 	mailbox_data = _default_mailbox_data()
 	_update_mailbox_badge()
 	stall_slots = [{}, {}, {}, {}, {}, {}]
+	stall_revenue = 0
 	_update_stall_crates_visual()
+	_update_stall_coin_badge()
 	farm.reset_all()
 	player.position = PLAYER_START
 	player.facing = Vector2.DOWN
@@ -1502,7 +1577,9 @@ func continue_game() -> void:
 		stall_slots = st_arr.duplicate(true)
 	else:
 		stall_slots = [{}, {}, {}, {}, {}, {}]
+	stall_revenue = int(d.get("stall_revenue", 0))
 	_update_stall_crates_visual()
+	_update_stall_coin_badge()
 	var farm_arr = d.get("farm", [])
 	if typeof(farm_arr) == TYPE_ARRAY:
 		farm.apply_state(farm_arr)
@@ -1744,7 +1821,7 @@ func _debug_grow() -> void:
 	print("POULTRY thu sau 95s = ", got, " trứng gà (kỳ vọng 2)")
 	print("POULTRY ready_left=", Inventory.ready_products())
 	print("POULTRY produce trung_ga=", Inventory.produce_count("trung_ga"))
-	SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots)
+	SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots, stall_revenue)
 	var d := SaveSystem.load_data()
 	print("DEBUG save/load farm tiles = ", (d.get("farm", []) as Array).size(),
 			" hoes=", int(d.get("hoes", -1)), " rods=", d.get("rods", {}),
@@ -1945,7 +2022,7 @@ func _clicktest_step() -> void:
 					break
 			_sprout_random_plant()
 			var count_after_sprout: int = foliage_data.size()
-			SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots)
+			SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots, stall_revenue)
 			var sd: Dictionary = SaveSystem.load_data()
 			var saved_f_size: int = (sd.get("foliage", []) as Array).size()
 			print("FOLIAGETEST initial=", f_count, " all_on_grass=", all_grass,
@@ -1976,15 +2053,41 @@ func _clicktest_step() -> void:
 			stall_panel._retrieve_from_stall(1)
 			var crate1_cleared: bool = (not stall_crate_sprites[1].visible) and stall_slots[1].is_empty()
 
-			# Lưu và nạp game xem sạp hàng có giữ được cà chua ở ô 0
-			SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots)
+			# Test NPC khách hàng ghé mua và tích lũy tiền tại sạp (không tự cộng vào ví)
+			var wallet_before: int = GameState.money
+			var rev_before: int = stall_revenue
+			_spawn_stall_customer([0])
+			var cust_spawned: bool = (_active_stall_customer != null)
+			# Giả lập hoàn thành mua hàng 1 quả cà chua giá 18 xu
+			_on_stall_customer_purchased(0, "Cà chua", 1, 18)
+			var wallet_unchanged: bool = (GameState.money == wallet_before)
+			var stall_rev_accumulated: bool = (stall_revenue == rev_before + 18)
+			var badge_active: bool = (stall_coin_badge.visible and stall_coin_label.text == "18 xu")
+			var slot0_count_decreased: bool = (stall_slots[0].get("count") == 1)
+
+			# Mở panel sạp hàng để thu tiền thủ công
+			_open_market_stall()
+			var collect_btn_shows_18: bool = stall_panel.collect_btn.visible and ("18 xu" in stall_panel.collect_btn.text)
+			stall_panel._on_collect_pressed()
+			var wallet_collected: bool = (GameState.money == wallet_before + 18)
+			var rev_reset: bool = (stall_revenue == 0)
+			var badge_hidden_after: bool = (not stall_coin_badge.visible)
+
+			# Lưu và nạp game xem sạp hàng có giữ được cà chua còn lại ở ô 0
+			SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots, stall_revenue)
 			var sd_stall: Dictionary = SaveSystem.load_data()
 			var st_saved: Array = sd_stall.get("stall", [])
-			var save_has_stall: bool = st_saved.size() == 6 and st_saved[0].get("id") == "tomato"
+			var save_has_stall: bool = st_saved.size() == 6 and st_saved[0].get("id") == "tomato" and st_saved[0].get("count") == 1
+			var save_rev_correct: bool = (int(sd_stall.get("stall_revenue", -1)) == 0)
 
 			# Thu hồi nốt cà chua ở ô 0 để sạch sạp
 			stall_panel._retrieve_from_stall(0)
 			stall_panel.close()
+
+			# Dọn khách hàng NPC test
+			if _active_stall_customer != null and is_instance_valid(_active_stall_customer):
+				_active_stall_customer.queue_free()
+				_active_stall_customer = null
 
 			# Kiểm tra đường mòn kéo dài hết map sang trái, nền cỏ dưới sạp và POI minimap
 			var west_road_exists: bool = false
@@ -2001,7 +2104,12 @@ func _clicktest_step() -> void:
 			print("MARKETSTALLTEST found=", stall_found, " opens_panel=", stall_opens_panel,
 					" slot0_filled=", slot0_filled, " crate0_visual=", crate0_visible,
 					" slot1_filled=", slot1_filled, " crate1_visual=", crate1_visible,
-					" crate1_cleared=", crate1_cleared, " save_has_stall=", save_has_stall,
+					" crate1_cleared=", crate1_cleared, " cust_spawned=", cust_spawned,
+					" wallet_unchanged=", wallet_unchanged, " stall_rev_accumulated=", stall_rev_accumulated,
+					" badge_active=", badge_active, " slot0_dec=", slot0_count_decreased,
+					" collect_btn=", collect_btn_shows_18, " wallet_collected=", wallet_collected,
+					" rev_reset=", rev_reset, " badge_hidden=", badge_hidden_after,
+					" save_has_stall=", save_has_stall, " save_rev=", save_rev_correct,
 					" west_road_to_edge=", west_road_exists, " ground_is_grass=", (not stall_ground_has_road),
 					" minimap_poi=", poi_stall_exists)
 		995:

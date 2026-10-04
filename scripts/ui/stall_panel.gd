@@ -1,6 +1,6 @@
 extends CanvasLayer
 # Giao diện Quản lý Sạp Hàng Nông Sản Của Tôi:
-# Người chơi bày nông sản lên 6 ô sạp gỗ để bán cho dân làng NPC ghé mua (giá +20%).
+# Người chơi bày nông sản lên 6 ô sạp gỗ để bán cho dân làng NPC ghé mua.
 
 const CropDB := preload("res://scripts/crop_db.gd")
 const FishDB := preload("res://scripts/fish_db.gd")
@@ -11,9 +11,12 @@ const UIKit := preload("res://scripts/ui/ui_kit.gd")
 signal closed
 signal feedback(text: String, color: Color)
 signal stall_changed
+signal revenue_collected(amount: int)
 
 var stall_slots: Array = []  # 6 phần tử Dictionary hoặc null
+var stall_revenue: int = 0
 var money_label: Label
+var collect_btn: Button
 var crates_grid: GridContainer
 var inventory_rows: VBoxContainer
 var scroll: ScrollContainer
@@ -78,6 +81,11 @@ func _ready() -> void:
 	hm.add_child(mic)
 	money_label = UIKit.label(hm, "%d xu" % GameState.money, 15, UIKit.COLOR_TEXT_GOLD)
 	head.add_child(money_box)
+
+	collect_btn = UIKit.styled_button(head, "🪙 Thu tiền: 0 xu", 13, "buy")
+	collect_btn.custom_minimum_size = Vector2(130, 36)
+	collect_btn.pressed.connect(_on_collect_pressed)
+	collect_btn.visible = false
 
 	var close_btn := UIKit.styled_button(head, "✕", 14, "danger")
 	close_btn.custom_minimum_size = Vector2(36, 36)
@@ -156,8 +164,9 @@ func _update_tab_styles() -> void:
 			btn.add_theme_color_override("font_color", UIKit.COLOR_TEXT_MUTED)
 
 
-func open(slots: Array) -> void:
+func open(slots: Array, revenue: int = 0) -> void:
 	stall_slots = slots
+	stall_revenue = revenue
 	visible = true
 	_update_tab_styles()
 	_refresh_ui()
@@ -173,9 +182,23 @@ func _on_dim_input(event: InputEvent) -> void:
 		close()
 
 
+func _on_collect_pressed() -> void:
+	if stall_revenue <= 0:
+		return
+	var amt := stall_revenue
+	GameState.add_money(amt)
+	stall_revenue = 0
+	revenue_collected.emit(amt)
+	feedback.emit("Đã thu %d xu tiền bán hàng! 🪙" % amt, Color(1.0, 0.9, 0.4))
+	_refresh_ui()
+
+
 func _refresh_ui() -> void:
 	if money_label != null:
 		money_label.text = "%d xu" % GameState.money
+	if collect_btn != null:
+		collect_btn.visible = stall_revenue > 0
+		collect_btn.text = "🪙 Thu tiền: %d xu" % stall_revenue
 	_build_crates_display()
 	_build_inventory_list()
 
@@ -320,7 +343,7 @@ func _build_inventory_item_card(id: String, type: String, name: String, count: i
 
 	UIKit.label(info_v, name, 14, UIKit.COLOR_TEXT_BODY)
 	var stall_price: int = maxi(1, int(round(float(base_price) * 1.2)))
-	UIKit.label(info_v, "%d xu (+20%%)" % stall_price, 12, UIKit.COLOR_TEXT_GOLD)
+	UIKit.label(info_v, "%d xu" % stall_price, 12, UIKit.COLOR_TEXT_GOLD)
 
 	# Số lượng có trong túi
 	var count_pill := PanelContainer.new()
