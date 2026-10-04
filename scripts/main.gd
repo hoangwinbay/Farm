@@ -1423,15 +1423,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_open_cat_panel()
 				get_viewport().set_input_as_handled()
 				return
-			elif event.keycode == KEY_P:
-				_open_market_stall()
-				get_viewport().set_input_as_handled()
-				return
 			elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
 				hud.select_slot_by_index(event.keycode - KEY_1)
 		elif (storage_panel != null and storage_panel.visible and event.keycode == KEY_K) \
-			or (cat_panel != null and cat_panel.visible and event.keycode == KEY_M) \
-			or (stall_panel != null and stall_panel.visible and event.keycode == KEY_P):
+			or (cat_panel != null and cat_panel.visible and event.keycode == KEY_M):
 			_close_panels()
 			get_viewport().set_input_as_handled()
 			return
@@ -2616,12 +2611,6 @@ func _clicktest_step() -> void:
 			hud.open_storage_requested.emit()
 			var quick_storage_open: bool = (storage_panel != null and storage_panel.visible)
 			_close_panels()
-			hud.open_inventory_requested.emit()
-			var quick_inv_open: bool = (inv_panel != null and inv_panel.visible)
-			_close_panels()
-			hud.open_stall_requested.emit()
-			var quick_stall_open: bool = (stall_panel != null and stall_panel.visible)
-			_close_panels()
 
 			# B. Kiểm thử Nâng cấp chú mèo bằng tiền
 			GameState.money = 1000
@@ -2641,7 +2630,6 @@ func _clicktest_step() -> void:
 			var overnight_unsold: bool = (int(stall_slots[0].get("count", 0)) == 10)
 
 			print("QUICK_DOCK_CAT_UPGRADE_TEST quick_cat=", quick_cat_open, " quick_storage=", quick_storage_open,
-					" quick_inv=", quick_inv_open, " quick_stall=", quick_stall_open,
 					" up_spd=", (cat_up_spd and cat_spd_lvl2), " up_work=", (cat_up_work and cat_work_lvl2),
 					" up_bag=", (cat_up_bag and cat_bag_lvl2), " save_upgrades=", save_upgrades_ok,
 					" overnight_unsold=", overnight_unsold)

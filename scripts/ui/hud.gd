@@ -133,35 +133,21 @@ func _ready() -> void:
 	h_w.add_child(w_ic)
 	water_label = UIKit.label(h_w, "Nước 20/20", 14, Color(0.70, 0.90, 1.0))
 
-	# --- 1b. THANH CÔNG CỤ NHANH CẠNH MÀN HÌNH (Quick Access Dock) ---
-	# Quản lý Mèo [M], Nhà kho [K], Balo/Túi đồ [I], Khay sạp hàng [P]
+	# --- 1b. NÚT NHANH CẠNH MÀN HÌNH: Quản lý Mèo [M], Nhà kho [K] ---
 	var quick_dock := PanelContainer.new()
-	quick_dock.add_theme_stylebox_override("panel", UIKit.wood_frame(8, 2, UIKit.COLOR_WOOD_DARK, UIKit.COLOR_BORDER_GOLD))
-	quick_dock.position = Vector2(16, 96)
+	quick_dock.add_theme_stylebox_override("panel", UIKit.wood_frame(6, 2, UIKit.COLOR_WOOD_DARK, UIKit.COLOR_BORDER_GOLD))
+	quick_dock.position = Vector2(16, 120)
 	root.add_child(quick_dock)
 
 	var qv := VBoxContainer.new()
 	qv.add_theme_constant_override("separation", 6)
 	quick_dock.add_child(qv)
 
-	# 1. Nút Quản lý Mèo [M]
-	_make_quick_btn(qv, "M", TextureGen.cat_char_tex("down", 0), "Quản lý & Nâng cấp Mèo làm nông [M]", func():
+	_make_quick_btn(qv, "M", TextureGen.cat_char_tex("down", 0), "Quản lý Mèo [M]", func():
 		open_cat_requested.emit()
 	)
-
-	# 2. Nút Nhà kho [K]
-	_make_quick_btn(qv, "K", TextureGen.get_tex("shed"), "Nhà kho lưu trữ nông sản [K]", func():
+	_make_quick_btn(qv, "K", TextureGen.get_tex("shed"), "Nhà kho [K]", func():
 		open_storage_requested.emit()
-	)
-
-	# 3. Nút Túi đồ / Balo [I]
-	_make_quick_btn(qv, "I", TextureGen.backpack_icon(), "Túi đồ cá nhân / Balo [I]", func():
-		open_inventory_requested.emit()
-	)
-
-	# 4. Nút Khay sạp hàng [P]
-	_make_quick_btn(qv, "P", TextureGen.get_tex("market_stall"), "Khay sạp hàng nông sản [P]", func():
-		open_stall_requested.emit()
 	)
 
 	# --- 2. THÔNG BÁO CUỘN GIẤY PHẢI PHÍA DƯỚI BẢN ĐỒ NHỎ ---
@@ -576,6 +562,7 @@ func _make_quick_btn(parent: Control, shortcut_text: String, icon_tex: Texture2D
 	if icon_tex != null:
 		var ic := TextureRect.new()
 		ic.texture = icon_tex
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ic.position = Vector2(6, 6)
 		ic.size = Vector2(32, 32)
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
