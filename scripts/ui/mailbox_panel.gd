@@ -178,6 +178,8 @@ func refresh() -> void:
 			total_items += 1
 			var item_info := _get_item_info(str(k), "crop")
 			_add_row(item_info.icon, str(item_info.name), "×%d" % n, UIKit.COLOR_TEXT_TITLE, func() -> void:
+				if not Inventory.can_hold("produce", str(k)):
+					return
 				Inventory.add_produce(str(k), n)
 				prod[k] = 0
 				changed.emit()
@@ -194,6 +196,8 @@ func refresh() -> void:
 			total_items += 1
 			var item_info := _get_item_info(str(k), "fish")
 			_add_row(item_info.icon, str(item_info.name), "×%d" % n, Color(0.6, 0.9, 1.0), func() -> void:
+				if not Inventory.can_hold("fish", str(k)):
+					return
 				Inventory.fish[str(k)] = int(Inventory.fish.get(str(k), 0)) + n
 				Inventory.changed.emit()
 				fish[k] = 0
@@ -256,7 +260,7 @@ func _claim_all() -> void:
 	if typeof(prod) == TYPE_DICTIONARY:
 		for k in prod.keys():
 			var n := int(prod[k])
-			if n > 0:
+			if n > 0 and Inventory.can_hold("produce", str(k)):
 				Inventory.add_produce(str(k), n)
 				prod[k] = 0
 
@@ -264,7 +268,7 @@ func _claim_all() -> void:
 	if typeof(fish) == TYPE_DICTIONARY:
 		for k in fish.keys():
 			var n := int(fish[k])
-			if n > 0:
+			if n > 0 and Inventory.can_hold("fish", str(k)):
 				Inventory.fish[str(k)] = int(Inventory.fish.get(str(k), 0)) + n
 				fish[k] = 0
 		Inventory.changed.emit()

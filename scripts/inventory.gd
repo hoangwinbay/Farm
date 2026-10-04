@@ -17,6 +17,8 @@ var rods: Dictionary = {}  # tier -> số lượt câu còn lại
 var fish: Dictionary = {}  # fish_id -> số lượng
 var coops: Dictionary = {"small": 0, "large": 0}  # số chuồng đã mua theo loại
 var animals: Array = []  # [{id, progress, ready}]
+var backpack_max: int = 12
+var storage: Dictionary = {"seeds": {}, "produce": {}, "fish": {}}
 
 
 func reset() -> void:
@@ -31,6 +33,8 @@ func reset() -> void:
 	fish = {}
 	coops = {"small": 0, "large": 0}
 	animals = []
+	backpack_max = 12
+	storage = {"seeds": {}, "produce": {}, "fish": {}}
 	changed.emit()
 
 
@@ -104,6 +108,162 @@ func refill_water() -> int:
 	water_level = water_max
 	changed.emit()
 	return added
+
+
+# ---- giới hạn túi đồ (backpack slots) ----
+
+func backpack_slots_used() -> int:
+	var slots := 0
+	if hoes > 0:
+		slots += 1
+	if water_max > 0:
+		slots += 1
+	if total_casts() > 0:
+		slots += 1
+	for k in seeds:
+		if int(seeds[k]) > 0:
+			slots += 1
+	for k in produce:
+		if int(produce[k]) > 0:
+			slots += 1
+	for k in fish:
+		if int(fish[k]) > 0:
+			slots += 1
+	return slots
+
+
+func can_hold(category: String, id: String) -> bool:
+	match category:
+		"seed", "seeds":
+			if seed_count(id) > 0:
+				return true
+		"produce", "crop", "poultry":
+			if produce_count(id) > 0:
+				return true
+		"fish":
+			if fish_count(id) > 0:
+				return true
+		"hoe":
+			if hoes > 0:
+				return true
+		"rod":
+			if rod_casts(id) > 0:
+				return true
+	return backpack_slots_used() < backpack_max
+
+
+# ---- nhà kho lưu trữ (shed storage) ----
+
+func _normalize_cat(category: String) -> String:
+	match category:
+		"seed", "seeds":
+			return "seeds"
+		"produce", "crop", "poultry":
+			return "produce"
+		"fish":
+			return "fish"
+	return category
+
+
+func storage_count(category: String, id: String) -> int:
+	var cat_key := _normalize_cat(category)
+	return int(storage.get(cat_key, {}).get(id, 0))
+
+
+func store_item(category: String, id: String, amount: int = 1) -> bool:
+	if amount <= 0:
+		return false
+	var cat_key := _normalize_cat(category)
+	var have := 0
+	match cat_key:
+		"seeds":
+			have = seed_count(id)
+			if have < amount:
+				amount = have
+			if amount <= 0:
+				return false
+			take_seed(id, amount)
+		"produce":
+			have = produce_count(id)
+			if have < amount:
+				amount = have
+			if amount <= 0:
+				return false
+			take_produce(id, amount)
+		"fish":
+			have = fish_count(id)
+			if have < amount:
+				amount = have
+			if amount <= 0:
+				return false
+			take_fish(id, amount)
+		_:
+			return false
+
+	if not storage.has(cat_key):
+		storage[cat_key] = {}
+	storage[cat_key][id] = int(storage[cat_key].get(id, 0)) + amount
+	changed.emit()
+	return true
+
+
+func withdraw_item(category: String, id: String, amount: int = 1) -> bool:
+	if amount <= 0:
+		return false
+	var cat_key := _normalize_cat(category)
+	var stored := storage_count(cat_key, id)
+	if stored <= 0:
+		return false
+	if amount > stored:
+		amount = stored
+
+	var item_cat := "produce"
+	if cat_key == "seeds":
+		item_cat = "seed"
+	elif cat_key == "fish":
+		item_cat = "fish"
+	if not can_hold(item_cat, id):
+		return false
+
+	storage[cat_key][id] = stored - amount
+	if int(storage[cat_key][id]) <= 0:
+		storage[cat_key].erase(id)
+
+	match cat_key:
+		"seeds":
+			add_seed(id, amount)
+		"produce":
+			add_produce(id, amount)
+		"fish":
+			add_fish(id, amount)
+
+	changed.emit()
+	return true
+
+
+func store_all_category(category: String) -> int:
+	var cat_key := _normalize_cat(category)
+	var total_moved := 0
+	match cat_key:
+		"seeds":
+			for k in seeds.keys():
+				var c := int(seeds.get(k, 0))
+				if c > 0:
+					store_item("seeds", str(k), c)
+					total_moved += c
+		"produce":
+			for k in produce.keys():
+				var c := int(produce.get(k, 0))
+				if c > 0:
+					store_item("produce", str(k), c)
+					total_moved += c
+		"fish":
+			for k in fish.keys():
+				var c := int(fish.get(k, 0))
+				if c > 0:
+					store_item("fish", str(k), c)
+					total_moved += c
+	return total_moved
 
 
 # ---- chọn đồ thanh công cụ ----
@@ -232,9 +392,12 @@ func ready_products() -> int:
 func collect_products() -> int:
 	var n := 0
 	for a in animals:
+		var prod_id := str(PoultryDB.get_animal(str(a.id)).product)
 		while int(a.ready) > 0:
+			if not can_hold("produce", prod_id):
+				break
 			a.ready = int(a.ready) - 1
-			add_produce(str(PoultryDB.get_animal(str(a.id)).product), 1)
+			add_produce(prod_id, 1)
 			n += 1
 	return n
 
@@ -261,11 +424,15 @@ func cycle_seed() -> String:
 
 
 func get_state() -> Dictionary:
-	return {"seeds": seeds.duplicate(), "produce": produce.duplicate(), "sel": selected_seed,
-			"hoes": hoes, "water_level": water_level, "water_max": water_max,
-			"active_item": active_item.duplicate(),
-			"rods": rods.duplicate(), "fish": fish.duplicate(),
-			"coops": coops.duplicate(), "animals": animals.duplicate(true)}
+	return {
+		"seeds": seeds.duplicate(), "produce": produce.duplicate(), "sel": selected_seed,
+		"hoes": hoes, "water_level": water_level, "water_max": water_max,
+		"active_item": active_item.duplicate(),
+		"rods": rods.duplicate(), "fish": fish.duplicate(),
+		"coops": coops.duplicate(), "animals": animals.duplicate(true),
+		"backpack_max": backpack_max,
+		"storage": storage.duplicate(true)
+	}
 
 
 func set_state(d: Dictionary) -> void:
@@ -275,6 +442,8 @@ func set_state(d: Dictionary) -> void:
 	fish = {}
 	animals = []
 	coops = {"small": 0, "large": 0}
+	storage = {"seeds": {}, "produce": {}, "fish": {}}
+	backpack_max = int(d.get("backpack_max", 12))
 	if d.has("seeds"):
 		for k in d["seeds"]:
 			seeds[str(k)] = int(d["seeds"][k])
@@ -294,6 +463,12 @@ func set_state(d: Dictionary) -> void:
 		for a in d["animals"]:
 			animals.append({"id": str(a.get("id", "")), "progress": float(a.get("progress", 0)),
 					"ready": int(a.get("ready", 0))})
+	if d.has("storage") and d["storage"] is Dictionary:
+		var st: Dictionary = d["storage"]
+		for cat in ["seeds", "produce", "fish"]:
+			if st.has(cat) and st[cat] is Dictionary:
+				for k in st[cat]:
+					storage[cat][str(k)] = int(st[cat][k])
 	selected_seed = str(d.get("sel", ""))
 	hoes = int(d.get("hoes", 0))
 	water_level = int(d.get("water_level", 20))

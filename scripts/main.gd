@@ -6,6 +6,7 @@ const CropDB := preload("res://scripts/crop_db.gd")
 const FishDB := preload("res://scripts/fish_db.gd")
 const PoultryDB := preload("res://scripts/poultry_db.gd")
 const FarmScript := preload("res://scripts/farm.gd")
+const FarmTileScript := preload("res://scripts/farm_tile.gd")
 const PlayerScript := preload("res://scripts/player.gd")
 const NpcScript := preload("res://scripts/npc.gd")
 const HudScript := preload("res://scripts/ui/hud.gd")
@@ -21,12 +22,14 @@ const PauseMenuScript := preload("res://scripts/ui/pause_menu.gd")
 const MinimapScript := preload("res://scripts/ui/minimap.gd")
 const TouchControlsScript := preload("res://scripts/ui/touch_controls.gd")
 const MailboxPanelScript := preload("res://scripts/ui/mailbox_panel.gd")
+const StoragePanelScript := preload("res://scripts/ui/storage_panel.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 const WORLD_SIZE := Vector2(1500, 1000)
 const FARM_ORIGIN := Vector2(424, 384)
 const FARM_TILES := Vector2i(14, 9)
 const HOUSE_POS := Vector2(241, 248)
+const SHED_POS := Vector2(105, 248)
 const MAILBOX_POS := Vector2(320, 246)
 const MARKET_STALL_POS := Vector2(184, 440) # sạp hàng nông sản tại góc rẽ trái
 
@@ -128,6 +131,7 @@ var _stall_customer_timer: float = 0.0
 var _active_stall_customer: Node2D = null
 var _stall_customers: Array[Node2D] = []
 var inv_panel: CanvasLayer
+var storage_panel: CanvasLayer
 var mailbox_panel: CanvasLayer
 var mailbox_badge: PanelContainer
 var mailbox_data: Dictionary = {"hoes": 999, "coins": 999}
@@ -238,6 +242,8 @@ func _build_world() -> void:
 
 	# nhà (chỗ ngủ) - Nhà gỗ Stardew Valley
 	_add_decor(TextureGen.get_tex("house"), HOUSE_POS, 1.0, Rect2(-68, -140, 134, 104))
+	# nhà kho Stardew Valley cạnh nhà chính
+	_add_decor(TextureGen.get_tex("shed"), SHED_POS, 1.0, Rect2(-48, -100, 96, 75))
 	# hòm thư Stardew Valley cạnh bậc thềm hiên nhà
 	_build_mailbox()
 	# bù nhìn Stardew Valley
@@ -289,6 +295,7 @@ func _build_world() -> void:
 
 	interactables = [
 		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ", "cb": _ask_sleep},
+		{"pos": SHED_POS + Vector2(0, -6), "r": 50.0, "label": "Nhà kho 🏚️", "cb": _open_storage},
 		{"pos": MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": _open_mailbox},
 		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪", "cb": _open_market_stall},
 		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư", "cb": _talk_npc},
@@ -785,6 +792,11 @@ func _is_grass_surface(pos: Vector2) -> bool:
 	if house_box.has_point(pos):
 		return false
 
+	# 4b. Nhà kho Stardew Valley cạnh nhà chính
+	var shed_box := Rect2(SHED_POS.x - 65.0, SHED_POS.y - 140.0, 130.0, 160.0)
+	if shed_box.has_point(pos):
+		return false
+
 	# 5. Hòm thư cạnh nhà
 	if pos.distance_to(MAILBOX_POS) < 36.0:
 		return false
@@ -1018,6 +1030,10 @@ func _build_ui() -> void:
 	add_child(mailbox_panel)
 	mailbox_panel.closed.connect(_close_panels)
 	mailbox_panel.changed.connect(_on_mailbox_changed)
+	storage_panel = StoragePanelScript.new()
+	add_child(storage_panel)
+	storage_panel.closed.connect(_close_panels)
+	storage_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
 	pause_menu = PauseMenuScript.new()
 	add_child(pause_menu)
 	dialog_box = DialogueBoxScript.new()
@@ -1337,14 +1353,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().paused = true
 		elif pause_menu.visible:
 			_resume_from_pause()
-		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible):
+		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible) or (storage_panel != null and storage_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("interact"):
 		if mode == Mode.PLAY and not get_tree().paused:
 			_do_interact()
 		elif mode == Mode.DIALOG:
 			dialog_box.advance()
-		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible):
+		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible) or (storage_panel != null and storage_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("inventory"):
 		if mode == Mode.PLAY and not get_tree().paused:
@@ -1515,6 +1531,12 @@ func _open_mailbox() -> void:
 	mailbox_panel.open(mailbox_data)
 
 
+func _open_storage() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	storage_panel.open()
+
+
 func _on_mailbox_changed() -> void:
 	_update_mailbox_badge()
 	hud.rebuild_hotbar()
@@ -1526,6 +1548,8 @@ func _close_panels() -> void:
 	fish_shop.visible = false
 	poultry_shop.visible = false
 	inv_panel.visible = false
+	if storage_panel != null:
+		storage_panel.visible = false
 	if mailbox_panel != null:
 		mailbox_panel.visible = false
 	if stall_panel != null:
@@ -1590,6 +1614,13 @@ func _do_sleep(forced: bool) -> void:
 	# Cây cối tự nhiên có tỉ lệ mọc thêm trên bề mặt cỏ qua đêm
 	if foliage_nodes.size() < 95 and randf() < 0.60:
 		_sprout_random_plant()
+	# Sâu bọ có thể xuất hiện trên các luống cây đang lớn qua đêm
+	var new_pests := 0
+	for t in farm.tiles.values():
+		if t.tstate == FarmTileScript.TState.PLANTED and not t.is_ready() and not t.has_pest and t.growth > 3.0:
+			if randf() < 0.15:
+				t.spawn_pest()
+				new_pests += 1
 	# Dân làng mua hàng qua đêm tại sạp nông sản
 	var total_overnight_coins := 0
 	var total_overnight_items := 0
@@ -1616,6 +1647,8 @@ func _do_sleep(forced: bool) -> void:
 		hud.toast("Bạn gục ngã vì kiệt sức...", Color(1.0, 0.55, 0.45))
 	if total_overnight_items > 0:
 		hud.toast("Sạp bán được %d món qua đêm! Có %d xu chờ thu tại sạp 🏪" % [total_overnight_items, stall_revenue], Color(1.0, 0.9, 0.45))
+	if new_pests > 0:
+		hud.toast("⚠️ Có %d cây bị sâu cắn phá! Hãy bắt sâu bọ để cây lớn tiếp 🐛" % new_pests, Color(1.0, 0.65, 0.4))
 	hud.toast("Ngày mới! %d cây đã chín chờ thu hoạch." % ready_n, Color(0.65, 1.0, 0.6))
 	var tw2 := create_tween()
 	tw2.tween_property(fade_rect, "modulate:a", 0.0, 0.6)
@@ -1688,7 +1721,11 @@ func _finish_fishing() -> void:
 	if f.is_empty():
 		hud.toast("Kéo cần lên... không con cá nào cắn!", Color(0.8, 0.8, 0.8))
 		return
-	Inventory.add_fish(str(f.id), 1)
+	var fid := str(f.id)
+	if not Inventory.can_hold("fish", fid):
+		hud.toast("Túi đồ đã đầy! Không thể giữ %s... Hãy cất bớt đồ vào nhà kho 🏚️" % f.name, Color(1.0, 0.5, 0.4))
+		return
+	Inventory.add_fish(fid, 1)
 	if str(f.tier) == "legend":
 		hud.toast("HUYỀN THOẠI! Bắt được %s!!!" % f.name, Color(1.0, 0.85, 0.3))
 	elif str(f.tier) == "rare":
@@ -2355,6 +2392,59 @@ func _clicktest_step() -> void:
 			print("WATER_HOTBAR_TEST slot_hoe=", slot0_hoe, " slot_water=", slot1_water, " slot_rod=", slot2_rod,
 					" pond_offers_water=", pond_offers_water, " water_refilled=", water_refilled,
 					" hoe_tex=", hoe_tex_ok, " till_tex=", till_tex_ok)
+
+			# 4. Kiểm thử Giới hạn túi đồ (Backpack 12 ô) + Nhà kho (Shed) + Bắt sâu bọ (Pests)
+			# A. Giới hạn túi đồ
+			Inventory.reset()
+			Inventory.backpack_max = 12
+			var initial_slots := Inventory.backpack_slots_used()
+			Inventory.add_seed("rice", 5)
+			Inventory.add_seed("wheat", 5)
+			Inventory.add_produce("tomato", 3)
+			Inventory.add_produce("corn", 2)
+			Inventory.add_fish("chep", 1)
+			var slots_after := Inventory.backpack_slots_used()
+			var can_add_existing := Inventory.can_hold("produce", "tomato") # đã có trong túi -> true
+			# B. Nhà kho Stardew Valley & Storage Panel
+			player.position = SHED_POS + Vector2(0, 15)
+			var near_shed: Dictionary = _nearest_interactable()
+			var shed_offers_storage: bool = ("Nhà kho" in str(near_shed.get("label", "")))
+			if near_shed.has("cb") and near_shed.cb is Callable:
+				near_shed.cb.call()
+			var storage_panel_opened: bool = (storage_panel != null and storage_panel.visible)
+			# Cất đồ vào nhà kho
+			var store_ok: bool = Inventory.store_item("produce", "tomato", 2)
+			var stored_tomato: int = Inventory.storage_count("produce", "tomato")
+			var bag_tomato_after: int = Inventory.produce_count("tomato")
+			# Rút đồ từ nhà kho
+			var withdraw_ok: bool = Inventory.withdraw_item("produce", "tomato", 1)
+			var stored_tomato_final: int = Inventory.storage_count("produce", "tomato")
+			_close_panels()
+			# C. Sâu bọ trên cây trồng (Pest mechanic)
+			var test_t = farm.tiles[Vector2i(0, 0)]
+			test_t.till()
+			test_t.plant("wheat")
+			test_t.growth = 10.0
+			test_t.spawn_pest()
+			var pest_spawned: bool = test_t.has_pest
+			var pest_action: Dictionary = farm.action_at(test_t)
+			var pest_action_is_catch: bool = (str(pest_action.get("act", "")) == "catch_pest")
+			var catch_msg: String = farm.perform_at(test_t)
+			var pest_cleared: bool = (not test_t.has_pest)
+			var worm_count: int = Inventory.produce_count("sau_bo")
+			var worm_crop_db: Dictionary = CropDB.get_crop("sau_bo")
+			var shed_tex_ok: bool = (TextureGen.get_tex("shed") != null)
+			var caterpillar_tex_ok: bool = (TextureGen.get_tex("caterpillar") != null)
+
+			print("SHED_PEST_BACKPACK_TEST initial_slots=", initial_slots, " slots_after=", slots_after,
+					" can_add_existing=", can_add_existing,
+					" shed_interact=", shed_offers_storage, " storage_panel_opened=", storage_panel_opened,
+					" store_ok=", store_ok, " stored_tomato=", stored_tomato, " bag_tomato=", bag_tomato_after,
+					" withdraw_ok=", withdraw_ok, " stored_final=", stored_tomato_final,
+					" pest_spawned=", pest_spawned, " pest_act_catch=", pest_action_is_catch,
+					" pest_cleared=", pest_cleared, " worm_count=", worm_count,
+					" worm_name=", worm_crop_db.get("name", ""),
+					" shed_tex=", shed_tex_ok, " caterpillar_tex=", caterpillar_tex_ok)
 			print("CLICKTEST_DONE")
 			get_tree().quit()
 

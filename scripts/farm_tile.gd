@@ -13,11 +13,14 @@ var tstate: int = TState.GRASS
 var crop_id := ""
 var growth := 0.0  # số giây đã lớn (đất ẩm)
 var watered := false
+var has_pest := false
 var coord := Vector2i.ZERO
 var farm: Node2D = null
 
 var _soil: Sprite2D
 var _crop_spr: Sprite2D
+var _pest_spr: Sprite2D
+var _pest_tween: Tween
 var _wet_time := 0.0
 var _last_stage := -1
 
@@ -31,6 +34,12 @@ func _ready() -> void:
 	_crop_spr.offset = Vector2(0, -16)
 	_crop_spr.visible = false
 	add_child(_crop_spr)
+	_pest_spr = Sprite2D.new()
+	_pest_spr.texture = TextureGen.get_tex("caterpillar")
+	_pest_spr.offset = Vector2(0, -16)
+	_pest_spr.visible = false
+	_pest_spr.z_index = 2
+	add_child(_pest_spr)
 
 
 func setup(c: Vector2i) -> void:
@@ -42,9 +51,33 @@ func _process(delta: float) -> void:
 	tick_growth(delta)
 
 
+func spawn_pest() -> void:
+	has_pest = true
+	if _pest_spr != null:
+		_pest_spr.visible = true
+		_pest_spr.position = Vector2(randf_range(-3, 3), randf_range(-3, 1))
+		if _pest_tween != null and _pest_tween.is_valid():
+			_pest_tween.kill()
+		_pest_tween = create_tween().set_loops()
+		_pest_tween.tween_property(_pest_spr, "scale", Vector2(1.15, 0.85), 0.35).set_trans(Tween.TRANS_SINE)
+		_pest_tween.tween_property(_pest_spr, "scale", Vector2(0.9, 1.1), 0.35).set_trans(Tween.TRANS_SINE)
+
+
+func clear_pest() -> void:
+	has_pest = false
+	if _pest_spr != null:
+		_pest_spr.visible = false
+		_pest_spr.scale = Vector2.ONE
+	if _pest_tween != null and _pest_tween.is_valid():
+		_pest_tween.kill()
+
+
 # Mỗi nhịp thời gian: đất ẩm dần khô đi, cây lớn khi đất còn ẩm và chưa chín.
 func tick_growth(delta: float) -> void:
 	if tstate != TState.PLANTED:
+		return
+	# Sâu bọ cắn phá: cây bị sâu sẽ tạm dừng phát triển cho đến khi người chơi bắt sâu!
+	if has_pest:
 		return
 	if watered:
 		_wet_time += delta
@@ -57,6 +90,12 @@ func tick_growth(delta: float) -> void:
 		return
 	if is_ready():
 		return
+
+	# Tỉ lệ ngẫu nhiên xuất hiện sâu bọ trên cây đang phát triển
+	if growth > 3.0 and randf() < 0.003 * delta:
+		spawn_pest()
+		return
+
 	growth += delta
 	var c := CropDB.get_crop(crop_id)
 	if c.is_empty():
@@ -101,6 +140,7 @@ func harvest() -> String:
 	growth = 0.0
 	watered = false
 	_wet_time = 0.0
+	clear_pest()
 	tstate = TState.TILLED
 	refresh()
 	return id
@@ -113,6 +153,7 @@ func reset_tile() -> void:
 	watered = false
 	_wet_time = 0.0
 	_last_stage = -1
+	clear_pest()
 	refresh()
 	notify_horizontal_neighbors()
 
@@ -192,7 +233,7 @@ func get_state() -> Dictionary:
 	if tstate == TState.GRASS:
 		return {}
 	return {"x": coord.x, "y": coord.y, "s": tstate, "c": crop_id,
-			"g": int(round(growth)), "w": watered}
+			"g": int(round(growth)), "w": watered, "p": has_pest}
 
 
 func apply_state(d: Dictionary) -> void:
@@ -201,5 +242,9 @@ func apply_state(d: Dictionary) -> void:
 	growth = float(d.get("g", 0))
 	watered = bool(d.get("w", false))
 	_wet_time = 0.0
+	if bool(d.get("p", false)):
+		spawn_pest()
+	else:
+		clear_pest()
 	refresh()
 	notify_horizontal_neighbors()

@@ -26,6 +26,8 @@ func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: D
 		"fish": Inventory.fish.duplicate(),
 		"coops": Inventory.coops.duplicate(),
 		"animals": Inventory.animals.duplicate(true),
+		"backpack_max": Inventory.backpack_max,
+		"storage": Inventory.storage.duplicate(true),
 		"farm": farm_state,
 		"player": [player_pos.x, player_pos.y],
 		"npc_met": npc_met,

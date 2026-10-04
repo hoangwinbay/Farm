@@ -449,6 +449,12 @@ func _retrieve_from_stall(idx: int) -> void:
 	var type: String = str(slot.get("type", "crop"))
 	var name: String = str(slot.get("name", ""))
 	var count: int = int(slot.get("count", 0))
+	var item_cat := "produce"
+	if type == "fish":
+		item_cat = "fish"
+	if not Inventory.can_hold(item_cat, id):
+		feedback.emit("Túi đồ đã đầy (%d/%d)! Hãy cất bớt đồ vào nhà kho 🏚️ trước khi thu hồi." % [Inventory.backpack_slots_used(), Inventory.backpack_max], Color(1.0, 0.5, 0.4))
+		return
 
 	if count > 0:
 		if type == "fish":

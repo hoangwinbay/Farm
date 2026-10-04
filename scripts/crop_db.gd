@@ -87,6 +87,8 @@ static func picture_path(id: String) -> String:
 
 
 static func get_crop(id: String) -> Dictionary:
+	if id == "sau_bo":
+		return {"id": "sau_bo", "name": "Sâu bọ", "group": "Mồi câu", "sell_price": 10, "desc": "Sâu bọ bắt trên luống cây, dùng làm mồi câu hoặc bán."}
 	for c in CROPS:
 		if c.id == id:
 			return c

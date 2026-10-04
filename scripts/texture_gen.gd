@@ -108,6 +108,12 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _tree_variant("tree_stump")
 		"house":
 			tex = _house()
+		"shed":
+			tex = _shed()
+		"caterpillar":
+			tex = _caterpillar()
+		"fx_pest":
+			tex = _fx_pest()
 		"mailbox":
 			tex = _mailbox()
 		"stand":
@@ -1041,6 +1047,64 @@ static func _house() -> ImageTexture:
 		rect(img, wx - 1, 37, 16, 1, Color(0.55, 0.42, 0.28))
 		rect(img, wx - 1, 51, 16, 1, Color(0.55, 0.42, 0.28))
 	return _tex(img)
+
+
+static func _shed() -> ImageTexture:
+	var loaded := _load_picture("res://picture/shed.png")
+	if loaded != null:
+		return _tex(loaded)
+	var img := _img(112, 128)
+	var wood_d := Color(0.35, 0.22, 0.12)
+	var wood_m := Color(0.55, 0.38, 0.22)
+	var roof := Color(0.65, 0.25, 0.18)
+	rect(img, 10, 10, 92, 40, roof)
+	rect(img, 16, 50, 80, 78, wood_m)
+	rect(img, 46, 80, 20, 48, wood_d)
+	return _tex(img)
+
+
+static func _caterpillar() -> ImageTexture:
+	var img := _img(16, 16)
+	var green_body := Color(0.48, 0.78, 0.22)
+	var green_light := Color(0.70, 0.90, 0.35)
+	var green_dark := Color(0.24, 0.48, 0.12)
+	var eye_black := Color(0.1, 0.1, 0.1)
+	var eye_white := Color(1.0, 1.0, 1.0)
+	var ant_color := Color(0.35, 0.60, 0.15)
+
+	# Đốt đuôi (Segment 1)
+	circle(img, 3.5, 9.5, 2.4, green_dark)
+	circle(img, 3.5, 9.5, 1.7, green_body)
+	px(img, 3, 9, green_light)
+	# Đốt thân 2
+	circle(img, 6.5, 9.0, 2.5, green_dark)
+	circle(img, 6.5, 9.0, 1.8, green_body)
+	px(img, 6, 8, green_light)
+	# Đốt thân 3
+	circle(img, 9.5, 8.5, 2.5, green_dark)
+	circle(img, 9.5, 8.5, 1.8, green_body)
+	px(img, 9, 8, green_light)
+	# Đốt đầu
+	circle(img, 12.5, 8.0, 2.7, green_dark)
+	circle(img, 12.5, 8.0, 2.0, green_body)
+	px(img, 12, 7, green_light)
+	# Mắt
+	px(img, 13, 7, eye_black)
+	px(img, 13, 6, eye_white)
+	# Râu
+	px(img, 13, 5, ant_color)
+	px(img, 14, 4, ant_color)
+	px(img, 12, 5, ant_color)
+	px(img, 11, 4, ant_color)
+	# Chân
+	px(img, 4, 12, green_dark)
+	px(img, 7, 12, green_dark)
+	px(img, 10, 12, green_dark)
+	return _tex(img)
+
+
+static func _fx_pest() -> ImageTexture:
+	return _caterpillar()
 
 
 static func _mailbox() -> ImageTexture:
@@ -2813,6 +2877,8 @@ static func get_crate_fill_tex(id: String, type: String) -> ImageTexture:
 
 
 static func prod_icon(crop: Dictionary) -> ImageTexture:
+	if str(crop.get("id", "")) == "sau_bo":
+		return get_tex("caterpillar")
 	var key := "prod_icon_%s" % crop.id
 	if _cache.has(key):
 		return _cache[key]

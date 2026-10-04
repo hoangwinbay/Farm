@@ -10,6 +10,7 @@ const DOT_SPACING := 26.0
 
 # Đồ thị nút giao nằm trên mạng lối đi PATHS (xem main.gd) — dùng tính đường đi.
 const NODES := {
+	"shed": Vector2(105, 250),
 	"house": Vector2(250, 250),
 	"j_house": Vector2(250, 470),
 	"stall": Vector2(184, 440),
@@ -29,6 +30,7 @@ const NODES := {
 	"hai": Vector2(1350, 430),
 }
 const EDGES := [
+	["shed", "house"],
 	["house", "j_house"], ["stall", "j_stall"], ["west_edge", "j_stall"], ["j_stall", "j_house"],
 	["j_house", "j_pen"], ["j_pen", "pen"],
 	["j_pen", "farm_w"], ["farm_w", "farm"],
@@ -41,6 +43,7 @@ const EDGES := [
 # Địa điểm bấm được trên bản đồ (id trùng với nút đích trong NODES).
 # "mlabel" là tên ngắn vẽ trên bản đồ; "mlab_above" đẩy nhãn lên trên điểm.
 const POIS := [
+	{"id": "shed", "name": "Nhà kho (cất đồ)", "mlabel": "Nhà kho", "pos": Vector2(105, 250), "color": Color(0.75, 0.55, 0.35), "letter": "K"},
 	{"id": "house", "name": "Nhà (ngủ & lưu game)", "mlabel": "Nhà (ngủ & lưu)", "pos": Vector2(250, 250), "color": Color(0.98, 0.62, 0.45), "letter": "N"},
 	{"id": "stall", "name": "Sạp hàng nông sản", "mlabel": "Sạp hàng", "mlab_above": true, "pos": Vector2(184, 440), "color": Color(0.95, 0.45, 0.35), "letter": "S"},
 	{"id": "farm", "name": "Nông trại", "mlabel": "Nông trại", "pos": Vector2(648, 470), "color": Color(0.55, 0.88, 0.42), "letter": "R"},

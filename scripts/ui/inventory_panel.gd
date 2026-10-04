@@ -10,6 +10,7 @@ signal closed
 
 var rows: VBoxContainer
 var scroll: ScrollContainer
+var capacity_label: Label
 var _active_filter := "all" # "all", "seed", "crop", "fish"
 var _tab_all: Button
 var _tab_seed: Button
@@ -50,8 +51,22 @@ func _ready() -> void:
 	head.add_theme_constant_override("separation", 14)
 	v.add_child(head)
 
-	var title := UIKit.title_label(head, "📦 Kho đồ", 20, UIKit.COLOR_TEXT_TITLE)
+	var title := UIKit.title_label(head, "🎒 Túi đồ", 20, UIKit.COLOR_TEXT_TITLE)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	# Sức chứa túi đồ
+	var cap_box := PanelContainer.new()
+	cap_box.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.14, 0.08), UIKit.COLOR_BORDER_GOLD, 6))
+	var hc := HBoxContainer.new()
+	hc.add_theme_constant_override("separation", 6)
+	cap_box.add_child(hc)
+	var bic := TextureRect.new()
+	bic.texture = TextureGen.backpack_icon()
+	bic.custom_minimum_size = Vector2(16, 16)
+	bic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	hc.add_child(bic)
+	capacity_label = UIKit.label(hc, "%d/%d ô" % [Inventory.backpack_slots_used(), Inventory.backpack_max], 14, UIKit.COLOR_TEXT_GOLD)
+	head.add_child(cap_box)
 
 	# Tiền hiện có
 	var money_box := PanelContainer.new()
@@ -132,6 +147,13 @@ func close() -> void:
 
 
 func refresh() -> void:
+	if capacity_label != null:
+		var used := Inventory.backpack_slots_used()
+		var cap := Inventory.backpack_max
+		capacity_label.text = "%d/%d ô" % [used, cap]
+		var col := Color(1.0, 0.45, 0.4) if used >= cap else (Color(1.0, 0.8, 0.3) if used >= cap - 2 else UIKit.COLOR_TEXT_GOLD)
+		capacity_label.add_theme_color_override("font_color", col)
+
 	for c in rows.get_children():
 		c.queue_free()
 

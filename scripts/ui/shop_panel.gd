@@ -182,6 +182,9 @@ func _build_hoe_row() -> Control:
 
 
 func _buy_hoe() -> void:
+	if not Inventory.can_hold("hoe", "hoe"):
+		feedback.emit("Túi đồ đã đầy (%d/%d)! Hãy cất bớt đồ vào nhà kho 🏚️" % [Inventory.backpack_slots_used(), Inventory.backpack_max])
+		return
 	if GameState.try_spend(HOE_PRICE):
 		Inventory.add_hoes(1)
 		refresh()
@@ -334,6 +337,9 @@ func _build_mystery_row() -> Control:
 
 func _buy(id: String) -> void:
 	var c := CropDB.get_crop(id)
+	if not Inventory.can_hold("seed", id):
+		feedback.emit("Túi đồ đã đầy (%d/%d)! Hãy cất bớt đồ vào nhà kho 🏚️" % [Inventory.backpack_slots_used(), Inventory.backpack_max])
+		return
 	if GameState.try_spend(int(c.seed_price)):
 		Inventory.add_seed(id, 1)
 		refresh()

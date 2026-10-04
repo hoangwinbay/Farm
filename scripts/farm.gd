@@ -45,6 +45,8 @@ func action_at(tile) -> Dictionary:
 		return {"act": "none", "label": "", "ok": false}
 	if tile.tstate == FarmTileScript.TState.GRASS:
 		return {"act": "till", "label": "Cày đất (cần cuốc — đang có ×%d)" % Inventory.hoes, "ok": Inventory.hoes > 0}
+	if tile.tstate == FarmTileScript.TState.PLANTED and tile.has_pest:
+		return {"act": "catch_pest", "label": "Bắt sâu bọ 🐛 (Đang cắn phá cây!)", "ok": true}
 	if tile.tstate == FarmTileScript.TState.PLANTED and tile.is_ready():
 		var c := CropDB.get_crop(tile.crop_id)
 		return {"act": "harvest", "label": "Thu hoạch %s" % c.get("name", "?"), "ok": true}
@@ -72,6 +74,12 @@ func perform_at(tile) -> String:
 	if tile == null:
 		return ""
 	match str(info.act):
+		"catch_pest":
+			if not Inventory.can_hold("produce", "sau_bo"):
+				return "Túi đồ đã đầy (%d/%d)! Hãy cất đồ vào nhà kho 🏚️ trước khi bắt sâu." % [Inventory.backpack_slots_used(), Inventory.backpack_max]
+			tile.clear_pest()
+			Inventory.add_produce("sau_bo", 1)
+			return "Đã bắt được 1 Sâu bọ 🐛! Có thể dùng làm mồi câu hoặc bán."
 		"till":
 			if not Inventory.take_hoe():
 				return "Cần CUỐC để cày đất! Mua ở cửa hàng Bác Tư (20 xu)."
@@ -94,6 +102,8 @@ func perform_at(tile) -> String:
 			tile.plant(sid)
 			return "Đã gieo hạt %s!" % c.get("name", "?")
 		"harvest":
+			if not Inventory.can_hold("produce", tile.crop_id):
+				return "Túi đồ đã đầy (%d/%d)! Hãy cất bớt đồ vào nhà kho 🏚️ để thu hoạch." % [Inventory.backpack_slots_used(), Inventory.backpack_max]
 			var id := str(tile.harvest())
 			var c := CropDB.get_crop(id)
 			Inventory.add_produce(id, 1)
