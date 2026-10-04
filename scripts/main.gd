@@ -23,6 +23,8 @@ const MinimapScript := preload("res://scripts/ui/minimap.gd")
 const TouchControlsScript := preload("res://scripts/ui/touch_controls.gd")
 const MailboxPanelScript := preload("res://scripts/ui/mailbox_panel.gd")
 const StoragePanelScript := preload("res://scripts/ui/storage_panel.gd")
+const CatHelperScript := preload("res://scripts/cat_helper.gd")
+const CatPanelScript := preload("res://scripts/ui/cat_panel.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 const WORLD_SIZE := Vector2(1500, 1000)
@@ -30,6 +32,7 @@ const FARM_ORIGIN := Vector2(424, 384)
 const FARM_TILES := Vector2i(14, 9)
 const HOUSE_POS := Vector2(241, 248)
 const SHED_POS := Vector2(105, 248)
+const TENT_POS := Vector2(366, 248)
 const MAILBOX_POS := Vector2(320, 246)
 const MARKET_STALL_POS := Vector2(184, 440) # sạp hàng nông sản tại góc rẽ trái
 
@@ -132,6 +135,8 @@ var _active_stall_customer: Node2D = null
 var _stall_customers: Array[Node2D] = []
 var inv_panel: CanvasLayer
 var storage_panel: CanvasLayer
+var cat_helper: Node2D
+var cat_panel: CanvasLayer
 var mailbox_panel: CanvasLayer
 var mailbox_badge: PanelContainer
 var mailbox_data: Dictionary = {"hoes": 999, "coins": 999}
@@ -244,6 +249,8 @@ func _build_world() -> void:
 	_add_decor(TextureGen.get_tex("house"), HOUSE_POS, 1.0, Rect2(-68, -140, 134, 104))
 	# nhà kho Stardew Valley cạnh nhà chính
 	_add_decor(TextureGen.get_tex("shed"), SHED_POS, 1.0, Rect2(-48, -100, 96, 75))
+	# lều của Mèo Stardew Valley cạnh nhà chính
+	_add_decor(TextureGen.get_tex("tent"), TENT_POS, 1.0, Rect2(-20, -56, 40, 42))
 	# hòm thư Stardew Valley cạnh bậc thềm hiên nhà
 	_build_mailbox()
 	# bù nhìn Stardew Valley
@@ -275,6 +282,12 @@ func _build_world() -> void:
 	player = PlayerScript.new()
 	player.position = PLAYER_START
 	world.add_child(player)
+
+	# Chú mèo tam thể làm nông
+	cat_helper = CatHelperScript.new()
+	cat_helper.farm = farm
+	cat_helper.toast_requested.connect(func(txt: String, col: Color): hud.toast(txt, col))
+	world.add_child(cat_helper)
 	cam = Camera2D.new()
 	cam.zoom = Vector2(2, 2)
 	cam.position_smoothing_enabled = true
@@ -797,6 +810,11 @@ func _is_grass_surface(pos: Vector2) -> bool:
 	if shed_box.has_point(pos):
 		return false
 
+	# 4c. Lều của Mèo Stardew Valley
+	var tent_box := Rect2(TENT_POS.x - 30.0, TENT_POS.y - 70.0, 60.0, 80.0)
+	if tent_box.has_point(pos):
+		return false
+
 	# 5. Hòm thư cạnh nhà
 	if pos.distance_to(MAILBOX_POS) < 36.0:
 		return false
@@ -1034,6 +1052,10 @@ func _build_ui() -> void:
 	add_child(storage_panel)
 	storage_panel.closed.connect(_close_panels)
 	storage_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
+	cat_panel = CatPanelScript.new()
+	add_child(cat_panel)
+	cat_panel.closed.connect(_close_panels)
+	cat_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
 	pause_menu = PauseMenuScript.new()
 	add_child(pause_menu)
 	dialog_box = DialogueBoxScript.new()
@@ -1336,6 +1358,18 @@ func _nearest_interactable() -> Dictionary:
 					"label": "%s · [E] Báo hết hàng" % c.display_name,
 					"cb": func(): _decline_stall_customer(c)
 				}
+	# Kiểm tra chú mèo tam thể làm nông
+	if is_instance_valid(cat_helper):
+		var d_cat: float = player.position.distance_to(cat_helper.position)
+		if d_cat <= 45.0 and d_cat < best_d:
+			best_d = d_cat
+			var cat_lbl := "Nói chuyện với Mèo Tam Thể 🐱" if not cat_helper.is_hired else "Quản lý việc làm của Mèo 🐱"
+			best = {
+				"pos": cat_helper.position,
+				"r": 45.0,
+				"label": cat_lbl,
+				"cb": _open_cat_panel
+			}
 	return best
 
 
@@ -1353,14 +1387,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().paused = true
 		elif pause_menu.visible:
 			_resume_from_pause()
-		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible) or (storage_panel != null and storage_panel.visible):
+		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("interact"):
 		if mode == Mode.PLAY and not get_tree().paused:
 			_do_interact()
 		elif mode == Mode.DIALOG:
 			dialog_box.advance()
-		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible) or (storage_panel != null and storage_panel.visible):
+		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("inventory"):
 		if mode == Mode.PLAY and not get_tree().paused:
@@ -1537,10 +1571,16 @@ func _open_storage() -> void:
 	storage_panel.open()
 
 
+func _open_cat_panel() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	cat_panel.open(cat_helper)
+
+
 func _on_mailbox_changed() -> void:
 	_update_mailbox_badge()
 	hud.rebuild_hotbar()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
 
 
 func _close_panels() -> void:
@@ -1550,6 +1590,8 @@ func _close_panels() -> void:
 	inv_panel.visible = false
 	if storage_panel != null:
 		storage_panel.visible = false
+	if cat_panel != null:
+		cat_panel.visible = false
 	if mailbox_panel != null:
 		mailbox_panel.visible = false
 	if stall_panel != null:
@@ -1567,13 +1609,19 @@ func _resume_from_pause() -> void:
 		mode = Mode.PLAY
 
 
+func _cat_save_data() -> Dictionary:
+	if is_instance_valid(cat_helper):
+		return cat_helper.get_save_dict()
+	return {}
+
+
 func _save_now() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
 	hud.toast("Đã lưu game!", Color(0.6, 1.0, 0.6))
 
 
 func _back_to_title() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
 	_close_panels()
 	mode = Mode.TITLE
 	dialog_box.force_close()
@@ -1611,6 +1659,13 @@ func _do_sleep(forced: bool) -> void:
 			c.queue_free()
 	_stall_customers.clear()
 	_active_stall_customer = null
+	# Chú mèo tam thể làm nông: trả lương và sẵn sàng cho ngày mới
+	if is_instance_valid(cat_helper) and cat_helper.is_hired:
+		cat_helper._pay_daily_wage()
+		cat_helper.wage_paid_today = false
+		cat_helper.position = CatHelperScript.TENT_SLEEP_POS
+		cat_helper.state = CatHelperScript.State.IDLE
+		cat_helper._hide_bubble()
 	# Cây cối tự nhiên có tỉ lệ mọc thêm trên bề mặt cỏ qua đêm
 	if foliage_nodes.size() < 95 and randf() < 0.60:
 		_sprout_random_plant()
@@ -1640,7 +1695,7 @@ func _do_sleep(forced: bool) -> void:
 		stall_revenue += total_overnight_coins
 		_update_stall_crates_visual()
 		_update_stall_coin_badge()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	if forced:
@@ -1754,6 +1809,12 @@ func start_new_game() -> void:
 	cam.reset_smoothing()
 	_npc_met = false
 	_populate_random_foliage(75)
+	if is_instance_valid(cat_helper):
+		cat_helper.dismiss()
+		cat_helper.position = CatHelperScript.SPAWN_POS
+		cat_helper.state = CatHelperScript.State.ARRIVING
+		cat_helper.waypoints = [CatHelperScript.ROAD_JUNCTION_POS, CatHelperScript.DOORSTEP_POS]
+		cat_helper._show_bubble_text("...")
 	dialog_box.force_close()
 	title_screen.hide_me()
 	get_tree().paused = false
@@ -1815,6 +1876,8 @@ func continue_game() -> void:
 		_load_foliage(f_arr)
 	elif foliage_data.is_empty():
 		_populate_random_foliage(75)
+	if d.has("cat") and is_instance_valid(cat_helper):
+		cat_helper.load_save_dict(d["cat"])
 	title_screen.hide_me()
 	get_tree().paused = false
 	mode = Mode.PLAY
@@ -2445,6 +2508,92 @@ func _clicktest_step() -> void:
 					" pest_cleared=", pest_cleared, " worm_count=", worm_count,
 					" worm_name=", worm_crop_db.get("name", ""),
 					" shed_tex=", shed_tex_ok, " caterpillar_tex=", caterpillar_tex_ok)
+			# 5. Kiểm thử Mèo Tam Thể làm nông (Cat Helper) + Lều Stardew Valley + Gieo hạt + Tưới + Bắt sâu + Thu hoạch + Cất kho + Ngủ lều
+			# A. Asset lều Stardew Valley & Minimap POI
+			var tent_tex_ok: bool = (TextureGen.get_tex("tent") != null)
+			var poi_tent_exists: bool = false
+			for p in MinimapScript.POIS:
+				if str(p.get("id", "")) == "tent":
+					poi_tent_exists = true
+			# B. Chú mèo xuất phát & tương tác cửa nhà
+			var cat_exists: bool = is_instance_valid(cat_helper)
+			var cat_spr_ok: bool = (TextureGen.cat_char_tex("down", 0) != null and TextureGen.cat_char_tex("side", 0) != null and TextureGen.cat_char_tex("act", 0) != null)
+			player.position = cat_helper.position + Vector2(0, 15)
+			var near_cat: Dictionary = _nearest_interactable()
+			var cat_offers_interact: bool = ("Mèo" in str(near_cat.get("label", "")))
+			if near_cat.has("cb") and near_cat.cb is Callable:
+				near_cat.cb.call()
+			var cat_panel_opened: bool = (cat_panel != null and cat_panel.visible)
+			_close_panels()
+			# C. Thuê chú mèo
+			cat_helper.hire()
+			var cat_hired_ok: bool = cat_helper.is_hired
+			# D. Giao hạt giống cho mèo
+			Inventory.add_seed("wheat", 10)
+			var give_seeds_ok: bool = cat_helper.give_seeds("wheat", 5)
+			var cat_has_seeds: bool = (int(cat_helper.assigned_seeds.get("wheat", 0)) == 5)
+			# E. Gieo hạt (Planting)
+			farm.reset_all()
+			var plant_tile = farm.tiles[Vector2i(1, 0)]
+			plant_tile.till()
+			cat_helper._find_next_job()
+			var job_plant_ok: bool = (cat_helper.current_job.get("type") == "plant")
+			cat_helper._complete_job()
+			var tile_planted: bool = (plant_tile.tstate == FarmTileScript.TState.PLANTED and plant_tile.crop_id == "wheat")
+			var cat_seeds_decreased: bool = (int(cat_helper.assigned_seeds.get("wheat", 0)) == 4)
+			# F. Bắt sâu (Pest catching)
+			plant_tile.spawn_pest()
+			cat_helper._find_next_job()
+			var job_pest_ok: bool = (cat_helper.current_job.get("type") == "pest")
+			cat_helper._complete_job()
+			var pest_caught: bool = (not plant_tile.has_pest and int(cat_helper.harvest_bag.get("sau_bo", 0)) == 1)
+			# G. Tưới nước & Hết nước tự múc ao (Watering & Refill)
+			plant_tile.watered = false
+			cat_helper.water_level = 1
+			cat_helper._find_next_job()
+			var job_water_ok: bool = (cat_helper.current_job.get("type") == "water")
+			cat_helper._complete_job()
+			var tile_watered: bool = plant_tile.watered
+			var cat_out_of_water: bool = (cat_helper.water_level == 0)
+			# Khi hết nước và cần tưới tiếp
+			plant_tile.watered = false
+			cat_helper._find_next_job()
+			var cat_goes_to_pond: bool = (cat_helper.state == CatHelperScript.State.WALKING_TO_POND)
+			# Mô phỏng múc nước đầy
+			cat_helper.water_level = cat_helper.water_capacity
+			cat_helper.state = CatHelperScript.State.IDLE
+			# H. Thu hoạch (Harvesting)
+			plant_tile.growth = 100.0
+			cat_helper._find_next_job()
+			var job_harvest_ok: bool = (cat_helper.current_job.get("type") == "harvest")
+			cat_helper._complete_job()
+			var cat_bag_has_crop: bool = (int(cat_helper.harvest_bag.get("wheat", 0)) == 1)
+			# I. Cất kho (Deposit to Shed)
+			cat_helper._deposit_items_to_shed()
+			var shed_has_wheat: bool = (Inventory.storage_count("produce", "wheat") >= 1)
+			var shed_has_worm: bool = (Inventory.storage_count("produce", "sau_bo") >= 1)
+			var cat_bag_empty: bool = cat_helper.harvest_bag.is_empty()
+			# J. Trả lương & Đi ngủ trong lều Stardew Valley
+			GameState.money = 200
+			cat_helper.wage_paid_today = false
+			cat_helper._pay_daily_wage()
+			var wage_paid_ok: bool = (cat_helper.wage_paid_today and GameState.money == 150)
+			# Di chuyển vào lều ngủ
+			cat_helper.position = CatHelperScript.TENT_SLEEP_POS
+			cat_helper.state = CatHelperScript.State.SLEEPING
+			var cat_sleeping_ok: bool = (cat_helper.state == CatHelperScript.State.SLEEPING)
+
+			print("CAT_HELPER_TEST tent_tex=", tent_tex_ok, " poi_tent=", poi_tent_exists,
+					" cat_exists=", cat_exists, " cat_spr=", cat_spr_ok,
+					" cat_interact=", cat_offers_interact, " panel_open=", cat_panel_opened,
+					" cat_hired=", cat_hired_ok, " give_seeds=", give_seeds_ok, " has_seeds=", cat_has_seeds,
+					" job_plant=", job_plant_ok, " tile_planted=", tile_planted, " seed_dec=", cat_seeds_decreased,
+					" job_pest=", job_pest_ok, " pest_caught=", pest_caught,
+					" job_water=", job_water_ok, " tile_watered=", tile_watered, " out_of_water=", cat_out_of_water,
+					" goes_to_pond=", cat_goes_to_pond,
+					" job_harvest=", job_harvest_ok, " bag_crop=", cat_bag_has_crop,
+					" shed_stored=", (shed_has_wheat and shed_has_worm), " bag_cleared=", cat_bag_empty,
+					" wage_paid=", wage_paid_ok, " cat_sleeping=", cat_sleeping_ok)
 			print("CLICKTEST_DONE")
 			get_tree().quit()
 

@@ -207,6 +207,16 @@ func store_item(category: String, id: String, amount: int = 1) -> bool:
 	return true
 
 
+func direct_store(category: String, id: String, amount: int = 1) -> void:
+	if amount <= 0:
+		return
+	var cat_key := _normalize_cat(category)
+	if not storage.has(cat_key):
+		storage[cat_key] = {}
+	storage[cat_key][id] = int(storage[cat_key].get(id, 0)) + amount
+	changed.emit()
+
+
 func withdraw_item(category: String, id: String, amount: int = 1) -> bool:
 	if amount <= 0:
 		return false

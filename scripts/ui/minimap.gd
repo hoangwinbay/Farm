@@ -12,7 +12,9 @@ const DOT_SPACING := 26.0
 const NODES := {
 	"shed": Vector2(105, 250),
 	"house": Vector2(250, 250),
+	"tent": Vector2(366, 250),
 	"j_house": Vector2(250, 470),
+	"j_tent": Vector2(366, 470),
 	"stall": Vector2(184, 440),
 	"j_stall": Vector2(184, 470),
 	"west_edge": Vector2(16, 470),
@@ -30,10 +32,11 @@ const NODES := {
 	"hai": Vector2(1350, 430),
 }
 const EDGES := [
-	["shed", "house"],
-	["house", "j_house"], ["stall", "j_stall"], ["west_edge", "j_stall"], ["j_stall", "j_house"],
+	["shed", "house"], ["house", "tent"],
+	["house", "j_house"], ["tent", "j_tent"],
+	["stall", "j_stall"], ["west_edge", "j_stall"], ["j_stall", "j_house"],
 	["j_house", "j_pen"], ["j_pen", "pen"],
-	["j_pen", "farm_w"], ["farm_w", "farm"],
+	["j_pen", "j_tent"], ["j_tent", "farm_w"], ["farm_w", "farm"],
 	["farm_w", "j_tu"], ["j_tu", "tu"],
 	["j_tu", "j_pond"], ["j_pond", "pond"],
 	["j_pond", "j_batu"], ["j_batu", "batu"],
@@ -45,6 +48,7 @@ const EDGES := [
 const POIS := [
 	{"id": "shed", "name": "Nhà kho (cất đồ)", "mlabel": "Nhà kho", "pos": Vector2(105, 250), "color": Color(0.75, 0.55, 0.35), "letter": "K"},
 	{"id": "house", "name": "Nhà (ngủ & lưu game)", "mlabel": "Nhà (ngủ & lưu)", "pos": Vector2(250, 250), "color": Color(0.98, 0.62, 0.45), "letter": "N"},
+	{"id": "tent", "name": "Lều của Mèo (ngủ đêm)", "mlabel": "Lều Mèo", "pos": Vector2(366, 250), "color": Color(0.95, 0.78, 0.42), "letter": "M"},
 	{"id": "stall", "name": "Sạp hàng nông sản", "mlabel": "Sạp hàng", "mlab_above": true, "pos": Vector2(184, 440), "color": Color(0.95, 0.45, 0.35), "letter": "S"},
 	{"id": "farm", "name": "Nông trại", "mlabel": "Nông trại", "pos": Vector2(648, 470), "color": Color(0.55, 0.88, 0.42), "letter": "R"},
 	{"id": "pen", "name": "Chuồng gia cầm", "mlabel": "Chuồng gia cầm", "pos": Vector2(304, 574), "color": Color(0.85, 0.65, 0.35), "letter": "C"},

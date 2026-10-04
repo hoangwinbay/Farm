@@ -110,6 +110,8 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _house()
 		"shed":
 			tex = _shed()
+		"tent":
+			tex = _tent()
 		"caterpillar":
 			tex = _caterpillar()
 		"fx_pest":
@@ -1061,6 +1063,43 @@ static func _shed() -> ImageTexture:
 	rect(img, 16, 50, 80, 78, wood_m)
 	rect(img, 46, 80, 20, 48, wood_d)
 	return _tex(img)
+
+
+static func _tent() -> ImageTexture:
+	var loaded := _load_picture("res://picture/tent.png")
+	if loaded != null:
+		return _tex(loaded)
+	var img := _img(48, 64)
+	rect(img, 8, 16, 32, 44, Color(0.82, 0.72, 0.52))
+	return _tex(img)
+
+
+static func cat_char_tex(anim: String, frame_idx: int = 0) -> Texture2D:
+	var path := ""
+	match anim:
+		"down":
+			var idx := absi(frame_idx) % 3
+			path = "res://picture/cat/cat_down_%d.png" % idx
+		"up":
+			var idx := absi(frame_idx) % 3
+			path = "res://picture/cat/cat_up_%d.png" % idx
+		"side":
+			var idx := absi(frame_idx) % 2
+			path = "res://picture/cat/cat_side_%d.png" % idx
+		"act", "action", "side_act":
+			path = "res://picture/cat/cat_side_act.png"
+		_:
+			path = "res://picture/cat/cat_down_0.png"
+
+	var key := "cat_%s_%d" % [anim, frame_idx]
+	if _cache.has(key):
+		return _cache[key]
+	var img := _load_picture(path)
+	if img != null:
+		var tex := _tex(img)
+		_cache[key] = tex
+		return tex
+	return null
 
 
 static func _caterpillar() -> ImageTexture:
@@ -2775,6 +2814,11 @@ static func seed_icon(crop: Dictionary) -> ImageTexture:
 	var tex := _tex(img)
 	_cache[key] = tex
 	return tex
+
+
+static func seed_bag_tex(seed_id: String) -> ImageTexture:
+	var c := CropDB.get_crop(seed_id)
+	return seed_icon(c)
 
 
 # Icon tròn generic dùng cho sản phẩm chăn nuôi (trứng/thịt/lông).
