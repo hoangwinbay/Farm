@@ -31,6 +31,7 @@ enum State {
 	SLEEPING
 }
 
+const WAITING_POS := Vector2(218, 305)
 const DOORSTEP_POS := Vector2(256, 260)
 const ROAD_JUNCTION_POS := Vector2(256, 472)
 const SPAWN_POS := Vector2(-30, 472)
@@ -55,7 +56,7 @@ var wage_paid_today: bool = false
 
 var farm: Node2D = null
 var current_job: Dictionary = {}
-var waypoints: Array[Vector2] = []
+var waypoints: Array = []
 var _target_tile: Node = null
 
 var _spr: Sprite2D
@@ -119,10 +120,10 @@ func _ready() -> void:
 	if not is_hired:
 		position = SPAWN_POS
 		state = State.ARRIVING
-		waypoints = [ROAD_JUNCTION_POS, DOORSTEP_POS]
+		waypoints = [ROAD_JUNCTION_POS, Vector2(ROAD_JUNCTION_POS.x, WAITING_POS.y), WAITING_POS]
 		_show_bubble_text("...")
 	else:
-		position = DOORSTEP_POS
+		position = WAITING_POS
 		state = State.IDLE
 		_hide_bubble()
 
@@ -263,19 +264,23 @@ func _process_walk(delta: float, on_reached: Callable) -> void:
 func _set_destination(dest: Vector2) -> void:
 	waypoints.clear()
 
-	# Hệ thống định tuyến thông minh tránh va chạm nhà và chuồng
+	# Hệ thống định tuyến thông minh tránh va chạm nhà, chuồng và sạp hàng
 	var from_p := position
 
 	# Di chuyển giữa khu nhà phía Bắc (y < 350) và ruộng/ao phía Nam (y >= 350)
 	if from_p.y < 350.0 and dest.y >= 350.0:
-		waypoints.append(Vector2(from_p.x, 472.0))
+		if from_p.x < 240.0:
+			waypoints.append(Vector2(ROAD_JUNCTION_POS.x, from_p.y))
+		waypoints.append(Vector2(ROAD_JUNCTION_POS.x, 472.0))
 		if dest.x >= 424.0:
 			waypoints.append(FARM_GATE_WEST)
 		waypoints.append(dest)
 	elif from_p.y >= 350.0 and dest.y < 350.0:
 		if from_p.x >= 424.0:
 			waypoints.append(FARM_GATE_WEST)
-		waypoints.append(Vector2(dest.x, 472.0))
+		waypoints.append(Vector2(ROAD_JUNCTION_POS.x, 472.0))
+		if dest.x < 240.0:
+			waypoints.append(Vector2(ROAD_JUNCTION_POS.x, dest.y))
 		waypoints.append(dest)
 	elif from_p.y < 350.0 and dest.y < 350.0:
 		# Giữa các công trình cạnh nhau (Nhà kho <-> Nhà <-> Lều)
@@ -461,7 +466,7 @@ func hire() -> void:
 func dismiss() -> void:
 	is_hired = false
 	state = State.WAITING_HIRE
-	position = DOORSTEP_POS
+	position = WAITING_POS
 	_show_bubble_text("...")
 
 
@@ -567,5 +572,6 @@ func load_save_dict(d: Dictionary) -> void:
 		_hide_bubble()
 	else:
 		state = State.WAITING_HIRE
-		position = DOORSTEP_POS
+		if not (d.has("x") and d.has("y")):
+			position = WAITING_POS
 		_show_bubble_text("...")

@@ -815,6 +815,10 @@ func _is_grass_surface(pos: Vector2) -> bool:
 	if tent_box.has_point(pos):
 		return false
 
+	# 4d. Vị trí mèo đứng đợi nhận việc trong sân
+	if pos.distance_to(CatHelperScript.WAITING_POS) < 32.0:
+		return false
+
 	# 5. Hòm thư cạnh nhà
 	if pos.distance_to(MAILBOX_POS) < 36.0:
 		return false
@@ -1813,7 +1817,7 @@ func start_new_game() -> void:
 		cat_helper.dismiss()
 		cat_helper.position = CatHelperScript.SPAWN_POS
 		cat_helper.state = CatHelperScript.State.ARRIVING
-		cat_helper.waypoints = [CatHelperScript.ROAD_JUNCTION_POS, CatHelperScript.DOORSTEP_POS]
+		cat_helper.waypoints = [CatHelperScript.ROAD_JUNCTION_POS, Vector2(CatHelperScript.ROAD_JUNCTION_POS.x, CatHelperScript.WAITING_POS.y), CatHelperScript.WAITING_POS]
 		cat_helper._show_bubble_text("...")
 	dialog_box.force_close()
 	title_screen.hide_me()
