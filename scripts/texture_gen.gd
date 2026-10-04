@@ -2130,13 +2130,21 @@ static func sdv_char_tex(char_name: String, dir: String, frame_idx: int) -> Text
 	if _cache.has(sheet_key):
 		sheet = _cache[sheet_key]
 	else:
-		var path := "res://Content (unpacked)/Characters/%s.png" % cname
-		if ResourceLoader.exists(path):
-			sheet = ResourceLoader.load(path) as Texture2D
+		var pic_path := "res://picture/characters/%s.png" % cname
+		if ResourceLoader.exists(pic_path):
+			sheet = ResourceLoader.load(pic_path) as Texture2D
 		if sheet == null:
-			var img := _load_picture(path)
+			var img := _load_picture(pic_path)
 			if img != null:
 				sheet = _tex(img)
+		if sheet == null:
+			var fallback_path := "res://Content (unpacked)/Characters/%s.png" % cname
+			if ResourceLoader.exists(fallback_path):
+				sheet = ResourceLoader.load(fallback_path) as Texture2D
+			if sheet == null:
+				var img_fb := _load_picture(fallback_path)
+				if img_fb != null:
+					sheet = _tex(img_fb)
 		if sheet != null:
 			_cache[sheet_key] = sheet
 
