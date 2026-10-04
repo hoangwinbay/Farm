@@ -1003,6 +1003,7 @@ func _wall(center: Vector2, size: Vector2, parent: Node = null) -> void:
 func _build_ui() -> void:
 	hud = HudScript.new()
 	add_child(hud)
+	hud.open_inventory_requested.connect(_open_inventory)
 	shop_panel = ShopPanelScript.new()
 	add_child(shop_panel)
 	fish_shop = FishShopScript.new()

@@ -50,7 +50,7 @@ func _ready() -> void:
 	head.add_theme_constant_override("separation", 14)
 	v.add_child(head)
 
-	var title := UIKit.title_label(head, "📦 KHO ĐỒ NÔNG DÂN", 22, UIKit.COLOR_TEXT_TITLE)
+	var title := UIKit.title_label(head, "📦 Kho đồ", 20, UIKit.COLOR_TEXT_TITLE)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	# Tiền hiện có
@@ -67,23 +67,18 @@ func _ready() -> void:
 	UIKit.label(hm, "%d xu" % GameState.money, 15, UIKit.COLOR_TEXT_GOLD)
 	head.add_child(money_box)
 
-	var close_btn := UIKit.styled_button(head, "✕ Đóng (I/Esc)", 14, "danger")
+	var close_btn := UIKit.styled_button(head, "✕ Đóng", 13, "danger")
 	close_btn.pressed.connect(close)
 
 	# Hàng Tabs phân loại
 	var tab_bar := HBoxContainer.new()
-	tab_bar.add_theme_constant_override("separation", 8)
+	tab_bar.add_theme_constant_override("separation", 6)
 	v.add_child(tab_bar)
 
 	_tab_all = _create_tab(tab_bar, "🌾 Tất cả", "all")
-	_tab_seed = _create_tab(tab_bar, "🌱 Hạt giống", "seed")
+	_tab_seed = _create_tab(tab_bar, "🌱 Hạt", "seed")
 	_tab_crop = _create_tab(tab_bar, "🧺 Nông sản", "crop")
-	_tab_fish = _create_tab(tab_bar, "🐟 Cá tươi", "fish")
-
-	UIKit.divider(v)
-
-	var tip := UIKit.label(v, "Bấm CHỌN HẠT để cầm gieo tại ruộng. Nông sản mang qua Bác Tư, cá mang qua Chú Hai để bán.", 13, UIKit.COLOR_TEXT_MUTED)
-	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tab_fish = _create_tab(tab_bar, "🐟 Cá", "fish")
 
 	# Danh sách thẻ cuộn
 	scroll = ScrollContainer.new()
@@ -142,7 +137,7 @@ func refresh() -> void:
 
 	# --- 1. HẠT GIỐNG ---
 	if _active_filter == "all" or _active_filter == "seed":
-		var head_p := _section_header("🌱 HẠT GIỐNG ĐANG CÓ", UIKit.COLOR_TEXT_GREEN)
+		var head_p := _section_header("🌱 Hạt giống", UIKit.COLOR_TEXT_GREEN)
 		rows.add_child(head_p)
 		var any_seed := false
 		for crop in CropDB.CROPS:
@@ -152,11 +147,11 @@ func refresh() -> void:
 			any_seed = true
 			rows.add_child(_build_seed_card(crop))
 		if not any_seed:
-			_empty_placeholder("Chưa có hạt giống nào — hãy ghé Cửa Hàng Bác Tư để mua hạt giống.")
+			_empty_placeholder("Chưa có hạt giống")
 
 	# --- 2. NÔNG SẢN ---
 	if _active_filter == "all" or _active_filter == "crop":
-		var head_p := _section_header("🧺 NÔNG SẢN ĐÃ THU HOẠCH", UIKit.COLOR_TEXT_TITLE)
+		var head_p := _section_header("🧺 Nông sản", UIKit.COLOR_TEXT_TITLE)
 		rows.add_child(head_p)
 		var any_prod := false
 		for crop in CropDB.CROPS:
@@ -167,11 +162,11 @@ func refresh() -> void:
 			any_prod = true
 			rows.add_child(_build_crop_card(crop, n))
 		if not any_prod:
-			_empty_placeholder("Chưa có nông sản thu hoạch — tưới nước cho cây chín rồi bấm [E] thu hoạch.")
+			_empty_placeholder("Chưa có nông sản")
 
 	# --- 3. CÁ TƯƠI ---
 	if _active_filter == "all" or _active_filter == "fish":
-		var head_p := _section_header("🐟 THỦY SẢN ĐÁNH BẮT ĐƯỢC", UIKit.COLOR_TEXT_BLUE)
+		var head_p := _section_header("🐟 Cá", UIKit.COLOR_TEXT_BLUE)
 		rows.add_child(head_p)
 		var any_fish := false
 		for f in FishDB.FISH:
@@ -182,7 +177,7 @@ func refresh() -> void:
 			any_fish = true
 			rows.add_child(_build_fish_card(f, n))
 		if not any_fish:
-			_empty_placeholder("Chưa có cá nào — mua cần câu của Chú Hai ở bờ ao để bắt đầu câu cá.")
+			_empty_placeholder("Chưa có cá")
 
 
 func _section_header(text: String, color: Color) -> PanelContainer:
@@ -240,20 +235,17 @@ func _build_seed_card(crop: Dictionary) -> Control:
 	UIKit.label(group_pill, str(crop.group), 11, UIKit.COLOR_TEXT_MUTED)
 	name_h.add_child(group_pill)
 
-	var grow_min: int = int(ceil(float(crop.grow_sec) / 60.0))
-	UIKit.label(info_v, "Lớn ~%d phút khi đất ẩm · Giá bán nông sản: %d xu" % [grow_min, int(crop.sell_price)], 12, UIKit.COLOR_TEXT_MUTED)
-
 	# Số lượng đang có
 	var count_pill := PanelContainer.new()
 	count_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07), UIKit.COLOR_BORDER_WOOD, 6))
-	UIKit.label(count_pill, "×%d hạt" % count, 14, Color(0.85, 0.95, 1.0))
+	UIKit.label(count_pill, "×%d" % count, 14, Color(0.85, 0.95, 1.0))
 	h.add_child(count_pill)
 
 	# Nút Chọn
 	var btn_type := "primary" if is_held else "buy"
-	var btn_text := "✓ ĐANG CẦM" if is_held else "CẦM GIEO"
+	var btn_text := "✓ Đang cầm" if is_held else "Cầm"
 	var sel_btn := UIKit.styled_button(h, btn_text, 13, btn_type)
-	sel_btn.custom_minimum_size = Vector2(100, 32)
+	sel_btn.custom_minimum_size = Vector2(90, 30)
 	sel_btn.disabled = (count < 1 and not is_held)
 	sel_btn.pressed.connect(_select.bind(id))
 
@@ -282,16 +274,15 @@ func _build_crop_card(crop: Dictionary, count: int) -> Control:
 	h.add_child(info_v)
 
 	UIKit.label(info_v, crop.name, 15, UIKit.COLOR_TEXT_BODY)
-	UIKit.label(info_v, "Nông sản tươi ngon · Mang qua Bác Tư bán lấy tiền", 12, UIKit.COLOR_TEXT_MUTED)
 
 	var price_pill := PanelContainer.new()
 	price_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.16, 0.08), UIKit.COLOR_BORDER_GOLD, 6))
-	UIKit.label(price_pill, "%d xu/cái" % int(crop.sell_price), 13, UIKit.COLOR_TEXT_GOLD)
+	UIKit.label(price_pill, "%d xu" % int(crop.sell_price), 13, UIKit.COLOR_TEXT_GOLD)
 	h.add_child(price_pill)
 
 	var count_pill := PanelContainer.new()
 	count_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07), UIKit.COLOR_BORDER_WOOD, 6))
-	UIKit.label(count_pill, "×%d cái" % count, 14, UIKit.COLOR_TEXT_TITLE)
+	UIKit.label(count_pill, "×%d" % count, 14, UIKit.COLOR_TEXT_TITLE)
 	h.add_child(count_pill)
 
 	return p
@@ -319,21 +310,20 @@ func _build_fish_card(f: Dictionary, count: int) -> Control:
 	h.add_child(info_v)
 
 	UIKit.label(info_v, f.name, 15, UIKit.COLOR_TEXT_BLUE)
-	UIKit.label(info_v, "Cá nước ngọt · Mang ra bờ ao bán cho Chú Hai", 12, UIKit.COLOR_TEXT_MUTED)
 
 	var price_pill := PanelContainer.new()
 	price_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.10, 0.18, 0.24), Color(0.40, 0.70, 0.90), 6))
-	UIKit.label(price_pill, "%d xu/con" % int(f.price), 13, UIKit.COLOR_TEXT_BLUE)
+	UIKit.label(price_pill, "%d xu" % int(f.price), 13, UIKit.COLOR_TEXT_BLUE)
 	h.add_child(price_pill)
 
 	var count_pill := PanelContainer.new()
 	count_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07), UIKit.COLOR_BORDER_WOOD, 6))
-	UIKit.label(count_pill, "×%d con" % count, 14, UIKit.COLOR_TEXT_TITLE)
+	UIKit.label(count_pill, "×%d" % count, 14, UIKit.COLOR_TEXT_TITLE)
 	h.add_child(count_pill)
 
 	return p
 
 
 func _select(id: String) -> void:
-	Inventory.selected_seed = id
+	Inventory.select_seed(id)
 	refresh()

@@ -5,6 +5,8 @@ const CropDB := preload("res://scripts/crop_db.gd")
 const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
+signal open_inventory_requested
+
 var clock_label: Label
 var day_label: Label
 var money_label: Label
@@ -173,46 +175,61 @@ func _ready() -> void:
 	hint_h.add_child(hint_label)
 	hint_container.visible = false
 
-	# --- 4. THANH CÔNG CỤ & HẠT GIỐNG DƯỚI CÙNG (Hotbar Tray) ---
+	# --- 4. THANH CÔNG CỤ DƯỚI CÙNG (Hotbar Tray - Gọn gàng, chỉ icon và số) ---
 	var strip := CenterContainer.new()
 	strip.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	strip.offset_top = -84
-	strip.offset_bottom = -14
+	strip.offset_top = -68
+	strip.offset_bottom = -12
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(strip)
 
 	var tray := PanelContainer.new()
-	tray.add_theme_stylebox_override("panel", UIKit.wood_frame(12, 2, UIKit.COLOR_WOOD_DARK, UIKit.COLOR_BORDER_GOLD))
+	tray.add_theme_stylebox_override("panel", UIKit.wood_frame(8, 2, UIKit.COLOR_WOOD_DARK, UIKit.COLOR_BORDER_GOLD))
 	strip.add_child(tray)
 
 	var hb := HBoxContainer.new()
-	hb.add_theme_constant_override("separation", 12)
+	hb.add_theme_constant_override("separation", 5)
 	tray.add_child(hb)
 
-	# Huy hiệu loại đồ đang cầm
-	var active_pill := PanelContainer.new()
-	active_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.14, 0.09), UIKit.COLOR_BORDER_GOLD, 6))
-	hb.add_child(active_pill)
-	active_label = UIKit.label(active_pill, "Đang cầm: ...", 13, UIKit.COLOR_TEXT_TITLE)
+	active_label = Label.new()
 	seed_label = active_label
 
 	# Danh sách các ô chọn công cụ & hạt giống
 	hotbar_row = HBoxContainer.new()
-	hotbar_row.add_theme_constant_override("separation", 6)
+	hotbar_row.add_theme_constant_override("separation", 5)
 	hb.add_child(hotbar_row)
 
-	# Phím tắt phụ bên phải
-	var tips_box := HBoxContainer.new()
-	tips_box.add_theme_constant_override("separation", 6)
-	hb.add_child(tips_box)
-	UIKit.key_badge(tips_box, "1-9")
-	UIKit.label(tips_box, "Chọn ô", 12, UIKit.COLOR_TEXT_MUTED)
-	UIKit.label(tips_box, "·", 12, UIKit.COLOR_BORDER_WOOD)
-	UIKit.key_badge(tips_box, "R")
-	UIKit.label(tips_box, "Đổi đồ", 12, UIKit.COLOR_TEXT_MUTED)
-	UIKit.label(tips_box, "·", 12, UIKit.COLOR_BORDER_WOOD)
-	UIKit.key_badge(tips_box, "I")
-	UIKit.label(tips_box, "Kho đồ", 12, UIKit.COLOR_TEXT_MUTED)
+	# Nút mở kho đồ dạng ô vuông Stardew Valley [I]
+	var inv_btn := Button.new()
+	inv_btn.custom_minimum_size = Vector2(46, 46)
+	inv_btn.tooltip_text = "Kho đồ [I]"
+	inv_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	inv_btn.add_theme_stylebox_override("normal", UIKit.slot_box(false))
+	inv_btn.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.32, 0.22, 0.14), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
+	inv_btn.add_theme_stylebox_override("pressed", UIKit.slot_box(true))
+
+	var inv_k := Label.new()
+	inv_k.text = "I"
+	inv_k.position = Vector2(4, 2)
+	inv_k.add_theme_font_size_override("font_size", 10)
+	inv_k.add_theme_color_override("font_color", Color(0.85, 0.82, 0.78, 0.9))
+	inv_k.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.95))
+	inv_k.add_theme_constant_override("outline_size", 2)
+	inv_k.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inv_btn.add_child(inv_k)
+
+	var inv_ic := TextureRect.new()
+	inv_ic.texture = TextureGen.backpack_icon()
+	inv_ic.position = Vector2(9, 9)
+	inv_ic.size = Vector2(28, 28)
+	inv_ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	inv_ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inv_btn.add_child(inv_ic)
+
+	inv_btn.pressed.connect(func():
+		open_inventory_requested.emit()
+	)
+	hb.add_child(inv_btn)
 
 	_group = ButtonGroup.new()
 	rebuild_hotbar()
@@ -256,7 +273,8 @@ func rebuild_hotbar() -> void:
 		"key": "1",
 		"type": "hoe",
 		"name": "Cuốc",
-		"desc": "×%d" % Inventory.hoes,
+		"qty": Inventory.hoes,
+		"tooltip": "Cuốc (×%d)" % Inventory.hoes,
 		"icon": TextureGen.hoe_icon(),
 		"active": hoe_active,
 		"action": func():
@@ -269,7 +287,8 @@ func rebuild_hotbar() -> void:
 		"key": "2",
 		"type": "watering_can",
 		"name": "Bình tưới",
-		"desc": "%d/%d" % [Inventory.water_level, Inventory.water_max],
+		"qty": Inventory.water_level,
+		"tooltip": "Bình tưới (%d/%d)" % [Inventory.water_level, Inventory.water_max],
 		"icon": TextureGen.watering_can_icon(),
 		"active": water_active,
 		"action": func():
@@ -282,7 +301,8 @@ func rebuild_hotbar() -> void:
 		"key": "3",
 		"type": "rod",
 		"name": "Cần câu",
-		"desc": ("%d lượt" % Inventory.total_casts()) if Inventory.total_casts() > 0 else "0",
+		"qty": Inventory.total_casts(),
+		"tooltip": "Cần câu (%d lượt)" % Inventory.total_casts(),
 		"icon": TextureGen.get_tex("fx_rod"),
 		"active": rod_active,
 		"action": func():
@@ -307,7 +327,8 @@ func rebuild_hotbar() -> void:
 			"type": "seed",
 			"id": sid,
 			"name": str(crop.name),
-			"desc": "×%d" % Inventory.seed_count(sid),
+			"qty": Inventory.seed_count(sid),
+			"tooltip": "%s (×%d)" % [crop.name, Inventory.seed_count(sid)],
 			"icon": TextureGen.seed_icon(crop),
 			"active": is_seed_active,
 			"action": func():
@@ -316,26 +337,57 @@ func rebuild_hotbar() -> void:
 
 	for slot in _slots_cache:
 		var b := Button.new()
-		b.icon = slot.icon
-		b.text = " [%s] %s %s" % [slot.key, slot.name, slot.desc]
-		b.add_theme_font_size_override("font_size", 12)
-		b.custom_minimum_size = Vector2(0, 32)
+		b.custom_minimum_size = Vector2(46, 46)
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		b.tooltip_text = str(slot.get("tooltip", ""))
 
-		var is_act: bool = bool(slot.active)
+		var is_act: bool = bool(slot.get("active", false))
 		if is_act:
-			b.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.38, 0.25, 0.12), UIKit.COLOR_BORDER_GOLD, 6, 2))
-			b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.46, 0.30, 0.15), UIKit.COLOR_BORDER_GOLD, 6, 2))
-			b.add_theme_stylebox_override("pressed", UIKit.btn_style(Color(0.30, 0.18, 0.08), UIKit.COLOR_BORDER_GOLD, 6, 2))
-			b.add_theme_color_override("font_color", UIKit.COLOR_TEXT_TITLE)
+			b.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.42, 0.28, 0.15), UIKit.COLOR_BORDER_GOLD, 6, 2))
+			b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.50, 0.34, 0.18), UIKit.COLOR_BORDER_GOLD, 6, 2))
+			b.add_theme_stylebox_override("pressed", UIKit.btn_style(Color(0.32, 0.20, 0.10), UIKit.COLOR_BORDER_GOLD, 6, 2))
 		else:
 			b.add_theme_stylebox_override("normal", UIKit.slot_box(false))
 			b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.30, 0.20, 0.12), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
 			b.add_theme_stylebox_override("pressed", UIKit.slot_box(true))
-			b.add_theme_color_override("font_color", UIKit.COLOR_TEXT_BODY)
 
-		b.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.95))
-		b.add_theme_constant_override("outline_size", 2)
+		# 1. Hình ảnh trung tâm duy nhất (không có chữ thừa)
+		var ic := TextureRect.new()
+		ic.texture = slot.icon
+		ic.position = Vector2(9, 9)
+		ic.size = Vector2(28, 28)
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(ic)
+
+		# 2. Số thứ tự phím tắt ở góc trên-trái (1, 2, 3...)
+		var key_lbl := Label.new()
+		key_lbl.text = str(slot.get("key", ""))
+		key_lbl.position = Vector2(4, 2)
+		key_lbl.add_theme_font_size_override("font_size", 10)
+		key_lbl.add_theme_color_override("font_color", Color(0.85, 0.82, 0.78, 0.9))
+		key_lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.95))
+		key_lbl.add_theme_constant_override("outline_size", 2)
+		key_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(key_lbl)
+
+		# 3. Ký hiệu số lượng ở góc dưới-phải (ví dụ 998, 20, 0...)
+		var qty_val: int = int(slot.get("qty", 0))
+		var qty_lbl := Label.new()
+		qty_lbl.text = str(qty_val)
+		qty_lbl.position = Vector2(2, 28)
+		qty_lbl.size = Vector2(41, 16)
+		qty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		qty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		qty_lbl.add_theme_font_size_override("font_size", 11)
+		if str(slot.get("type", "")) == "watering_can":
+			qty_lbl.add_theme_color_override("font_color", Color(0.5, 0.9, 1.0) if qty_val > 0 else Color(1.0, 0.45, 0.45))
+		else:
+			qty_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.8) if qty_val > 0 else Color(0.65, 0.60, 0.55, 0.8))
+		qty_lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.98))
+		qty_lbl.add_theme_constant_override("outline_size", 3)
+		qty_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(qty_lbl)
 
 		var fn: Callable = slot.action
 		b.pressed.connect(func():
@@ -345,10 +397,27 @@ func rebuild_hotbar() -> void:
 		hotbar_row.add_child(b)
 
 	if ids.size() > shown:
-		var more_pill := PanelContainer.new()
-		more_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.14, 0.09), UIKit.COLOR_BORDER_WOOD, 6))
-		var _more_l := UIKit.label(more_pill, "+%d loại (I)" % (ids.size() - shown), 12, UIKit.COLOR_TEXT_MUTED)
-		hotbar_row.add_child(more_pill)
+		var more_b := Button.new()
+		more_b.custom_minimum_size = Vector2(46, 46)
+		more_b.tooltip_text = "+%d loại hạt khác (I)" % (ids.size() - shown)
+		more_b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		more_b.add_theme_stylebox_override("normal", UIKit.slot_box(false))
+		more_b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.30, 0.20, 0.12), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
+		more_b.add_theme_stylebox_override("pressed", UIKit.slot_box(true))
+		var more_lbl := Label.new()
+		more_lbl.text = "+%d" % (ids.size() - shown)
+		more_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		more_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		more_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		more_lbl.add_theme_font_size_override("font_size", 12)
+		more_lbl.add_theme_color_override("font_color", UIKit.COLOR_TEXT_GOLD)
+		more_lbl.add_theme_constant_override("outline_size", 2)
+		more_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		more_b.add_child(more_lbl)
+		more_b.pressed.connect(func():
+			open_inventory_requested.emit()
+		)
+		hotbar_row.add_child(more_b)
 
 	_update_active_label()
 

@@ -2943,3 +2943,30 @@ static func star_icon() -> ImageTexture:
 	_cache[key] = tex
 	return tex
 
+
+static func backpack_icon() -> ImageTexture:
+	var key := "backpack_icon"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var leather := Color(0.72, 0.44, 0.22)
+	var leather_d := Color(0.48, 0.26, 0.12)
+	var metal := Color(0.95, 0.85, 0.40)
+	# Thân ba lô da mộc
+	rect(img, 3, 4, 10, 11, leather)
+	rect(img, 4, 5, 8, 9, leather.lightened(0.12))
+	# Nắp túi trên
+	rect(img, 4, 2, 8, 4, leather_d)
+	# Dây đai & khóa đồng
+	rect(img, 5, 4, 2, 9, leather_d)
+	rect(img, 9, 4, 2, 9, leather_d)
+	px(img, 5, 7, metal)
+	px(img, 10, 7, metal)
+	# Túi con phía trước
+	rect(img, 5, 9, 6, 4, leather_d)
+	px(img, 7, 10, metal)
+	px(img, 8, 10, metal)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
