@@ -8,7 +8,7 @@ func has_save() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
 
 
-func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool) -> void:
+func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: Dictionary = {}, foliage: Array = [], stall: Array = [], stall_revenue: int = 0, cat: Dictionary = {}) -> void:
 	var data := {
 		"v": 2,
 		"money": GameState.money,
@@ -19,13 +19,23 @@ func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool) -> void:
 		"produce": Inventory.produce.duplicate(),
 		"sel": Inventory.selected_seed,
 		"hoes": Inventory.hoes,
+		"water_level": Inventory.water_level,
+		"water_max": Inventory.water_max,
+		"active_item": Inventory.active_item.duplicate(),
 		"rods": Inventory.rods.duplicate(),
 		"fish": Inventory.fish.duplicate(),
 		"coops": Inventory.coops.duplicate(),
 		"animals": Inventory.animals.duplicate(true),
+		"backpack_max": Inventory.backpack_max,
+		"storage": Inventory.storage.duplicate(true),
 		"farm": farm_state,
 		"player": [player_pos.x, player_pos.y],
 		"npc_met": npc_met,
+		"mailbox": mailbox.duplicate(),
+		"foliage": foliage.duplicate(true),
+		"stall": stall.duplicate(true),
+		"stall_revenue": stall_revenue,
+		"cat": cat.duplicate(true),
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:

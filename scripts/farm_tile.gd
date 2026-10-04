@@ -1,5 +1,5 @@
 extends Node2D
-# Một ô đất trong nông trại: cỏ -> đất cày -> đã gieo hạt.
+# Một ô đất trong nông trại: đất mộc (không cỏ) -> đất cày -> đã gieo hạt.
 # Cây lớn dần theo THỜI GIAN THẬT khi đất ẩm; đất khô sau ~4 phút thì phải tưới lại.
 
 const TextureGen := preload("res://scripts/texture_gen.gd")
@@ -7,16 +7,20 @@ const CropDB := preload("res://scripts/crop_db.gd")
 
 const DRY_SEC := 240.0  # đất đủ ẩm kéo dài bao lâu (giây thật) trước khi khô
 
-enum TState { GRASS, TILLED, PLANTED }
+enum TState { GRASS, TILLED, PLANTED, HARVESTED }
 
 var tstate: int = TState.GRASS
 var crop_id := ""
 var growth := 0.0  # số giây đã lớn (đất ẩm)
 var watered := false
+var has_pest := false
 var coord := Vector2i.ZERO
+var farm: Node2D = null
 
 var _soil: Sprite2D
 var _crop_spr: Sprite2D
+var _pest_spr: Sprite2D
+var _pest_tween: Tween
 var _wet_time := 0.0
 var _last_stage := -1
 
@@ -27,8 +31,15 @@ func _ready() -> void:
 	_soil.visible = false
 	add_child(_soil)
 	_crop_spr = Sprite2D.new()
+	_crop_spr.offset = Vector2(0, -16)
 	_crop_spr.visible = false
 	add_child(_crop_spr)
+	_pest_spr = Sprite2D.new()
+	_pest_spr.texture = TextureGen.get_tex("caterpillar")
+	_pest_spr.offset = Vector2(0, -16)
+	_pest_spr.visible = false
+	_pest_spr.z_index = 2
+	add_child(_pest_spr)
 
 
 func setup(c: Vector2i) -> void:
@@ -40,9 +51,33 @@ func _process(delta: float) -> void:
 	tick_growth(delta)
 
 
+func spawn_pest() -> void:
+	has_pest = true
+	if _pest_spr != null:
+		_pest_spr.visible = true
+		_pest_spr.position = Vector2(randf_range(-3, 3), randf_range(-3, 1))
+		if _pest_tween != null and _pest_tween.is_valid():
+			_pest_tween.kill()
+		_pest_tween = create_tween().set_loops()
+		_pest_tween.tween_property(_pest_spr, "scale", Vector2(1.15, 0.85), 0.35).set_trans(Tween.TRANS_SINE)
+		_pest_tween.tween_property(_pest_spr, "scale", Vector2(0.9, 1.1), 0.35).set_trans(Tween.TRANS_SINE)
+
+
+func clear_pest() -> void:
+	has_pest = false
+	if _pest_spr != null:
+		_pest_spr.visible = false
+		_pest_spr.scale = Vector2.ONE
+	if _pest_tween != null and _pest_tween.is_valid():
+		_pest_tween.kill()
+
+
 # Mỗi nhịp thời gian: đất ẩm dần khô đi, cây lớn khi đất còn ẩm và chưa chín.
 func tick_growth(delta: float) -> void:
 	if tstate != TState.PLANTED:
+		return
+	# Sâu bọ cắn phá: cây bị sâu sẽ tạm dừng phát triển cho đến khi người chơi bắt sâu!
+	if has_pest:
 		return
 	if watered:
 		_wet_time += delta
@@ -55,6 +90,12 @@ func tick_growth(delta: float) -> void:
 		return
 	if is_ready():
 		return
+
+	# Tỉ lệ ngẫu nhiên xuất hiện sâu bọ trên cây đang phát triển
+	if growth > 3.0 and randf() < 0.003 * delta:
+		spawn_pest()
+		return
+
 	growth += delta
 	var c := CropDB.get_crop(crop_id)
 	if c.is_empty():
@@ -67,16 +108,20 @@ func tick_growth(delta: float) -> void:
 func till() -> void:
 	tstate = TState.TILLED
 	refresh()
+	notify_horizontal_neighbors()
 
 
 func plant(id: String) -> void:
 	crop_id = id
 	growth = 0.0
+	_last_stage = -1
 	tstate = TState.PLANTED
 	refresh()
 
 
 func water() -> void:
+	if tstate != TState.PLANTED:
+		return
 	watered = true
 	_wet_time = 0.0
 	refresh()
@@ -95,7 +140,8 @@ func harvest() -> String:
 	growth = 0.0
 	watered = false
 	_wet_time = 0.0
-	tstate = TState.TILLED
+	clear_pest()
+	tstate = TState.HARVESTED
 	refresh()
 	return id
 
@@ -107,18 +153,37 @@ func reset_tile() -> void:
 	watered = false
 	_wet_time = 0.0
 	_last_stage = -1
+	clear_pest()
 	refresh()
+	notify_horizontal_neighbors()
 
 
 func refresh() -> void:
 	if _soil == null:
 		return
-	_soil.visible = true
 	if tstate == TState.GRASS:
-		_soil.texture = TextureGen.get_tex("field")
+		_soil.visible = false
 		_crop_spr.visible = false
 		return
-	_soil.texture = TextureGen.get_tex("tilled_wet" if watered else "tilled")
+	_soil.visible = true
+	var w: bool = _has_soil(Vector2i(-1, 0))
+	var e: bool = _has_soil(Vector2i(1, 0))
+	var dir_type := "isolated"
+	if not w and e:
+		dir_type = "left"
+	elif w and e:
+		dir_type = "mid"
+	elif w and not e:
+		dir_type = "right"
+
+	if tstate == TState.HARVESTED:
+		var tex_key := "tilled_dark_%s" % dir_type
+		_soil.texture = TextureGen.get_tex(tex_key)
+		_crop_spr.visible = false
+		return
+
+	var tex_key := "tilled_wet_%s" % dir_type if watered else "tilled_%s" % dir_type
+	_soil.texture = TextureGen.get_tex(tex_key)
 	if tstate == TState.PLANTED:
 		var c := CropDB.get_crop(crop_id)
 		if c.is_empty():
@@ -131,20 +196,50 @@ func refresh() -> void:
 		_crop_spr.visible = false
 
 
+func _has_soil(offset: Vector2i) -> bool:
+	var f := farm
+	if f == null:
+		var p = get_parent()
+		if p is Node2D and ("tiles" in p):
+			f = p
+	if f == null or not ("tiles" in f):
+		return false
+	var neighbor = f.tiles.get(coord + offset)
+	return neighbor != null and neighbor.tstate != TState.GRASS
+
+
+func notify_horizontal_neighbors() -> void:
+	var f := farm
+	if f == null:
+		var p = get_parent()
+		if p is Node2D and ("tiles" in p):
+			f = p
+	if f == null or not ("tiles" in f):
+		return
+	var left_tile = f.tiles.get(coord + Vector2i(-1, 0))
+	if left_tile != null and left_tile.tstate != TState.GRASS:
+		left_tile.refresh()
+	var right_tile = f.tiles.get(coord + Vector2i(1, 0))
+	if right_tile != null and right_tile.tstate != TState.GRASS:
+		right_tile.refresh()
+
+
 func visual_stage(c: Dictionary) -> int:
-	var t := float(c.grow_sec)
+	var total_st: int = int(c.get("stages", 5))
+	var t := float(c.get("grow_sec", 60))
 	if growth >= t:
-		return 3
-	if growth < t * 0.5:
-		return 1
-	return 2
+		return total_st - 1
+	if growth <= 0.0:
+		return 0
+	var pct := clampf(growth / t, 0.0, 0.999)
+	return int(pct * (total_st - 1))
 
 
 func get_state() -> Dictionary:
 	if tstate == TState.GRASS:
 		return {}
 	return {"x": coord.x, "y": coord.y, "s": tstate, "c": crop_id,
-			"g": int(round(growth)), "w": watered}
+			"g": int(round(growth)), "w": watered, "p": has_pest}
 
 
 func apply_state(d: Dictionary) -> void:
@@ -153,4 +248,9 @@ func apply_state(d: Dictionary) -> void:
 	growth = float(d.get("g", 0))
 	watered = bool(d.get("w", false))
 	_wet_time = 0.0
+	if bool(d.get("p", false)):
+		spawn_pest()
+	else:
+		clear_pest()
 	refresh()
+	notify_horizontal_neighbors()

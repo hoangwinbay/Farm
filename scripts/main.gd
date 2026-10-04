@@ -6,31 +6,79 @@ const CropDB := preload("res://scripts/crop_db.gd")
 const FishDB := preload("res://scripts/fish_db.gd")
 const PoultryDB := preload("res://scripts/poultry_db.gd")
 const FarmScript := preload("res://scripts/farm.gd")
+const FarmTileScript := preload("res://scripts/farm_tile.gd")
 const PlayerScript := preload("res://scripts/player.gd")
 const NpcScript := preload("res://scripts/npc.gd")
 const HudScript := preload("res://scripts/ui/hud.gd")
 const ShopPanelScript := preload("res://scripts/ui/shop_panel.gd")
 const FishShopScript := preload("res://scripts/ui/fish_shop.gd")
 const PoultryShopScript := preload("res://scripts/ui/poultry_shop.gd")
+const StallPanelScript := preload("res://scripts/ui/stall_panel.gd")
+const StallCustomerScript := preload("res://scripts/stall_customer.gd")
 const InventoryPanelScript := preload("res://scripts/ui/inventory_panel.gd")
 const DialogueBoxScript := preload("res://scripts/ui/dialogue_box.gd")
 const TitleScreenScript := preload("res://scripts/ui/title_screen.gd")
 const PauseMenuScript := preload("res://scripts/ui/pause_menu.gd")
 const MinimapScript := preload("res://scripts/ui/minimap.gd")
 const TouchControlsScript := preload("res://scripts/ui/touch_controls.gd")
+const MailboxPanelScript := preload("res://scripts/ui/mailbox_panel.gd")
+const StoragePanelScript := preload("res://scripts/ui/storage_panel.gd")
+const CatHelperScript := preload("res://scripts/cat_helper.gd")
+const CatPanelScript := preload("res://scripts/ui/cat_panel.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 const WORLD_SIZE := Vector2(1500, 1000)
-const FARM_ORIGIN := Vector2(420, 380)
+const FARM_ORIGIN := Vector2(424, 384)
 const FARM_TILES := Vector2i(14, 9)
-const HOUSE_POS := Vector2(250, 230)
-const STAND_POS := Vector2(1180, 348)       # quầy Bác Tư
-const STAND_HAI_POS := Vector2(1350, 348)   # quầy Chú Hai
-const STAND_TU_POS := Vector2(1010, 348)    # quầy Cô Tư
-const NPC_POS := Vector2(1180, 362)         # điểm tương tác Bác Tư
-const CHU_HAI_POS := Vector2(1350, 362)     # điểm tương tác Chú Hai
-const COTU_POS := Vector2(1010, 362)        # điểm tương tác Cô Tư
-const SCARECROW_POS := Vector2(392, 356)
+const HOUSE_POS := Vector2(241, 248)
+const SHED_POS := Vector2(105, 248)
+const TENT_POS := Vector2(366, 248)
+const MAILBOX_POS := Vector2(320, 246)
+const MARKET_STALL_POS := Vector2(184, 440) # sạp hàng nông sản tại góc rẽ trái
+
+# 10 nhân vật Stardew Valley với tên Việt Nam thân thiện
+const SDV_CUSTOMERS_DATA := [
+	{"name": "Bé Lan", "asset": "Abigail"},
+	{"name": "Cô Mai", "asset": "Haley"},
+	{"name": "Chị Thảo", "asset": "Leah"},
+	{"name": "Em Cúc", "asset": "Penny"},
+	{"name": "Anh Nam", "asset": "Sam"},
+	{"name": "Anh Dũng", "asset": "Alex"},
+	{"name": "Chị Hoa", "asset": "Emily"},
+	{"name": "Bác Minh", "asset": "Harvey"},
+	{"name": "Bé Linh", "asset": "Maru"},
+	{"name": "Anh Phong", "asset": "Sebastian"},
+]
+const SDV_CUSTOMERS := ["Abigail", "Haley", "Leah", "Penny", "Sam", "Alex", "Emily", "Harvey", "Maru", "Sebastian"]
+
+# Các vị trí đứng trước sạp hàng để tối đa 10 NPC ghé cùng lúc
+const STALL_COUNTER_SPOTS := [
+	Vector2(146, 468), Vector2(165, 468), Vector2(184, 468),
+	Vector2(203, 468), Vector2(222, 468), Vector2(155, 482),
+	Vector2(174, 482), Vector2(193, 482), Vector2(212, 482),
+	Vector2(230, 482)
+]
+
+const STALL_WISHLIST_ITEMS := [
+	{"id": "wheat", "type": "crop", "name": "Lúa mì", "base_price": 45},
+	{"id": "rice", "type": "crop", "name": "Lúa nước", "base_price": 25},
+	{"id": "tomato", "type": "crop", "name": "Cà chua", "base_price": 96},
+	{"id": "carrot", "type": "crop", "name": "Cà rốt", "base_price": 66},
+	{"id": "corn", "type": "crop", "name": "Bắp ngô", "base_price": 70},
+	{"id": "potato", "type": "crop", "name": "Khoai tây", "base_price": 88},
+	{"id": "cabbage", "type": "crop", "name": "Bắp cải", "base_price": 110},
+	{"id": "watermelon", "type": "crop", "name": "Dưa hấu", "base_price": 155},
+	{"id": "chep", "type": "fish", "name": "Cá chép", "base_price": 40},
+	{"id": "trung_ga", "type": "poultry", "name": "Trứng gà", "base_price": 30},
+	{"id": "trung_vit", "type": "poultry", "name": "Trứng vịt", "base_price": 45},
+]
+const STAND_POS := Vector2(1180, 416)       # quầy Bác Tư
+const STAND_HAI_POS := Vector2(1350, 416)   # quầy Chú Hai
+const STAND_TU_POS := Vector2(1010, 416)    # quầy Cô Tư
+const NPC_POS := Vector2(1180, 430)         # điểm tương tác Bác Tư
+const CHU_HAI_POS := Vector2(1350, 430)     # điểm tương tác Chú Hai
+const COTU_POS := Vector2(1010, 430)        # điểm tương tác Cô Tư
+const SCARECROW_POS := Vector2(648, 528)
 const PLAYER_START := Vector2(250, 470)
 const POND_RECT := Rect2(940, 760, 180, 100)
 const FISH_SPOT_POS := Vector2(1030, 810)   # tâm hồ — câu được ở MỌI bờ
@@ -46,17 +94,14 @@ const PEN_SPOTS := [                      # chỗ đứng con vật trong ô (so
 	Vector2(-8, 18), Vector2(22, -6), Vector2(-24, -4),
 ]
 
-# Mạng lối đi hình chữ nhật (24px) — trùng với đồ thị chỉ đường trong minimap.
-# Đại lộ đông-tây + nhánh nhà, 3 nhánh quầy hàng, nhánh cổng chuồng, nhánh bờ ao.
+# Mạng lối đi lát đất chuẩn Stardew Valley (lưới 16px).
+# Đại lộ đông-tây (48px = 3 ô) + các nhánh lối đi (32px = 2 ô).
 const PATHS := [
-	Rect2(238, 236, 24, 246),    # từ cửa nhà xuống đại lộ
-	Rect2(238, 458, 1162, 24),   # đại lộ đông - tây (qua 2 cổng ruộng)
-	Rect2(970, 370, 430, 24),    # lối chợ chạy trước 3 quầy
-	Rect2(998, 394, 24, 64),     # nhánh lên quầy Cô Tư
-	Rect2(1168, 394, 24, 64),    # nhánh lên quầy Bác Tư
-	Rect2(1338, 394, 24, 64),    # nhánh lên quầy Chú Hai
-	Rect2(292, 482, 24, 84),     # nhánh tới cổng chuồng gia cầm
-	Rect2(1018, 482, 24, 266),   # nhánh xuống bờ ao câu cá
+	Rect2(240, 240, 32, 224),    # từ cửa nhà xuống đại lộ (x: 240..272, y: 240..464)
+	Rect2(0, 448, 1408, 48),     # đại lộ đông - tây qua 2 cổng ruộng, kéo dài hết map sang trái (x: 0..1408, y: 448..496)
+	Rect2(944, 352, 464, 96),    # khuôn viên chợ quê 3 quầy hàng liền sát đại lộ (x: 944..1408, y: 352..448)
+	Rect2(288, 480, 32, 96),     # nhánh tới cổng chuồng gia cầm (x: 288..320, y: 480..576)
+	Rect2(1024, 480, 32, 272),   # nhánh xuống bờ ao câu cá (x: 1024..1056, y: 480..752)
 ]
 
 enum Mode { TITLE, PLAY, DIALOG, PANEL }
@@ -79,7 +124,22 @@ var hud: CanvasLayer
 var shop_panel: CanvasLayer
 var fish_shop: CanvasLayer
 var poultry_shop: CanvasLayer
+var stall_panel: CanvasLayer
+var stall_slots: Array = [{}, {}, {}, {}, {}, {}]
+var stall_crate_sprites: Array[Sprite2D] = []
+var stall_revenue: int = 0
+var stall_coin_badge: PanelContainer
+var stall_coin_label: Label
+var _stall_customer_timer: float = 0.0
+var _active_stall_customer: Node2D = null
+var _stall_customers: Array[Node2D] = []
 var inv_panel: CanvasLayer
+var storage_panel: CanvasLayer
+var cat_helper: Node2D
+var cat_panel: CanvasLayer
+var mailbox_panel: CanvasLayer
+var mailbox_badge: PanelContainer
+var mailbox_data: Dictionary = {"hoes": 999, "coins": 999}
 var dialog_box: CanvasLayer
 var title_screen: CanvasLayer
 var pause_menu: CanvasLayer
@@ -92,6 +152,21 @@ var _npc_met := false
 var _npc_hai_met := false
 var _npc_tu_met := false
 var _dialog_next := "shop"
+
+var foliage_nodes: Array = []
+var foliage_data: Array = []
+
+const FOLIAGE_TYPES := [
+	{"name": "tree_oak", "weight": 20},
+	{"name": "tree_maple", "weight": 20},
+	{"name": "tree_pine", "weight": 18},
+	{"name": "tree_broadleaf", "weight": 12},
+	{"name": "bush_large", "weight": 8},
+	{"name": "bush_med", "weight": 8},
+	{"name": "bush_berry", "weight": 6},
+	{"name": "bush_small", "weight": 5},
+	{"name": "tree_stump", "weight": 3},
+]
 
 var fishing := false
 var fishing_left := 0.0
@@ -109,6 +184,7 @@ func _ready() -> void:
 	visible = true  # chống trường hợp node Main bị ẩn vô tình trong editor
 	_debug_mode = OS.get_environment("FARM_SHOT")
 	_clicktest = OS.get_environment("FARM_CLICKTEST")
+	mailbox_data = _default_mailbox_data()
 
 	_build_world()
 	_build_ui()
@@ -122,6 +198,10 @@ func _ready() -> void:
 	fish_shop.closed.connect(_close_panels)
 	poultry_shop.feedback.connect(func(t: String) -> void: hud.toast(t, Color(1.0, 0.7, 0.6)))
 	poultry_shop.closed.connect(_close_panels)
+	stall_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
+	stall_panel.closed.connect(_close_panels)
+	stall_panel.stall_changed.connect(_on_stall_changed)
+	stall_panel.revenue_collected.connect(_on_stall_revenue_collected)
 	Inventory.changed.connect(_rebuild_pen)
 	inv_panel.closed.connect(_close_panels)
 	dialog_box.finished.connect(_on_dialog_finished)
@@ -165,19 +245,20 @@ func _build_world() -> void:
 	highlight.visible = false
 	farm.add_child(highlight)
 
-	# nhà (chỗ ngủ)
-	_add_decor(TextureGen.get_tex("house"), HOUSE_POS, 1.5, Rect2(-66, -34, 132, 36))
-	# bù nhìn
-	_add_decor(TextureGen.get_tex("scarecrow"), SCARECROW_POS, 1.5, Rect2(0, 0, 0, 0))
-	# cây
-	for tpos in [
-		Vector2(90, 130), Vector2(300, 90), Vector2(420, 110), Vector2(720, 90),
-		Vector2(1010, 120), Vector2(1350, 110), Vector2(1150, 60), Vector2(1450, 300),
-		Vector2(60, 360), Vector2(1450, 540), Vector2(80, 700), Vector2(700, 760),
-		Vector2(740, 780), Vector2(500, 930), Vector2(820, 940), Vector2(1210, 900),
-		Vector2(1430, 780), Vector2(960, 640),
-	]:
-		_add_decor(TextureGen.get_tex("tree"), tpos, 1.5, Rect2(-7, -8, 14, 10))
+	# nhà (chỗ ngủ) - Nhà gỗ Stardew Valley
+	_add_decor(TextureGen.get_tex("house"), HOUSE_POS, 1.0, Rect2(-68, -140, 134, 104))
+	# nhà kho Stardew Valley cạnh nhà chính
+	_add_decor(TextureGen.get_tex("shed"), SHED_POS, 1.0, Rect2(-48, -100, 96, 75))
+	# lều của Mèo Stardew Valley cạnh nhà chính
+	_add_decor(TextureGen.get_tex("tent"), TENT_POS, 1.0, Rect2(-20, -56, 40, 42))
+	# hòm thư Stardew Valley cạnh bậc thềm hiên nhà
+	_build_mailbox()
+	# bù nhìn Stardew Valley
+	_add_decor(TextureGen.get_tex("scarecrow"), SCARECROW_POS, 1.5, Rect2(-6, -10, 12, 10))
+	# sạp hàng nông sản Stardew Valley tại góc rẽ trái (kèm bóng đổ mềm mại trên nền cỏ)
+	_build_market_stall()
+	# Hệ thống thực vật & cây cối mọc ngẫu nhiên trên bề mặt cỏ tự nhiên (Stardew Valley)
+	_populate_random_foliage(75)
 
 	_build_fences()
 	_build_walls()
@@ -201,6 +282,12 @@ func _build_world() -> void:
 	player = PlayerScript.new()
 	player.position = PLAYER_START
 	world.add_child(player)
+
+	# Chú mèo tam thể làm nông
+	cat_helper = CatHelperScript.new()
+	cat_helper.farm = farm
+	cat_helper.toast_requested.connect(func(txt: String, col: Color): hud.toast(txt, col))
+	world.add_child(cat_helper)
 	cam = Camera2D.new()
 	cam.zoom = Vector2(2, 2)
 	cam.position_smoothing_enabled = true
@@ -220,12 +307,15 @@ func _build_world() -> void:
 	_build_pen()
 
 	interactables = [
-		{"pos": HOUSE_POS + Vector2(0, 16), "r": 54.0, "label": "Ngủ (sang ngày mới + lưu game)", "cb": _ask_sleep},
-		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư — hạt giống & nông sản", "cb": _talk_npc},
-		{"pos": CHU_HAI_POS, "r": 60.0, "label": "Chú Hai — cần câu & thu mua cá", "cb": _talk_hai},
-		{"pos": COTU_POS, "r": 60.0, "label": "Cô Tư — mua gia cầm & chuồng", "cb": _talk_tu},
-		{"pos": PEN_RECT.get_center() + Vector2(0, 4), "r": 75.0, "label": "Thu sản phẩm chăn nuôi", "cb": _collect_products},
-		{"pos": FISH_SPOT_POS, "r": 152.0, "label": "Thả câu cá (15 giây)", "cb": _start_fishing},
+		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ", "cb": _ask_sleep},
+		{"pos": SHED_POS + Vector2(0, -6), "r": 50.0, "label": "Nhà kho 🏚️", "cb": _open_storage},
+		{"pos": MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": _open_mailbox},
+		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪", "cb": _open_market_stall},
+		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư", "cb": _talk_npc},
+		{"pos": CHU_HAI_POS, "r": 60.0, "label": "Chú Hai", "cb": _talk_hai},
+		{"pos": COTU_POS, "r": 60.0, "label": "Cô Tư", "cb": _talk_tu},
+		{"pos": PEN_RECT.get_center() + Vector2(0, 4), "r": 75.0, "label": "Thu hoạch chuồng", "cb": _collect_products},
+		{"pos": FISH_SPOT_POS, "r": 152.0, "label": "Câu cá", "cb": _start_fishing},
 	]
 
 
@@ -318,10 +408,12 @@ func _rebuild_pen() -> void:
 	for y in range(576, int(y_s) + 8, 32):
 		_add_sprite(fv, Vector2(120.0, y) - org, pen_node)
 		_add_sprite(fv, Vector2(392.0, y) - org, pen_node)
-	for x in range(136, 392, 32):
+	for x in [136, 168, 200, 232, 264, 296, 328, 360, 376]:
 		_add_sprite(fh, Vector2(x, y_s + 8.0) - org, pen_node)
-	for cpos in [Vector2(120, 560), Vector2(392, 560), Vector2(120, y_s + 8), Vector2(392, y_s + 8)]:
-		_add_sprite(fc, cpos - org, pen_node)
+	_add_sprite(TextureGen.get_tex("fence_corner_tl"), Vector2(120, 560) - org, pen_node)
+	_add_sprite(TextureGen.get_tex("fence_corner_tr"), Vector2(392, 560) - org, pen_node)
+	_add_sprite(TextureGen.get_tex("fence_corner_bl"), Vector2(120, y_s + 8) - org, pen_node)
+	_add_sprite(TextureGen.get_tex("fence_corner_br"), Vector2(392, y_s + 8) - org, pen_node)
 
 	# 3. Sân trong: nhà chuồng, máng ăn/nước, ổ đẻ, đống rơm
 	var coop := StaticBody2D.new()
@@ -331,9 +423,9 @@ func _rebuild_pen() -> void:
 	coop.add_child(coop_spr)
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	shape.size = Vector2(50, 28)
+	shape.size = Vector2(44, 26)
 	col.shape = shape
-	col.position = Vector2(0, 4)
+	col.position = Vector2(0, -2)
 	coop.add_child(col)
 	pen_node.add_child(coop)
 	_add_sprite(TextureGen.get_tex("hay_bale"), Vector2(234, 82), pen_node)
@@ -455,9 +547,197 @@ func _rebuild_pen() -> void:
 		stw.tween_property(harvest_sign, "position:y", 6.0, 0.6).set_trans(Tween.TRANS_SINE)
 
 
+func _build_mailbox() -> void:
+	var tex := TextureGen.get_tex("mailbox")
+	if tex == null:
+		return
+	var body := StaticBody2D.new()
+	body.position = MAILBOX_POS
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.scale = Vector2(1.0, 1.0)
+	spr.offset = Vector2(0, -tex.get_height() / 2.0)
+	body.add_child(spr)
+
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(12, 10)
+	col.shape = shape
+	col.position = Vector2(0, -5)
+	body.add_child(col)
+
+	# Biển báo thư mới lơ lửng trên hòm thư
+	mailbox_badge = PanelContainer.new()
+	mailbox_badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.16, 0.08, 0.95), UIKit.COLOR_BORDER_GOLD, 6))
+	var bh := HBoxContainer.new()
+	bh.add_theme_constant_override("separation", 4)
+	mailbox_badge.add_child(bh)
+
+	var star_ic := TextureRect.new()
+	star_ic.texture = TextureGen.star_icon()
+	star_ic.custom_minimum_size = Vector2(12, 12)
+	star_ic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	bh.add_child(star_ic)
+
+	UIKit.label(bh, "Thư mới [E]", 11, UIKit.COLOR_TEXT_TITLE)
+	mailbox_badge.position = Vector2(-36, -46)
+	body.add_child(mailbox_badge)
+
+	var tw := create_tween().set_loops()
+	tw.tween_property(mailbox_badge, "position:y", -49.0, 0.7).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(mailbox_badge, "position:y", -43.0, 0.7).set_trans(Tween.TRANS_SINE)
+
+	world.add_child(body)
+	_update_mailbox_badge()
 
 
-func _add_decor(tex: Texture2D, pos: Vector2, scl: float, collide: Rect2) -> void:
+func _default_mailbox_data() -> Dictionary:
+	return {
+		"hoes": 999,
+		"coins": 9999,
+		"produce": {
+			"tomato": 50,
+			"corn": 50,
+			"watermelon": 50,
+			"strawberry": 50,
+			"carrot": 50,
+			"potato": 50,
+			"rice": 50,
+			"trung_ga": 50,
+			"trung_vit": 50,
+			"thit_ga": 30,
+			"long_ngong": 20,
+			"trung_da_dieu": 10,
+		},
+		"fish": {
+			"chep": 30,
+			"hoi": 30,
+			"tram": 30,
+			"tre_vang": 20,
+			"chien": 10,
+		}
+	}
+
+
+func _has_mailbox_items() -> bool:
+	if int(mailbox_data.get("hoes", 0)) > 0 or int(mailbox_data.get("coins", 0)) > 0:
+		return true
+	var prod = mailbox_data.get("produce", {})
+	if typeof(prod) == TYPE_DICTIONARY:
+		for k in prod:
+			if int(prod[k]) > 0:
+				return true
+	var fish = mailbox_data.get("fish", {})
+	if typeof(fish) == TYPE_DICTIONARY:
+		for k in fish:
+			if int(fish[k]) > 0:
+				return true
+	return false
+
+
+func _update_mailbox_badge() -> void:
+	if mailbox_badge == null:
+		return
+	mailbox_badge.visible = _has_mailbox_items()
+
+
+func _build_market_stall() -> void:
+	var body := StaticBody2D.new()
+	body.position = MARKET_STALL_POS
+
+	# 1. Hiệu ứng bóng đổ mềm mại trên nền cỏ (Stardew Valley ground shadow)
+	var shadow := Sprite2D.new()
+	shadow.texture = TextureGen.get_tex("stall_shadow")
+	shadow.position = Vector2(2, -4)
+	body.add_child(shadow)
+
+	# 2. Thân sạp hàng gỗ
+	var spr := Sprite2D.new()
+	var tex: Texture2D = TextureGen.get_tex("market_stall")
+	spr.texture = tex
+	spr.offset = Vector2(0, -tex.get_height() / 2.0)
+	body.add_child(spr)
+
+	# 3. 6 ô chứa nông sản / cá / gia cầm trên mặt quầy gỗ (2 hàng x 3 cột)
+	stall_crate_sprites.clear()
+	var crate_offsets: Array[Vector2] = [
+		Vector2(-20.5, -36.0), Vector2(-6.5, -36.0), Vector2(7.5, -36.0),
+		Vector2(-20.5, -27.0), Vector2(-6.5, -27.0), Vector2(7.5, -27.0),
+	]
+	for i in 6:
+		var cs := Sprite2D.new()
+		cs.name = "CrateFill_%d" % i
+		cs.position = crate_offsets[i]
+		cs.visible = false
+		body.add_child(cs)
+		stall_crate_sprites.append(cs)
+
+	# 4. Huy hiệu tiền bán hàng nổi phía trên sạp (khi có tiền chưa thu)
+	stall_coin_badge = PanelContainer.new()
+	stall_coin_badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.16, 0.08, 0.95), UIKit.COLOR_BORDER_GOLD, 6))
+	var ch := HBoxContainer.new()
+	ch.add_theme_constant_override("separation", 4)
+	stall_coin_badge.add_child(ch)
+	var mic := TextureRect.new()
+	mic.texture = TextureGen.coin_icon()
+	mic.custom_minimum_size = Vector2(14, 14)
+	mic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	ch.add_child(mic)
+	stall_coin_label = UIKit.label(ch, "0 xu", 11, UIKit.COLOR_TEXT_GOLD)
+	stall_coin_badge.position = Vector2(8, -52)
+	stall_coin_badge.visible = false
+	body.add_child(stall_coin_badge)
+
+	var ctw := create_tween().set_loops()
+	ctw.tween_property(stall_coin_badge, "position:y", -55.0, 0.7).set_trans(Tween.TRANS_SINE)
+	ctw.tween_property(stall_coin_badge, "position:y", -49.0, 0.7).set_trans(Tween.TRANS_SINE)
+
+	# 5. Va chạm (chân cột và quầy hàng)
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(104, 24)
+	col.shape = shape
+	col.position = Vector2(0, -14)
+	body.add_child(col)
+
+	world.add_child(body)
+	_update_stall_crates_visual()
+	_update_stall_coin_badge()
+
+
+func _update_stall_coin_badge() -> void:
+	if stall_coin_badge == null:
+		return
+	stall_coin_badge.visible = stall_revenue > 0
+	if stall_coin_label != null:
+		stall_coin_label.text = "%d xu" % stall_revenue
+
+
+func _update_stall_crates_visual() -> void:
+	for i in 6:
+		if i >= stall_crate_sprites.size():
+			continue
+		var cs: Sprite2D = stall_crate_sprites[i]
+		if i < stall_slots.size() and stall_slots[i] != null and not stall_slots[i].is_empty():
+			var slot: Dictionary = stall_slots[i]
+			var sid: String = str(slot.get("id", ""))
+			var stype: String = str(slot.get("type", "crop"))
+			var count: int = int(slot.get("count", 0))
+			if sid != "" and count > 0:
+				cs.texture = TextureGen.get_crate_fill_tex(sid, stype)
+				cs.visible = true
+			else:
+				cs.visible = false
+		else:
+			cs.visible = false
+
+
+func _on_stall_changed() -> void:
+	_update_stall_crates_visual()
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+
+
+func _add_decor(tex: Texture2D, pos: Vector2, scl: float, collide: Rect2) -> StaticBody2D:
 	var body := StaticBody2D.new()
 	body.position = pos
 	var spr := Sprite2D.new()
@@ -473,48 +753,257 @@ func _add_decor(tex: Texture2D, pos: Vector2, scl: float, collide: Rect2) -> voi
 		col.position = collide.position + collide.size / 2.0
 		body.add_child(col)
 	world.add_child(body)
+	return body
+
+
+func _get_foliage_col_rect(f_name: String) -> Rect2:
+	match f_name:
+		"bush_large":
+			return Rect2(-18, -14, 36, 14)
+		"bush_med", "bush_berry":
+			return Rect2(-12, -12, 24, 12)
+		"bush_small":
+			return Rect2(-10, -10, 20, 10)
+		"tree_stump":
+			return Rect2(-7, -14, 14, 14)
+		"tree_broadleaf":
+			return Rect2(-10, -16, 20, 16)
+		_:
+			return Rect2(-8, -14, 16, 14)
+
+
+func _random_foliage_type(rng: RandomNumberGenerator) -> String:
+	var total_w := 0
+	for item in FOLIAGE_TYPES:
+		total_w += int(item.weight)
+	var r := rng.randi_range(0, total_w - 1)
+	var cur := 0
+	for item in FOLIAGE_TYPES:
+		cur += int(item.weight)
+		if r < cur:
+			return str(item.name)
+	return "tree_oak"
+
+
+func _is_grass_surface(pos: Vector2) -> bool:
+	# 1. Giới hạn biên bản đồ
+	if pos.x < 45.0 or pos.x > WORLD_SIZE.x - 45.0 or pos.y < 50.0 or pos.y > WORLD_SIZE.y - 50.0:
+		return false
+
+	# 2. Toàn bộ mạng lưới đường đi (PATHS) + hành lang an toàn 28px
+	for p in PATHS:
+		if p.grow(28.0).has_point(pos):
+			return false
+
+	# 3. Ruộng nông trại & hàng rào + cổng vào (Tây, Đông, rào Bắc, Nam)
+	var farm_box := Rect2(FARM_ORIGIN.x - 40.0, FARM_ORIGIN.y - 60.0, FARM_TILES.x * 32.0 + 80.0, FARM_TILES.y * 32.0 + 120.0)
+	if farm_box.has_point(pos):
+		return false
+
+	# 4. Nhà gỗ & hiên nhà
+	var house_box := Rect2(HOUSE_POS.x - 90.0, HOUSE_POS.y - 155.0, 185.0, 180.0)
+	if house_box.has_point(pos):
+		return false
+
+	# 4b. Nhà kho Stardew Valley cạnh nhà chính
+	var shed_box := Rect2(SHED_POS.x - 65.0, SHED_POS.y - 140.0, 130.0, 160.0)
+	if shed_box.has_point(pos):
+		return false
+
+	# 4c. Lều của Mèo Stardew Valley
+	var tent_box := Rect2(TENT_POS.x - 30.0, TENT_POS.y - 70.0, 60.0, 80.0)
+	if tent_box.has_point(pos):
+		return false
+
+	# 4d. Vị trí mèo đứng đợi nhận việc trong sân
+	if pos.distance_to(CatHelperScript.WAITING_POS) < 32.0:
+		return false
+
+	# 5. Hòm thư cạnh nhà
+	if pos.distance_to(MAILBOX_POS) < 36.0:
+		return false
+
+	# 6. Bù nhìn rơm
+	if pos.distance_to(SCARECROW_POS) < 32.0:
+		return false
+
+	# 7. Vị trí xuất phát của người chơi
+	if pos.distance_to(PLAYER_START) < 40.0:
+		return false
+
+	# 8. Khu chuồng nuôi gia cầm & lối đi xung quanh
+	var pen_box := Rect2(90.0, 530.0, 320.0, 230.0)
+	if pen_box.has_point(pos):
+		return false
+
+	# 9. Ao nước & toàn bộ bờ ao câu cá
+	if POND_RECT.grow(30.0).has_point(pos):
+		return false
+
+	# 10. Ba quầy hàng chợ quê & khoảng đất mua bán
+	var market_box := Rect2(920.0, 330.0, 500.0, 130.0)
+	if market_box.has_point(pos):
+		return false
+
+	# 10b. Sạp hàng nông sản ở góc rẽ trái
+	var stall_box := Rect2(MARKET_STALL_POS.x - 65.0, MARKET_STALL_POS.y - 75.0, 130.0, 95.0)
+	if stall_box.has_point(pos):
+		return false
+
+	# 11. Các vạt đất trống (dirt patches) tự nhiên trên mặt đất
+	var dirt_patches: Array[Vector4i] = [
+		Vector4i(6, 14, 4, 3), Vector4i(30, 8, 5, 3), Vector4i(46, 10, 4, 3), Vector4i(70, 7, 5, 3),
+		Vector4i(88, 19, 4, 3), Vector4i(82, 36, 5, 4), Vector4i(86, 46, 4, 3), Vector4i(72, 48, 4, 3),
+		Vector4i(34, 55, 5, 3), Vector4i(48, 52, 4, 3), Vector4i(78, 56, 5, 3), Vector4i(6, 42, 4, 3), Vector4i(8, 58, 4, 3),
+	]
+	for dp in dirt_patches:
+		var cx := dp.x * 16.0
+		var cy := dp.y * 16.0
+		var rx := dp.z * 16.0
+		var ry := dp.w * 16.0
+		var dx := (pos.x - cx) / rx
+		var dy := (pos.y - cy) / ry
+		if dx * dx + dy * dy <= 1.0:
+			return false
+
+	return true
+
+
+func _clear_foliage() -> void:
+	for node in foliage_nodes:
+		if is_instance_valid(node):
+			node.queue_free()
+	foliage_nodes.clear()
+	foliage_data.clear()
+
+
+func _spawn_foliage_item(f_name: String, pos: Vector2) -> StaticBody2D:
+	var tex := TextureGen.get_tex(f_name)
+	if tex == null:
+		return null
+	var col_rect := _get_foliage_col_rect(f_name)
+	var body: StaticBody2D = _add_decor(tex, pos, 1.0, col_rect)
+	foliage_nodes.append(body)
+	foliage_data.append({"type": f_name, "x": pos.x, "y": pos.y})
+	return body
+
+
+func _populate_random_foliage(target_count: int = 75, seed_val: int = 0) -> void:
+	_clear_foliage()
+	var rng := RandomNumberGenerator.new()
+	if seed_val != 0:
+		rng.seed = seed_val
+	else:
+		rng.randomize()
+
+	var attempts := 0
+	var max_attempts := 3500
+	var min_dist := 48.0
+
+	while foliage_data.size() < target_count and attempts < max_attempts:
+		attempts += 1
+		var x := rng.randf_range(50.0, WORLD_SIZE.x - 50.0)
+		var y := rng.randf_range(55.0, WORLD_SIZE.y - 55.0)
+		var pt := Vector2(x, y)
+
+		if not _is_grass_surface(pt):
+			continue
+
+		var too_close := false
+		for d in foliage_data:
+			var ex_pt := Vector2(float(d.x), float(d.y))
+			if pt.distance_to(ex_pt) < min_dist:
+				too_close = true
+				break
+		if too_close:
+			continue
+
+		var f_type := _random_foliage_type(rng)
+		_spawn_foliage_item(f_type, pt)
+
+
+func _load_foliage(saved_items: Array) -> void:
+	_clear_foliage()
+	for item in saved_items:
+		if typeof(item) != TYPE_DICTIONARY:
+			continue
+		var px: float = float(item.get("x", 0.0))
+		var py: float = float(item.get("y", 0.0))
+		var pt := Vector2(px, py)
+		if not _is_grass_surface(pt):
+			continue
+		var f_type: String = str(item.get("type", "tree_oak"))
+		_spawn_foliage_item(f_type, pt)
+
+
+func _sprout_random_plant() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for _i in 100:
+		var x := rng.randf_range(50.0, WORLD_SIZE.x - 50.0)
+		var y := rng.randf_range(55.0, WORLD_SIZE.y - 55.0)
+		var pt := Vector2(x, y)
+		if not _is_grass_surface(pt):
+			continue
+		var too_close := false
+		for d in foliage_data:
+			var ex_pt := Vector2(float(d.x), float(d.y))
+			if pt.distance_to(ex_pt) < 48.0:
+				too_close = true
+				break
+		if too_close:
+			continue
+		var plant_pool := ["bush_small", "bush_berry", "bush_med", "tree_oak", "tree_maple", "tree_pine"]
+		var plant_type: String = plant_pool[rng.randi_range(0, plant_pool.size() - 1)]
+		_spawn_foliage_item(plant_type, pt)
+		hud.toast("Một cây xanh vừa mọc tự nhiên trên bãi cỏ qua đêm! 🌱", Color(0.65, 0.95, 0.6))
+		break
 
 
 func _build_fences() -> void:
 	var fh: Texture2D = TextureGen.get_tex("fence_h")
 	var fv: Texture2D = TextureGen.get_tex("fence_v")
-	var fc: Texture2D = TextureGen.get_tex("fence_corner")
-	var y_top := int(FARM_ORIGIN.y - 8)
-	var y_bot := int(FARM_ORIGIN.y + FARM_TILES.y * 32 + 4)
-	var x_left := int(FARM_ORIGIN.x - 12)
-	var x_right := int(FARM_ORIGIN.x + FARM_TILES.x * 32 + 12)
+	var y_top := 370
+	var y_bot := 672
+	var x_left := 408
+	var x_right := 888
 
-	# 1. Hàng ngang trên + dưới liền kín
-	for x in range(int(FARM_ORIGIN.x) + 16, int(FARM_ORIGIN.x + FARM_TILES.x * 32) - 15, 32):
+	# 1. Hàng ngang trên + dưới liền kín (14 sprite 32px nối liền kín khít từ cọc góc này sang cọc góc kia)
+	for x in range(440, 857, 32):
 		_add_sprite(fh, Vector2(x, y_top))
 		_add_sprite(fh, Vector2(x, y_bot))
 
-	# 2. Hai cột dọc — Tây và Đông chừa cửa đi qua
-	var door_w1 := FARM_ORIGIN.y + 2 * 32
-	var door_w2 := FARM_ORIGIN.y + 4 * 32
-	for y in range(y_top + 16, y_bot, 32):
-		if y > door_w1 and y < door_w2:
-			continue
+	# 2. Hai cột dọc — Tây và Đông chừa cửa đi qua ở đại lộ (tâm 472), rào nối khít vào cổng không khe hở
+	for y in [398, 430, 514, 546, 578, 610, 642]:
 		_add_sprite(fv, Vector2(x_left, y))
 		_add_sprite(fv, Vector2(x_right, y))
 
-	# 3. Bốn cọc góc vững chãi cho hàng rào ruộng
-	_add_sprite(fc, Vector2(x_left, y_top))
-	_add_sprite(fc, Vector2(x_right, y_top))
-	_add_sprite(fc, Vector2(x_left, y_bot))
-	_add_sprite(fc, Vector2(x_right, y_bot))
+	# 3. Bốn cọc góc vững chãi cho hàng rào ruộng ngay rìa ngoài đất trồng
+	_add_sprite(TextureGen.get_tex("fence_corner_tl"), Vector2(x_left, y_top))
+	_add_sprite(TextureGen.get_tex("fence_corner_tr"), Vector2(x_right, y_top))
+	_add_sprite(TextureGen.get_tex("fence_corner_bl"), Vector2(x_left, y_bot))
+	_add_sprite(TextureGen.get_tex("fence_corner_br"), Vector2(x_right, y_bot))
 
-	# Va chạm: tây/đông mở cửa giữa, nam/bắc liền kín
-	_wall(Vector2(FARM_ORIGIN.x + FARM_TILES.x * 16, y_top), Vector2(FARM_TILES.x * 32, 10))
-	_wall(Vector2(FARM_ORIGIN.x + FARM_TILES.x * 16, y_bot), Vector2(FARM_TILES.x * 32, 10))
-	_wall(Vector2(x_left, (y_top - 6 + door_w1) / 2.0), Vector2(10, door_w1 - y_top + 6))
-	_wall(Vector2(x_left, (door_w2 + y_bot + 8) / 2.0), Vector2(10, y_bot + 8 - door_w2))
-	_wall(Vector2(x_right, (y_top - 6 + door_w1) / 2.0), Vector2(10, door_w1 - y_top + 6))
-	_wall(Vector2(x_right, (door_w2 + y_bot + 8) / 2.0), Vector2(10, y_bot + 8 - door_w2))
+	# Va chạm: tây/đông mở cửa giữa (y: 440..504), nam/bắc liền kín
+	var door_y1 := 440
+	var door_y2 := 504
+	var farm_mid_x := (x_left + x_right) / 2.0  # 648.0
+	var farm_width := float(x_right - x_left)   # 480.0
+	_wall(Vector2(farm_mid_x, y_top), Vector2(farm_width, 10))
+	_wall(Vector2(farm_mid_x, y_bot), Vector2(farm_width, 10))
+	_wall(Vector2(x_left, (y_top - 6 + door_y1) / 2.0), Vector2(10, door_y1 - y_top + 6))
+	_wall(Vector2(x_left, (door_y2 + y_bot + 8) / 2.0), Vector2(10, y_bot + 8 - door_y2))
+	_wall(Vector2(x_right, (y_top - 6 + door_y1) / 2.0), Vector2(10, door_y1 - y_top + 6))
+	_wall(Vector2(x_right, (door_y2 + y_bot + 8) / 2.0), Vector2(10, y_bot + 8 - door_y2))
 
 	# 4. Hai khung cổng DỌC nghệ thuật tại cửa Tây & Đông
-	for door_x in [x_left, x_right]:
-		_add_sprite(TextureGen.get_tex("gate_v"), Vector2(door_x, (door_w1 + door_w2) / 2.0))
+	var door_mid := 472.0
+	_add_sprite(TextureGen.get_tex("gate_v"), Vector2(x_left, door_mid))
+	var s_right := Sprite2D.new()
+	s_right.texture = TextureGen.get_tex("gate_v")
+	s_right.position = Vector2(x_right, door_mid)
+	s_right.flip_h = true
+	world.add_child(s_right)
 
 
 func _add_sprite(tex: Texture2D, pos: Vector2, parent: Node = null) -> void:
@@ -548,14 +1037,32 @@ func _wall(center: Vector2, size: Vector2, parent: Node = null) -> void:
 func _build_ui() -> void:
 	hud = HudScript.new()
 	add_child(hud)
+	hud.open_inventory_requested.connect(_open_inventory)
+	hud.open_storage_requested.connect(_open_storage)
+	hud.open_cat_requested.connect(_open_cat_panel)
+	hud.open_stall_requested.connect(_open_market_stall)
 	shop_panel = ShopPanelScript.new()
 	add_child(shop_panel)
 	fish_shop = FishShopScript.new()
 	add_child(fish_shop)
 	poultry_shop = PoultryShopScript.new()
 	add_child(poultry_shop)
+	stall_panel = StallPanelScript.new()
+	add_child(stall_panel)
 	inv_panel = InventoryPanelScript.new()
 	add_child(inv_panel)
+	mailbox_panel = MailboxPanelScript.new()
+	add_child(mailbox_panel)
+	mailbox_panel.closed.connect(_close_panels)
+	mailbox_panel.changed.connect(_on_mailbox_changed)
+	storage_panel = StoragePanelScript.new()
+	add_child(storage_panel)
+	storage_panel.closed.connect(_close_panels)
+	storage_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
+	cat_panel = CatPanelScript.new()
+	add_child(cat_panel)
+	cat_panel.closed.connect(_close_panels)
+	cat_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
 	pause_menu = PauseMenuScript.new()
 	add_child(pause_menu)
 	dialog_box = DialogueBoxScript.new()
@@ -600,6 +1107,7 @@ func _process(delta: float) -> void:
 		return
 	GameState.tick(delta)
 	Inventory.tick_animals(delta)
+	_process_stall_customers(delta)
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	_update_hint_and_highlight()
@@ -611,6 +1119,155 @@ func _process(delta: float) -> void:
 			_finish_fishing()
 	if GameState.clock >= GameState.COLLAPSE_MIN and GameState.clock < GameState.DAY_START:
 		_do_sleep(true)  # 2h sáng chưa ngủ -> gục ngã
+
+
+func _process_stall_customers(delta: float) -> void:
+	var t := GameState.clock
+
+	# Lọc danh sách khách hàng đang hoạt động
+	var alive: Array[Node2D] = []
+	for c in _stall_customers:
+		if is_instance_valid(c):
+			alive.append(c)
+	_stall_customers = alive
+	_active_stall_customer = _stall_customers[0] if not _stall_customers.is_empty() else null
+
+	# Khi trời tối (sau 21:00 / 1260.0 hoặc trước 7:00 sáng / 420.0), dân làng đứng chờ sẽ chào và ra về
+	if t >= 1260.0 or t < 420.0:
+		for c in _stall_customers:
+			if is_instance_valid(c) and c.state == StallCustomerScript.State.WAITING:
+				c.dismiss_for_night()
+		return
+
+	# Cho phép tối đa 10 NPC xuất hiện và chờ cùng lúc
+	if _stall_customers.size() >= STALL_COUNTER_SPOTS.size():
+		return
+
+	_stall_customer_timer += delta
+	# Cứ mỗi 3.5 - 5s có một khách mới ghé sạp nếu chưa đủ 10 người
+	if _stall_customer_timer < 4.0:
+		return
+	_stall_customer_timer = 0.0
+
+	_spawn_stall_customer()
+
+
+func _spawn_stall_customer(forced_slot_idx: int = -1) -> Node2D:
+	# Tìm vị trí đứng còn trống trước quầy sạp hàng
+	var occupied_spots: Array[Vector2] = []
+	for c in _stall_customers:
+		if is_instance_valid(c):
+			occupied_spots.append(c.target_stall_pos)
+
+	var free_spots: Array[Vector2] = []
+	for spot in STALL_COUNTER_SPOTS:
+		if not spot in occupied_spots:
+			free_spots.append(spot)
+
+	if free_spots.is_empty():
+		return null
+
+	var chosen_spot: Vector2 = free_spots[randi() % free_spots.size()]
+
+	# Chọn nhân vật Stardew Valley (1 trong 10 dân làng với tên tiếng Việt thân thuộc)
+	var available_chars := []
+	for d in SDV_CUSTOMERS_DATA:
+		var in_use := false
+		for c in _stall_customers:
+			if is_instance_valid(c) and c.display_name == str(d.name):
+				in_use = true
+				break
+		if not in_use:
+			available_chars.append(d)
+
+	var cdata: Dictionary = available_chars[randi() % available_chars.size()] if not available_chars.is_empty() else SDV_CUSTOMERS_DATA[randi() % SDV_CUSTOMERS_DATA.size()]
+
+	# Lựa chọn món đồ khách muốn mua:
+	# Ưu tiên chọn món đang có sẵn trên sạp (để mua được ngay), hoặc chọn từ wishlist (đứng chờ người chơi bày hàng)
+	var target_item: Dictionary = {}
+	var stocked_indices: Array[int] = []
+	for i in stall_slots.size():
+		var slot = stall_slots[i]
+		if typeof(slot) == TYPE_DICTIONARY and not slot.is_empty() and int(slot.get("count", 0)) > 0:
+			stocked_indices.append(i)
+
+	if forced_slot_idx >= 0 and forced_slot_idx < stall_slots.size() and not stall_slots[forced_slot_idx].is_empty():
+		var slot: Dictionary = stall_slots[forced_slot_idx]
+		target_item = {
+			"id": str(slot.get("id", "")),
+			"type": str(slot.get("type", "crop")),
+			"name": str(slot.get("name", "Nông sản")),
+			"price": int(slot.get("price", 10)),
+			"qty": mini(int(slot.get("count", 1)), randi_range(1, 3))
+		}
+	elif not stocked_indices.is_empty() and randf() < 0.65:
+		var idx: int = stocked_indices[randi() % stocked_indices.size()]
+		var slot: Dictionary = stall_slots[idx]
+		target_item = {
+			"id": str(slot.get("id", "")),
+			"type": str(slot.get("type", "crop")),
+			"name": str(slot.get("name", "Nông sản")),
+			"price": int(slot.get("price", 10)),
+			"qty": mini(int(slot.get("count", 1)), randi_range(1, 3))
+		}
+	else:
+		var w_item: Dictionary = STALL_WISHLIST_ITEMS[randi() % STALL_WISHLIST_ITEMS.size()]
+		var bp: int = int(w_item.get("base_price", 20))
+		target_item = {
+			"id": str(w_item.get("id", "wheat")),
+			"type": str(w_item.get("type", "crop")),
+			"name": str(w_item.get("name", "Lúa mì")),
+			"price": maxi(1, int(round(float(bp) * 1.2))),
+			"qty": randi_range(1, 3)
+		}
+
+	var cust: Node2D = StallCustomerScript.new()
+	cust.character_name = str(cdata.asset)
+	cust.display_name = str(cdata.name)
+	cust.target_stall_pos = chosen_spot
+	cust.stall_slots = stall_slots
+
+	cust.item_id = str(target_item.get("id", "wheat"))
+	cust.item_type = str(target_item.get("type", "crop"))
+	cust.item_name = str(target_item.get("name", "Lúa mì"))
+	cust.unit_price = int(target_item.get("price", 10))
+	cust.buy_qty = int(target_item.get("qty", 1))
+
+	cust.purchase_completed.connect(_on_stall_customer_purchased)
+	cust.departed.connect(func():
+		_stall_customers.erase(cust)
+		if _active_stall_customer == cust:
+			_active_stall_customer = _stall_customers[0] if not _stall_customers.is_empty() else null
+	)
+
+	_stall_customers.append(cust)
+	_active_stall_customer = cust
+	world.add_child(cust)
+	return cust
+
+
+func _on_stall_customer_purchased(slot_idx: int, item_name: String, qty: int, coins: int, buyer_name: String = "") -> void:
+	if slot_idx >= 0 and slot_idx < stall_slots.size():
+		var slot: Dictionary = stall_slots[slot_idx]
+		if not slot.is_empty():
+			var cur: int = int(slot.get("count", 0))
+			var actual_qty: int = mini(cur, qty)
+			slot["count"] = cur - actual_qty
+			if int(slot["count"]) <= 0:
+				stall_slots[slot_idx] = {}
+			_update_stall_crates_visual()
+			if stall_panel != null and stall_panel.visible:
+				stall_panel.stall_slots = stall_slots
+				stall_panel.stall_revenue = stall_revenue + coins
+				stall_panel._refresh_ui()
+
+	# Tiền bán tích lũy tại sạp để người chơi tự đến nhận, không tự cộng vào ví
+	stall_revenue += coins
+	_update_stall_coin_badge()
+	var who := buyer_name if buyer_name != "" else "Khách"
+	hud.toast("%s ghé mua %d %s! Có %d xu chờ thu tại sạp 🏪" % [who, qty, item_name, stall_revenue], Color(1.0, 0.88, 0.4))
+	_spawn_effect("fx_harvest", Vector2(184, 432))
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
 
 
 func _tint() -> Color:
@@ -637,11 +1294,27 @@ func _update_hint_and_highlight() -> void:
 		if near.pos == PEN_RECT.get_center() + Vector2(0, 4):
 			var r_count := Inventory.ready_products()
 			if r_count > 0:
-				lbl = "Thu hoạch %d sản phẩm chăn nuôi 🥚" % r_count
+				lbl = "Thu hoạch (%d) 🥚" % r_count
 			elif Inventory.animals.size() > 0:
-				lbl = "Chuồng gia cầm (%d con đang lớn) 🌾" % Inventory.animals.size()
+				lbl = "Chuồng gia cầm (%d con)" % Inventory.animals.size()
 			else:
-				lbl = "Chuồng gia cầm (Gặp Cô Tư mua giống)"
+				lbl = "Chuồng gia cầm"
+		elif near.pos == MAILBOX_POS:
+			if _has_mailbox_items():
+				lbl = "Hòm thư 📬 (Có quà)"
+			else:
+				lbl = "Hòm thư 📬 (Trống)"
+		elif near.pos == MARKET_STALL_POS + Vector2(0, 16):
+			var count_items := 0
+			var occupied_crates := 0
+			for sl in stall_slots:
+				if typeof(sl) == TYPE_DICTIONARY and not sl.is_empty() and int(sl.get("count", 0)) > 0:
+					count_items += int(sl.get("count", 0))
+					occupied_crates += 1
+			if occupied_crates > 0:
+				lbl = "Sạp hàng 🏪 (%d/6 ô · %d món)" % [occupied_crates, count_items]
+			else:
+				lbl = "Sạp hàng 🏪"
 		hud.set_hint("E: " + lbl)
 		return
 	var tile = farm.tile_at_world(player.get_facing_point())
@@ -660,11 +1333,58 @@ func _nearest_interactable() -> Dictionary:
 	var best := {}
 	var best_d := INF
 	for it in interactables:
-		var d: float = player.position.distance_to(it.pos)
+		var it_pos: Vector2 = it.pos
+		var d: float = player.position.distance_to(it_pos)
 		if d <= float(it.r) and d < best_d:
 			best_d = d
-			best = it
+			best = it.duplicate()
+			if it_pos == FISH_SPOT_POS:
+				var active_t: String = str(Inventory.active_item.get("type", ""))
+				if active_t == "rod" and Inventory.total_casts() > 0:
+					best.label = "Câu cá (%d lượt)" % Inventory.total_casts()
+					best.cb = _start_fishing
+				elif Inventory.water_level < Inventory.water_max:
+					best.label = "Múc nước vào bình (%d/%d) 💧" % [Inventory.water_level, Inventory.water_max]
+					best.cb = _refill_water_can
+				elif Inventory.total_casts() > 0:
+					best.label = "Câu cá (%d lượt)" % Inventory.total_casts()
+					best.cb = _start_fishing
+				else:
+					best.label = "Bình nước đã đầy (20/20) 💧"
+					best.cb = func(): hud.toast("Bình nước đã đầy rồi (20/20)!")
+
+	# Kiểm tra khách NPC đang đứng chờ quanh sạp để người chơi có thể từ chối / báo hết hàng
+	for c in _stall_customers:
+		if is_instance_valid(c) and c.state == StallCustomerScript.State.WAITING:
+			var d: float = player.position.distance_to(c.position)
+			if d <= 32.0 and d < best_d:
+				best_d = d
+				best = {
+					"pos": c.position,
+					"r": 32.0,
+					"label": "%s · [E] Báo hết hàng" % c.display_name,
+					"cb": func(): _decline_stall_customer(c)
+				}
+	# Kiểm tra chú mèo tam thể làm nông
+	if is_instance_valid(cat_helper):
+		var d_cat: float = player.position.distance_to(cat_helper.position)
+		if d_cat <= 45.0 and d_cat < best_d:
+			best_d = d_cat
+			var cat_lbl := "Nói chuyện với Mèo Tam Thể 🐱" if not cat_helper.is_hired else "Quản lý việc làm của Mèo 🐱"
+			best = {
+				"pos": cat_helper.position,
+				"r": 45.0,
+				"label": cat_lbl,
+				"cb": _open_cat_panel
+			}
 	return best
+
+
+func _decline_stall_customer(cust: Node2D) -> void:
+	if not is_instance_valid(cust) or cust.state != StallCustomerScript.State.WAITING:
+		return
+	cust.decline()
+	hud.toast("%s: Tiếc quá, hẹn hôm khác nhé! 👋" % cust.display_name, Color(1.0, 0.85, 0.5))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -674,13 +1394,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().paused = true
 		elif pause_menu.visible:
 			_resume_from_pause()
-		elif shop_panel.visible or inv_panel.visible:
+		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("interact"):
 		if mode == Mode.PLAY and not get_tree().paused:
 			_do_interact()
 		elif mode == Mode.DIALOG:
 			dialog_box.advance()
+		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible):
+			_close_panels()
 	elif event.is_action_pressed("inventory"):
 		if mode == Mode.PLAY and not get_tree().paused:
 			_open_inventory()
@@ -691,6 +1413,28 @@ func _unhandled_input(event: InputEvent) -> void:
 		var c := CropDB.get_crop(id)
 		if not c.is_empty():
 			hud.toast("Đổi hạt: %s" % c.name)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if mode == Mode.PLAY and not get_tree().paused:
+			if event.keycode == KEY_K:
+				_open_storage()
+				get_viewport().set_input_as_handled()
+				return
+			elif event.keycode == KEY_M:
+				_open_cat_panel()
+				get_viewport().set_input_as_handled()
+				return
+			elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
+				hud.select_slot_by_index(event.keycode - KEY_1)
+		elif (storage_panel != null and storage_panel.visible and event.keycode == KEY_K) \
+			or (cat_panel != null and cat_panel.visible and event.keycode == KEY_M):
+			_close_panels()
+			get_viewport().set_input_as_handled()
+			return
+	elif event is InputEventMouseButton and event.pressed and mode == Mode.PLAY and not get_tree().paused:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			hud.cycle_slot(-1)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			hud.cycle_slot(1)
 
 
 # ---------------- hành động ----------------
@@ -713,9 +1457,10 @@ func _do_interact() -> void:
 	var act := str(info.act)
 	if act != "none":
 		_spawn_effect("fx_" + act, farm.tile_center(tile.coord))
-	player.play_action_anim()
+	player.play_action_anim(act)
 	player.can_move = false
-	await get_tree().create_timer(0.25).timeout
+	var act_time: float = player.get_action_duration(act)
+	await get_tree().create_timer(act_time).timeout
 	if not fishing:
 		player.can_move = true
 
@@ -781,6 +1526,18 @@ func _open_shop() -> void:
 	shop_panel.open()
 
 
+func _open_market_stall() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	stall_panel.open(stall_slots, stall_revenue)
+
+
+func _on_stall_revenue_collected(_amt: int) -> void:
+	stall_revenue = 0
+	_update_stall_coin_badge()
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+
+
 func _open_fish_shop() -> void:
 	mode = Mode.PANEL
 	get_tree().paused = true
@@ -823,11 +1580,43 @@ func _open_inventory() -> void:
 	inv_panel.open()
 
 
+func _open_mailbox() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	mailbox_panel.open(mailbox_data)
+
+
+func _open_storage() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	storage_panel.open()
+
+
+func _open_cat_panel() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	cat_panel.open(cat_helper)
+
+
+func _on_mailbox_changed() -> void:
+	_update_mailbox_badge()
+	hud.rebuild_hotbar()
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+
+
 func _close_panels() -> void:
 	shop_panel.visible = false
 	fish_shop.visible = false
 	poultry_shop.visible = false
 	inv_panel.visible = false
+	if storage_panel != null:
+		storage_panel.visible = false
+	if cat_panel != null:
+		cat_panel.visible = false
+	if mailbox_panel != null:
+		mailbox_panel.visible = false
+	if stall_panel != null:
+		stall_panel.visible = false
 	pause_menu.visible = false
 	get_tree().paused = false
 	if mode != Mode.TITLE:
@@ -841,13 +1630,19 @@ func _resume_from_pause() -> void:
 		mode = Mode.PLAY
 
 
+func _cat_save_data() -> Dictionary:
+	if is_instance_valid(cat_helper):
+		return cat_helper.get_save_dict()
+	return {}
+
+
 func _save_now() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
 	hud.toast("Đã lưu game!", Color(0.6, 1.0, 0.6))
 
 
 func _back_to_title() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
 	_close_panels()
 	mode = Mode.TITLE
 	dialog_box.force_close()
@@ -879,11 +1674,37 @@ func _do_sleep(forced: bool) -> void:
 	await tw.finished
 	GameState.sleep_to_morning()
 	var ready_n: int = farm.ready_count()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met)
+	# Dọn các khách NPC ngày hôm trước để ngày mới đón khách mới
+	for c in _stall_customers:
+		if is_instance_valid(c):
+			c.queue_free()
+	_stall_customers.clear()
+	_active_stall_customer = null
+	# Chú mèo tam thể làm nông: trả lương và sẵn sàng cho ngày mới
+	if is_instance_valid(cat_helper) and cat_helper.is_hired:
+		cat_helper._pay_daily_wage()
+		cat_helper.wage_paid_today = false
+		cat_helper.position = CatHelperScript.TENT_SLEEP_POS
+		cat_helper.state = CatHelperScript.State.IDLE
+		cat_helper._hide_bubble()
+	# Cây cối tự nhiên có tỉ lệ mọc thêm trên bề mặt cỏ qua đêm
+	if foliage_nodes.size() < 95 and randf() < 0.60:
+		_sprout_random_plant()
+	# Sâu bọ có thể xuất hiện trên các luống cây đang lớn qua đêm
+	var new_pests := 0
+	for t in farm.tiles.values():
+		if t.tstate == FarmTileScript.TState.PLANTED and not t.is_ready() and not t.has_pest and t.growth > 3.0:
+			if randf() < 0.15:
+				t.spawn_pest()
+				new_pests += 1
+	# Hàng hoá trên sạp được giữ nguyên qua đêm (không bán qua đêm)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	if forced:
 		hud.toast("Bạn gục ngã vì kiệt sức...", Color(1.0, 0.55, 0.45))
+	if new_pests > 0:
+		hud.toast("⚠️ Có %d cây bị sâu cắn phá! Hãy bắt sâu bọ để cây lớn tiếp 🐛" % new_pests, Color(1.0, 0.65, 0.4))
 	hud.toast("Ngày mới! %d cây đã chín chờ thu hoạch." % ready_n, Color(0.65, 1.0, 0.6))
 	var tw2 := create_tween()
 	tw2.tween_property(fade_rect, "modulate:a", 0.0, 0.6)
@@ -893,7 +1714,23 @@ func _do_sleep(forced: bool) -> void:
 	get_tree().paused = false
 
 
-# ---------------- câu cá ----------------
+# ---------------- múc nước từ ao & câu cá ----------------
+
+func _refill_water_can() -> void:
+	if Inventory.water_level >= Inventory.water_max:
+		hud.toast("Bình tưới đã đầy nước (%d/%d)!" % [Inventory.water_level, Inventory.water_max])
+		return
+	var _added: int = Inventory.refill_water()
+	player.facing = (POND_RECT.get_center() - player.position).normalized()
+	_spawn_effect("fx_water", player.position + player.facing * 18.0)
+	player.play_action_anim("water")
+	player.can_move = false
+	var act_time: float = player.get_action_duration("water")
+	await get_tree().create_timer(act_time).timeout
+	player.can_move = true
+	hud.rebuild_hotbar()
+	hud.toast("Đã múc nước từ ao! Bình tưới: %d/%d 💧" % [Inventory.water_level, Inventory.water_max], Color(0.4, 0.85, 1.0))
+
 
 func _start_fishing() -> void:
 	if fishing:
@@ -940,7 +1777,11 @@ func _finish_fishing() -> void:
 	if f.is_empty():
 		hud.toast("Kéo cần lên... không con cá nào cắn!", Color(0.8, 0.8, 0.8))
 		return
-	Inventory.add_fish(str(f.id), 1)
+	var fid := str(f.id)
+	if not Inventory.can_hold("fish", fid):
+		hud.toast("Túi đồ đã đầy! Không thể giữ %s... Hãy cất bớt đồ vào nhà kho 🏚️" % f.name, Color(1.0, 0.5, 0.4))
+		return
+	Inventory.add_fish(fid, 1)
 	if str(f.tier) == "legend":
 		hud.toast("HUYỀN THOẠI! Bắt được %s!!!" % f.name, Color(1.0, 0.85, 0.3))
 	elif str(f.tier) == "rare":
@@ -957,11 +1798,24 @@ func start_new_game() -> void:
 	Inventory.selected_seed = "rice"
 	Inventory.add_hoes(2)
 	Inventory.add_seed("rice", 2)
+	mailbox_data = _default_mailbox_data()
+	_update_mailbox_badge()
+	stall_slots = [{}, {}, {}, {}, {}, {}]
+	stall_revenue = 0
+	_update_stall_crates_visual()
+	_update_stall_coin_badge()
 	farm.reset_all()
 	player.position = PLAYER_START
 	player.facing = Vector2.DOWN
 	cam.reset_smoothing()
 	_npc_met = false
+	_populate_random_foliage(75)
+	if is_instance_valid(cat_helper):
+		cat_helper.dismiss()
+		cat_helper.position = CatHelperScript.SPAWN_POS
+		cat_helper.state = CatHelperScript.State.ARRIVING
+		cat_helper.waypoints = [CatHelperScript.ROAD_JUNCTION_POS, Vector2(CatHelperScript.ROAD_JUNCTION_POS.x, CatHelperScript.WAITING_POS.y), CatHelperScript.WAITING_POS]
+		cat_helper._show_bubble_text("...")
 	dialog_box.force_close()
 	title_screen.hide_me()
 	get_tree().paused = false
@@ -989,11 +1843,28 @@ func continue_game() -> void:
 		"produce": d.get("produce", {}),
 		"sel": d.get("sel", ""),
 		"hoes": d.get("hoes", 0),
+		"water_level": d.get("water_level", 20),
+		"water_max": d.get("water_max", 20),
+		"active_item": d.get("active_item", {"type": "hoe"}),
 		"rods": d.get("rods", {}),
 		"fish": d.get("fish", {}),
 		"coops": d.get("coops", {}),
 		"animals": d.get("animals", []),
 	})
+	var mb_dict = d.get("mailbox", null)
+	if typeof(mb_dict) == TYPE_DICTIONARY and not mb_dict.is_empty() and (mb_dict.has("produce") or mb_dict.has("fish")):
+		mailbox_data = mb_dict.duplicate(true)
+	else:
+		mailbox_data = _default_mailbox_data()
+	_update_mailbox_badge()
+	var st_arr = d.get("stall", [])
+	if typeof(st_arr) == TYPE_ARRAY and st_arr.size() == 6:
+		stall_slots = st_arr.duplicate(true)
+	else:
+		stall_slots = [{}, {}, {}, {}, {}, {}]
+	stall_revenue = int(d.get("stall_revenue", 0))
+	_update_stall_crates_visual()
+	_update_stall_coin_badge()
 	var farm_arr = d.get("farm", [])
 	if typeof(farm_arr) == TYPE_ARRAY:
 		farm.apply_state(farm_arr)
@@ -1001,6 +1872,13 @@ func continue_game() -> void:
 	player.position = Vector2(float(pp[0]), float(pp[1]))
 	cam.reset_smoothing()
 	_npc_met = bool(d.get("npc_met", true))
+	var f_arr = d.get("foliage", [])
+	if typeof(f_arr) == TYPE_ARRAY and f_arr.size() > 0:
+		_load_foliage(f_arr)
+	elif foliage_data.is_empty():
+		_populate_random_foliage(75)
+	if d.has("cat") and is_instance_valid(cat_helper):
+		cat_helper.load_save_dict(d["cat"])
 	title_screen.hide_me()
 	get_tree().paused = false
 	mode = Mode.PLAY
@@ -1061,7 +1939,7 @@ func _debug_step() -> void:
 		285:
 			_shot("9_house")
 		290:
-			player.position = Vector2(1030, 400)
+			player.position = Vector2(1030, 460)
 		330:
 			_shot("10_stand")
 		335:
@@ -1117,7 +1995,7 @@ func _debug_step() -> void:
 			print("MINIMAP after_cancel=", minimap.guide_dest == "")
 		540:
 			minimap._on_poi_clicked("batu")
-			player.position = Vector2(1180, 415)
+			player.position = Vector2(1180, 430)
 		580:
 			print("MINIMAP arrival_cleared=", minimap.guide_dest == "")
 			_debug_done()
@@ -1208,6 +2086,18 @@ func _debug_grow() -> void:
 	print("HOETEST lần2: ", farm.perform_at(tb), " | cuốc còn=", Inventory.hoes)
 	tb.reset_tile()
 	print("HOETEST lần3 (hết cuốc): ", farm.perform_at(tb), " | cuốc còn=", Inventory.hoes)
+	# ---- test nước & múc nước ao ----
+	Inventory.water_level = 1
+	var twater = farm.tiles[Vector2i(6, 5)]
+	twater.reset_tile()
+	twater.till()
+	twater.plant("rice")
+	print("WATERTEST tưới lần1: ", farm.perform_at(twater), " | nước còn=", Inventory.water_level)
+	twater.watered = false
+	print("WATERTEST tưới lần2 (hết nước): ", farm.perform_at(twater), " | nước còn=", Inventory.water_level)
+	var added_w: int = Inventory.refill_water()
+	print("WATERTEST múc đầy ao: +%d | nước đầy=%d/%d" % [added_w, Inventory.water_level, Inventory.water_max])
+	twater.reset_tile()
 	# ---- test lượt câu ----
 	Inventory.rods = {"basic": 2}
 	print("FISHTEST cast1=", Inventory.take_cast(), " cast2=", Inventory.take_cast(),
@@ -1230,7 +2120,7 @@ func _debug_grow() -> void:
 	print("POULTRY thu sau 95s = ", got, " trứng gà (kỳ vọng 2)")
 	print("POULTRY ready_left=", Inventory.ready_products())
 	print("POULTRY produce trung_ga=", Inventory.produce_count("trung_ga"))
-	SaveSystem.save_game(farm.get_state(), player.position, true)
+	SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots, stall_revenue)
 	var d := SaveSystem.load_data()
 	print("DEBUG save/load farm tiles = ", (d.get("farm", []) as Array).size(),
 			" hoes=", int(d.get("hoes", -1)), " rods=", d.get("rods", {}),
@@ -1292,7 +2182,7 @@ func _clicktest_step() -> void:
 			_shot("auto_clicktest")
 		140:
 			# cửa NAM đã bị xoá: đi lên phải bị chặn
-			player.position = Vector2(644, 725)
+			player.position = Vector2(648, 725)
 			player.facing = Vector2.UP
 			cam.reset_smoothing()
 			Input.action_press("move_up")
@@ -1302,7 +2192,7 @@ func _clicktest_step() -> void:
 					" (kỳ vọng y > 685: cửa nam đã xoá, bị chặn)")
 		245:
 			# cửa TÂY: đi phải xuyên qua cửa vào ruộng
-			player.position = Vector2(350, 470)
+			player.position = Vector2(350, 472)
 			player.facing = Vector2.RIGHT
 			cam.reset_smoothing()
 			Input.action_press("move_right")
@@ -1318,7 +2208,7 @@ func _clicktest_step() -> void:
 			print("ETEST tile_tstate=", (t.tstate if t != null else -1), " (kỳ vọng 1=TILLED)")
 		445:
 			# cửa ĐÔNG: đi trái xuyên qua cửa vào ruộng
-			player.position = Vector2(960, 470)
+			player.position = Vector2(960, 472)
 			player.facing = Vector2.LEFT
 			cam.reset_smoothing()
 			Input.action_press("move_left")
@@ -1354,15 +2244,427 @@ func _clicktest_step() -> void:
 					" (kỳ vọng x < 200: bị rào tây chặn)")
 		910:
 			# rào bắc ruộng: đi xuống bị chặn
-			player.position = Vector2(644, 330)
+			player.position = Vector2(648, 330)
 			Input.action_press("move_down")
 		985:
 			Input.action_release("move_down")
 			print("FARMTOP player=", player.position,
 					" (kỳ vọng y < 400: bị rào bắc ruộng chặn)")
+		988:
+			# test hòm thư bên cạnh nhà: kiểm tra sẵn 999 cuốc và 999 xu
+			player.position = MAILBOX_POS + Vector2(0, 15)
+			var near_mb: Dictionary = _nearest_interactable()
+			var is_near_mb: bool = not near_mb.is_empty() and (Vector2(near_mb.get("pos", Vector2.ZERO)) == MAILBOX_POS)
+			var mb_hoes_before: int = int(mailbox_data.get("hoes", 0))
+			var mb_coins_before: int = int(mailbox_data.get("coins", 0))
+			_open_mailbox()
+			var opened_ok: bool = mailbox_panel.visible
+			mailbox_panel._claim_all()
+			var claimed_hoes: bool = Inventory.hoes >= 999
+			var claimed_coins: bool = GameState.money >= 999
+			var claimed_produce: bool = Inventory.produce_count("tomato") >= 50 and Inventory.produce_count("trung_ga") >= 50
+			var claimed_fish: bool = int(Inventory.fish.get("chep", 0)) >= 30
+			var mb_empty: bool = int(mailbox_data.get("hoes", -1)) == 0 and int(mailbox_data.get("coins", -1)) == 0
+			_close_panels()
+			var closed_ok: bool = not mailbox_panel.visible
+			print("MAILBOXTEST near=", is_near_mb, " before=(", mb_hoes_before, ",", mb_coins_before,
+					") opened=", opened_ok, " claimed=(", claimed_hoes, ",", claimed_coins,
+					") resources=", (claimed_produce and claimed_fish),
+					" empty=", mb_empty, " closed=", closed_ok)
+		989:
+			# test không tưới được khi chưa trồng hạt giống & kiểm tra texture cây trồng Stardew Valley
+			var test_tile = farm.tiles[Vector2i(6, 6)]
+			test_tile.reset_tile()
+			test_tile.till()
+			# Chưa trồng -> hành động tưới phải bị chặn
+			var tilled_action: Dictionary = farm.action_at(test_tile)
+			var can_water_unplanted: bool = str(tilled_action.get("act", "")) == "water"
+			test_tile.water()
+			var watered_unplanted: bool = test_tile.watered
+			# Gieo hạt -> cho phép tưới
+			Inventory.add_seed("rice", 1)
+			Inventory.selected_seed = "rice"
+			test_tile.plant("rice")
+			var planted_action: Dictionary = farm.action_at(test_tile)
+			var can_water_planted: bool = str(planted_action.get("act", "")) == "water"
+			test_tile.water()
+			var watered_planted: bool = test_tile.watered
+			# Kiểm tra texture SDV mầm -> lớn
+			var c_rice := CropDB.get_crop("rice")
+			var tex_stage0 := TextureGen.crop_tex(c_rice, 0)
+			var tex_stage4 := TextureGen.crop_tex(c_rice, 4)
+			var tex_seed := TextureGen.seed_icon(c_rice)
+			var tex_prod := TextureGen.prod_icon(c_rice)
+			var assets_ok: bool = (tex_stage0 != null and tex_stage4 != null and tex_seed != null and tex_prod != null)
+			print("CROGTEST water_unplanted=(action:", can_water_unplanted, ", wet:", watered_unplanted,
+					") water_planted=(action:", can_water_planted, ", wet:", watered_planted,
+					") sdv_assets=", assets_ok)
+			test_tile.reset_tile()
 		990:
+			# test 3 quán bên cạnh đường mòn to và tương tác trực tiếp từ đại lộ
+			player.position = Vector2(1010, 460)
+			var near_tu: Dictionary = _nearest_interactable()
+			player.position = Vector2(1180, 460)
+			var near_batu: Dictionary = _nearest_interactable()
+			player.position = Vector2(1350, 460)
+			var near_hai: Dictionary = _nearest_interactable()
+			var stands_on_road: bool = (near_tu.get("pos") == COTU_POS) and (near_batu.get("pos") == NPC_POS) and (near_hai.get("pos") == CHU_HAI_POS)
+			print("STANDTEST roadside_accessible=", stands_on_road,
+					" cotu_pos=", COTU_POS, " batu_pos=", NPC_POS, " hai_pos=", CHU_HAI_POS)
+		992:
+			# test cây cối mọc ngẫu nhiên trên bề mặt cỏ & mọc thêm qua đêm
+			var f_count: int = foliage_data.size()
+			var all_grass: bool = true
+			for fd in foliage_data:
+				if not _is_grass_surface(Vector2(float(fd.x), float(fd.y))):
+					all_grass = false
+					break
+			_sprout_random_plant()
+			var count_after_sprout: int = foliage_data.size()
+			SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots, stall_revenue)
+			var sd: Dictionary = SaveSystem.load_data()
+			var saved_f_size: int = (sd.get("foliage", []) as Array).size()
+			print("FOLIAGETEST initial=", f_count, " all_on_grass=", all_grass,
+					" sprouted=", (count_after_sprout == f_count + 1),
+					" saved_and_loaded=", (saved_f_size == count_after_sprout))
+		994:
+			# test sạp hàng nông sản tại góc rẽ trái và đường mòn sang bên trái
+			player.position = Vector2(184, 460)
+			var near_stall: Dictionary = _nearest_interactable()
+			var stall_lbl: String = str(near_stall.get("label", ""))
+			var stall_found: bool = "Sạp hàng" in stall_lbl
+			_open_market_stall()
+			var stall_opens_panel: bool = stall_panel.visible
+
+			# Thử nghiệm bày 2 quả cà chua lên ô 0
+			Inventory.add_produce("tomato", 5)
+			stall_panel._add_item_to_stall("tomato", "crop", "Cà chua", 18, 2)
+			var slot0_filled: bool = stall_slots[0].get("id") == "tomato" and stall_slots[0].get("count") == 2
+			var crate0_visible: bool = stall_crate_sprites[0].visible and stall_crate_sprites[0].texture != null
+
+			# Thử nghiệm bày 1 cá chép lên ô 1
+			Inventory.fish["chep"] = int(Inventory.fish.get("chep", 0)) + 1
+			stall_panel._add_item_to_stall("chep", "fish", "Cá chép", 48, 1)
+			var slot1_filled: bool = stall_slots[1].get("id") == "chep"
+			var crate1_visible: bool = stall_crate_sprites[1].visible
+
+			# Thu hồi cá chép ở ô 1 -> ô 1 trống và sprite ẩn
+			stall_panel._retrieve_from_stall(1)
+			var crate1_cleared: bool = (not stall_crate_sprites[1].visible) and stall_slots[1].is_empty()
+
+			# Test NPC khách hàng ghé mua và tích lũy tiền tại sạp (không tự cộng vào ví)
+			var wallet_before: int = GameState.money
+			var rev_before: int = stall_revenue
+			var cust1: Node2D = _spawn_stall_customer(0)
+			var cust_spawned: bool = (cust1 != null and cust1.character_name in SDV_CUSTOMERS and cust1.display_name != "")
+			var cust_from_left: bool = (cust1.position.x < 0.0)
+			var cust_slow: bool = (cust1.speed <= 40.0)
+			var cust_bubble_has_qty: bool = (cust1._bubble_qty_label != null and cust1._bubble_qty_label.text.begins_with("×"))
+
+			# Thử nghiệm spawn thêm NPC thứ 2 ghé sạp cùng lúc tại vị trí khác
+			var cust2: Node2D = _spawn_stall_customer()
+			var multi_cust_ok: bool = (_stall_customers.size() >= 2 and cust2.target_stall_pos != cust1.target_stall_pos)
+			var diff_names_ok: bool = (cust2.display_name != cust1.display_name)
+			var wander_spot: Vector2 = cust2._pick_wander_spot()
+			var wander_ok: bool = (wander_spot.x >= 100.0 and wander_spot.x <= 270.0 and wander_spot.y >= 450.0 and wander_spot.y <= 515.0)
+
+			# Thử nghiệm từ chối NPC 2 (báo hết hàng) -> NPC 2 quay về đoạn đường ban đầu ở rìa trái
+			cust2.state = StallCustomerScript.State.WAITING
+			_decline_stall_customer(cust2)
+			var decline_ok: bool = (cust2.state == StallCustomerScript.State.WALK_OUT and cust2.exit_pos.x <= 0.0)
+
+			# Giả lập hoàn thành mua hàng 1 quả cà chua giá 18 xu
+			_on_stall_customer_purchased(0, "Cà chua", 1, 18, cust1.display_name)
+			var wallet_unchanged: bool = (GameState.money == wallet_before)
+			var stall_rev_accumulated: bool = (stall_revenue == rev_before + 18)
+			var badge_active: bool = (stall_coin_badge.visible and stall_coin_label.text == "18 xu")
+			var slot0_count_decreased: bool = (stall_slots[0].get("count") == 1)
+
+			# Mở panel sạp hàng để thu tiền thủ công
+			_open_market_stall()
+			var collect_btn_shows_18: bool = stall_panel.collect_btn.visible and ("18 xu" in stall_panel.collect_btn.text)
+			stall_panel._on_collect_pressed()
+			var wallet_collected: bool = (GameState.money == wallet_before + 18)
+			var rev_reset: bool = (stall_revenue == 0)
+			var badge_hidden_after: bool = (not stall_coin_badge.visible)
+
+			# Lưu và nạp game xem sạp hàng có giữ được cà chua còn lại ở ô 0
+			SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots, stall_revenue)
+			var sd_stall: Dictionary = SaveSystem.load_data()
+			var st_saved: Array = sd_stall.get("stall", [])
+			var save_has_stall: bool = st_saved.size() == 6 and st_saved[0].get("id") == "tomato" and st_saved[0].get("count") == 1
+			var save_rev_correct: bool = (int(sd_stall.get("stall_revenue", -1)) == 0)
+
+			# Thu hồi nốt cà chua ở ô 0 để sạch sạp
+			stall_panel._retrieve_from_stall(0)
+			stall_panel.close()
+
+			# Dọn khách hàng NPC test
+			for c in _stall_customers:
+				if is_instance_valid(c):
+					c.queue_free()
+			_stall_customers.clear()
+			_active_stall_customer = null
+
+			# Kiểm tra đường mòn kéo dài hết map sang trái, nền cỏ dưới sạp và POI minimap
+			var west_road_exists: bool = false
+			var stall_ground_has_road: bool = false
+			for p in PATHS:
+				if p.position.x <= 0.0 and p.position.y <= 450.0 and p.end.y >= 490.0:
+					west_road_exists = true
+				if p.has_point(Vector2(184, 420)):
+					stall_ground_has_road = true
+			var poi_stall_exists: bool = false
+			for p in MinimapScript.POIS:
+				if str(p.get("id", "")) == "stall":
+					poi_stall_exists = true
+			print("MARKETSTALLTEST found=", stall_found, " opens_panel=", stall_opens_panel,
+					" slot0_filled=", slot0_filled, " crate0_visual=", crate0_visible,
+					" slot1_filled=", slot1_filled, " crate1_visual=", crate1_visible,
+					" crate1_cleared=", crate1_cleared, " cust_spawned=", cust_spawned,
+					" cust_from_left=", cust_from_left, " cust_slow=", cust_slow,
+					" bubble_qty=", cust_bubble_has_qty, " multi_cust=", multi_cust_ok,
+					" diff_names=", diff_names_ok, " wander=", wander_ok,
+					" decline=", decline_ok,
+					" wallet_unchanged=", wallet_unchanged, " stall_rev_accumulated=", stall_rev_accumulated,
+					" badge_active=", badge_active, " slot0_dec=", slot0_count_decreased,
+					" collect_btn=", collect_btn_shows_18, " wallet_collected=", wallet_collected,
+					" rev_reset=", rev_reset, " badge_hidden=", badge_hidden_after,
+					" save_has_stall=", save_has_stall, " save_rev=", save_rev_correct,
+					" west_road_to_edge=", west_road_exists, " ground_is_grass=", (not stall_ground_has_road),
+					" minimap_poi=", poi_stall_exists)
+		995:
+			# Test kiểm thử tính năng mới: Bình nước có hạn + múc nước bờ ao + thanh hotbar Stardew Valley + hoe sprites
+			# 1. Hotbar slots
+			hud.select_slot_by_index(0)
+			var slot0_hoe: bool = (str(Inventory.active_item.get("type")) == "hoe")
+			hud.select_slot_by_index(1)
+			var slot1_water: bool = (str(Inventory.active_item.get("type")) == "watering_can")
+			hud.select_slot_by_index(2)
+			var slot2_rod: bool = (str(Inventory.active_item.get("type")) == "rod")
+			# 2. Ao nước & giới hạn nước
+			Inventory.water_level = 5
+			player.position = FISH_SPOT_POS + Vector2(-60, 0)
+			var near_pond: Dictionary = _nearest_interactable()
+			var pond_offers_water: bool = ("Múc nước" in str(near_pond.get("label", "")))
+			if near_pond.has("cb") and near_pond.cb is Callable:
+				near_pond.cb.call()
+			var water_refilled: bool = (Inventory.water_level == Inventory.water_max)
+			# 3. Sprite cuốc đất & biểu tượng
+			var hoe_tex_ok: bool = (TextureGen.hoe_icon() != null and TextureGen.watering_can_icon() != null)
+			var till_tex_ok: bool = (TextureGen.char_action_tex("down", "till", 3) != null and TextureGen.char_action_tex("side", "till", 3) != null)
+			print("WATER_HOTBAR_TEST slot_hoe=", slot0_hoe, " slot_water=", slot1_water, " slot_rod=", slot2_rod,
+					" pond_offers_water=", pond_offers_water, " water_refilled=", water_refilled,
+					" hoe_tex=", hoe_tex_ok, " till_tex=", till_tex_ok)
+
+			# 4. Kiểm thử Giới hạn túi đồ (Backpack 12 ô) + Nhà kho (Shed) + Bắt sâu bọ (Pests)
+			# A. Giới hạn túi đồ
+			Inventory.reset()
+			Inventory.backpack_max = 12
+			var initial_slots := Inventory.backpack_slots_used()
+			Inventory.add_seed("rice", 5)
+			Inventory.add_seed("wheat", 5)
+			Inventory.add_produce("tomato", 3)
+			Inventory.add_produce("corn", 2)
+			Inventory.add_fish("chep", 1)
+			var slots_after := Inventory.backpack_slots_used()
+			var can_add_existing := Inventory.can_hold("produce", "tomato") # đã có trong túi -> true
+			# B. Nhà kho Stardew Valley & Storage Panel
+			player.position = SHED_POS + Vector2(0, 15)
+			var near_shed: Dictionary = _nearest_interactable()
+			var shed_offers_storage: bool = ("Nhà kho" in str(near_shed.get("label", "")))
+			if near_shed.has("cb") and near_shed.cb is Callable:
+				near_shed.cb.call()
+			var storage_panel_opened: bool = (storage_panel != null and storage_panel.visible)
+			# Cất đồ vào nhà kho
+			var store_ok: bool = Inventory.store_item("produce", "tomato", 2)
+			var stored_tomato: int = Inventory.storage_count("produce", "tomato")
+			var bag_tomato_after: int = Inventory.produce_count("tomato")
+			# Rút đồ từ nhà kho
+			var withdraw_ok: bool = Inventory.withdraw_item("produce", "tomato", 1)
+			var stored_tomato_final: int = Inventory.storage_count("produce", "tomato")
+			_close_panels()
+			# C. Sâu bọ trên cây trồng (Pest mechanic)
+			var test_t = farm.tiles[Vector2i(0, 0)]
+			test_t.till()
+			test_t.plant("wheat")
+			test_t.growth = 10.0
+			test_t.spawn_pest()
+			var pest_spawned: bool = test_t.has_pest
+			var pest_action: Dictionary = farm.action_at(test_t)
+			var pest_action_is_catch: bool = (str(pest_action.get("act", "")) == "catch_pest")
+			var catch_msg: String = farm.perform_at(test_t)
+			var pest_cleared: bool = (not test_t.has_pest)
+			var worm_count: int = Inventory.produce_count("sau_bo")
+			var worm_crop_db: Dictionary = CropDB.get_crop("sau_bo")
+			var shed_tex_ok: bool = (TextureGen.get_tex("shed") != null)
+			var caterpillar_tex_ok: bool = (TextureGen.get_tex("caterpillar") != null)
+
+			print("SHED_PEST_BACKPACK_TEST initial_slots=", initial_slots, " slots_after=", slots_after,
+					" can_add_existing=", can_add_existing,
+					" shed_interact=", shed_offers_storage, " storage_panel_opened=", storage_panel_opened,
+					" store_ok=", store_ok, " stored_tomato=", stored_tomato, " bag_tomato=", bag_tomato_after,
+					" withdraw_ok=", withdraw_ok, " stored_final=", stored_tomato_final,
+					" pest_spawned=", pest_spawned, " pest_act_catch=", pest_action_is_catch,
+					" pest_cleared=", pest_cleared, " worm_count=", worm_count,
+					" worm_name=", worm_crop_db.get("name", ""),
+					" shed_tex=", shed_tex_ok, " caterpillar_tex=", caterpillar_tex_ok)
+			# 5. Kiểm thử Mèo Tam Thể làm nông (Cat Helper) + Lều Stardew Valley + Gieo hạt + Tưới + Bắt sâu + Thu hoạch + Cất kho + Ngủ lều
+			# A. Asset lều Stardew Valley & Minimap POI
+			var tent_tex_ok: bool = (TextureGen.get_tex("tent") != null)
+			var poi_tent_exists: bool = false
+			for p in MinimapScript.POIS:
+				if str(p.get("id", "")) == "tent":
+					poi_tent_exists = true
+			# B. Chú mèo xuất phát & tương tác cửa nhà
+			var cat_exists: bool = is_instance_valid(cat_helper)
+			var cat_spr_ok: bool = (TextureGen.cat_char_tex("down", 0) != null and TextureGen.cat_char_tex("side", 0) != null and TextureGen.cat_char_tex("act", 0) != null)
+			player.position = cat_helper.position + Vector2(0, 15)
+			var near_cat: Dictionary = _nearest_interactable()
+			var cat_offers_interact: bool = ("Mèo" in str(near_cat.get("label", "")))
+			if near_cat.has("cb") and near_cat.cb is Callable:
+				near_cat.cb.call()
+			var cat_panel_opened: bool = (cat_panel != null and cat_panel.visible)
+			_close_panels()
+			# C. Thuê chú mèo
+			cat_helper.hire()
+			var cat_hired_ok: bool = cat_helper.is_hired
+			# D. Giao hạt giống cho mèo
+			Inventory.add_seed("wheat", 10)
+			var give_seeds_ok: bool = cat_helper.give_seeds("wheat", 5)
+			var cat_has_seeds: bool = (int(cat_helper.assigned_seeds.get("wheat", 0)) == 5)
+			# E. Gieo hạt (Planting)
+			farm.reset_all()
+			var plant_tile = farm.tiles[Vector2i(1, 0)]
+			plant_tile.till()
+			cat_helper._find_next_job()
+			var job_plant_ok: bool = (cat_helper.current_job.get("type") == "plant")
+			cat_helper._complete_job()
+			var tile_planted: bool = (plant_tile.tstate == FarmTileScript.TState.PLANTED and plant_tile.crop_id == "wheat")
+			var cat_seeds_decreased: bool = (int(cat_helper.assigned_seeds.get("wheat", 0)) == 4)
+			# F. Bắt sâu (Pest catching)
+			plant_tile.spawn_pest()
+			cat_helper._find_next_job()
+			var job_pest_ok: bool = (cat_helper.current_job.get("type") == "pest")
+			cat_helper._complete_job()
+			var pest_caught: bool = (not plant_tile.has_pest and int(cat_helper.harvest_bag.get("sau_bo", 0)) == 1)
+			# G. Tưới nước & Hết nước tự múc ao (Watering & Refill)
+			plant_tile.watered = false
+			cat_helper.water_level = 1
+			cat_helper._find_next_job()
+			var job_water_ok: bool = (cat_helper.current_job.get("type") == "water")
+			cat_helper._complete_job()
+			var tile_watered: bool = plant_tile.watered
+			var cat_out_of_water: bool = (cat_helper.water_level == 0)
+			# Khi hết nước và cần tưới tiếp
+			plant_tile.watered = false
+			cat_helper._find_next_job()
+			var cat_goes_to_pond: bool = (cat_helper.state == CatHelperScript.State.WALKING_TO_POND)
+			# Mô phỏng múc nước đầy
+			cat_helper.water_level = cat_helper.water_capacity
+			cat_helper.state = CatHelperScript.State.IDLE
+			# H. Thu hoạch (Harvesting)
+			plant_tile.growth = 100.0
+			cat_helper._find_next_job()
+			var job_harvest_ok: bool = (cat_helper.current_job.get("type") == "harvest")
+			cat_helper._complete_job()
+			var cat_bag_has_crop: bool = (int(cat_helper.harvest_bag.get("wheat", 0)) == 1)
+			# I. Cất kho (Deposit to Shed)
+			cat_helper._deposit_items_to_shed()
+			var shed_has_wheat: bool = (Inventory.storage_count("produce", "wheat") >= 1)
+			var shed_has_worm: bool = (Inventory.storage_count("produce", "sau_bo") >= 1)
+			var cat_bag_empty: bool = cat_helper.harvest_bag.is_empty()
+			# J. Trả lương & Đi ngủ trong lều Stardew Valley
+			GameState.money = 200
+			cat_helper.wage_paid_today = false
+			cat_helper._pay_daily_wage()
+			var wage_paid_ok: bool = (cat_helper.wage_paid_today and GameState.money == 150)
+			# Di chuyển vào lều ngủ
+			cat_helper.position = CatHelperScript.TENT_SLEEP_POS
+			cat_helper.state = CatHelperScript.State.SLEEPING
+			var cat_sleeping_ok: bool = (cat_helper.state == CatHelperScript.State.SLEEPING)
+
+			print("CAT_HELPER_TEST tent_tex=", tent_tex_ok, " poi_tent=", poi_tent_exists,
+					" cat_exists=", cat_exists, " cat_spr=", cat_spr_ok,
+					" cat_interact=", cat_offers_interact, " panel_open=", cat_panel_opened,
+					" cat_hired=", cat_hired_ok, " give_seeds=", give_seeds_ok, " has_seeds=", cat_has_seeds,
+					" job_plant=", job_plant_ok, " tile_planted=", tile_planted, " seed_dec=", cat_seeds_decreased,
+					" job_pest=", job_pest_ok, " pest_caught=", pest_caught,
+					" job_water=", job_water_ok, " tile_watered=", tile_watered, " out_of_water=", cat_out_of_water,
+					" goes_to_pond=", cat_goes_to_pond,
+					" job_harvest=", job_harvest_ok, " bag_crop=", cat_bag_has_crop,
+					" shed_stored=", (shed_has_wheat and shed_has_worm), " bag_cleared=", cat_bag_empty,
+					" wage_paid=", wage_paid_ok, " cat_sleeping=", cat_sleeping_ok)
+
+			# 6. Kiểm thử Máng ăn, Máng nước & Chuồng mới từ ảnh người dùng cung cấp
+			var new_coop_ok: bool = (TextureGen.get_tex("coop") != null and TextureGen.get_tex("coop").get_width() == 48 and TextureGen.get_tex("coop").get_height() == 48)
+			var new_trough_ok: bool = (TextureGen.get_tex("trough") != null and TextureGen.get_tex("trough").get_width() == 22 and TextureGen.get_tex("trough").get_height() == 8)
+			var new_water_trough_ok: bool = (TextureGen.get_tex("water_trough") != null and TextureGen.get_tex("water_trough").get_width() == 18 and TextureGen.get_tex("water_trough").get_height() == 8)
+			print("NEW_COOP_TROUGH_TEST coop=", new_coop_ok, " trough=", new_trough_ok, " water_trough=", new_water_trough_ok)
+
+			# 7. Kiểm thử các nút tắt cạnh màn hình + Nâng cấp Mèo + Sạp không bán qua đêm
+			# A. Thử mở các panel qua nút tắt cạnh màn hình (HUD signals)
+			_close_panels()
+			hud.open_cat_requested.emit()
+			var quick_cat_open: bool = (cat_panel != null and cat_panel.visible)
+			_close_panels()
+			hud.open_storage_requested.emit()
+			var quick_storage_open: bool = (storage_panel != null and storage_panel.visible)
+			_close_panels()
+
+			# B. Kiểm thử Nâng cấp chú mèo bằng tiền
+			GameState.money = 1000
+			var cat_up_spd: bool = cat_helper.upgrade("speed")
+			var cat_spd_lvl2: bool = (cat_helper.speed_level == 2 and cat_helper.speed > 60.0)
+			var cat_up_work: bool = cat_helper.upgrade("work")
+			var cat_work_lvl2: bool = (cat_helper.work_level == 2)
+			var cat_up_bag: bool = cat_helper.upgrade("bag")
+			var cat_bag_lvl2: bool = (cat_helper.bag_level == 2 and cat_helper.water_capacity > 15)
+
+			var save_dict: Dictionary = cat_helper.get_save_dict()
+			var save_upgrades_ok: bool = (int(save_dict.get("speed_level", 0)) == 2 and int(save_dict.get("work_level", 0)) == 2 and int(save_dict.get("bag_level", 0)) == 2)
+
+			# C. Kiểm thử hàng trên sạp không bị bán qua đêm
+			stall_slots[0] = {"id": "tomato", "name": "Cà chua", "count": 10, "price": 25}
+			_do_sleep(false)
+			var overnight_unsold: bool = (int(stall_slots[0].get("count", 0)) == 10)
+
+			print("QUICK_DOCK_CAT_UPGRADE_TEST quick_cat=", quick_cat_open, " quick_storage=", quick_storage_open,
+					" up_spd=", (cat_up_spd and cat_spd_lvl2), " up_work=", (cat_up_work and cat_work_lvl2),
+					" up_bag=", (cat_up_bag and cat_bag_lvl2), " save_upgrades=", save_upgrades_ok,
+					" overnight_unsold=", overnight_unsold)
+
+			# 8. Kiểm thử Đất đen sau thu hoạch + Giao cuốc cho Mèo + Mèo tự cày đất đen
+			# A. Đất sau thu hoạch ở trạng thái HARVESTED và có texture đen SDV
+			var harvested_state_ok: bool = (plant_tile.tstate == FarmTileScript.TState.HARVESTED)
+			var dark_tex_ok: bool = (TextureGen.get_tex("tilled_dark_isolated") != null and TextureGen.get_tex("tilled_dark_mid") != null)
+			# B. Người chơi có thể tự cuốc lại đất đen
+			var dark_action: Dictionary = farm.action_at(plant_tile)
+			var dark_action_ok: bool = (str(dark_action.get("act")) == "till")
+			# C. Giao cuốc cho mèo
+			Inventory.hoes = 5
+			var give_hoe_ok: bool = cat_helper.give_hoes(3)
+			var cat_has_hoes: bool = (cat_helper.assigned_hoes == 3 and Inventory.hoes == 2)
+			# D. Mèo tự tìm việc cuốc đất đen sau thu hoạch
+			cat_helper._find_next_job()
+			var job_till_ok: bool = (str(cat_helper.current_job.get("type")) == "till")
+			cat_helper._complete_job()
+			var tile_tilled_by_cat: bool = (plant_tile.tstate == FarmTileScript.TState.TILLED)
+			var cat_hoes_decremented: bool = (cat_helper.assigned_hoes == 2)
+			# E. Lấy lại cuốc từ mèo
+			var take_hoe_ok: bool = cat_helper.take_back_hoes(1)
+			var hoes_retrieved: bool = (cat_helper.assigned_hoes == 1 and Inventory.hoes == 3)
+			# F. Lưu/Tải số cuốc của mèo
+			var cat_save: Dictionary = cat_helper.get_save_dict()
+			var save_hoes_ok: bool = (int(cat_save.get("assigned_hoes", 0)) == 1)
+
+			print("HARVEST_DARK_DIRT_AND_HOE_TEST dark_state=", harvested_state_ok, " dark_tex=", dark_tex_ok,
+					" dark_act=", dark_action_ok, " give_hoe=", (give_hoe_ok and cat_has_hoes),
+					" job_till=", job_till_ok, " tilled_by_cat=", tile_tilled_by_cat,
+					" hoe_dec=", cat_hoes_decremented, " take_hoe=", (take_hoe_ok and hoes_retrieved),
+					" save_hoes=", save_hoes_ok)
+
 			print("CLICKTEST_DONE")
-			get_tree().quit()
 			get_tree().quit()
 
 

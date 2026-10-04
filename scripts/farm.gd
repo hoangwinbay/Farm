@@ -18,9 +18,15 @@ func setup(o: Vector2, s: Vector2i) -> void:
 	for y in s.y:
 		for x in s.x:
 			var t := FarmTileScript.new()
+			t.farm = self
 			t.setup(Vector2i(x, y))
 			add_child(t)
 			tiles[Vector2i(x, y)] = t
+
+
+func has_soil(c: Vector2i) -> bool:
+	var t = tiles.get(c)
+	return t != null and t.tstate != FarmTileScript.TState.GRASS
 
 
 func tile_at_world(p: Vector2) -> Node:
@@ -39,19 +45,23 @@ func action_at(tile) -> Dictionary:
 		return {"act": "none", "label": "", "ok": false}
 	if tile.tstate == FarmTileScript.TState.GRASS:
 		return {"act": "till", "label": "Cày đất (cần cuốc — đang có ×%d)" % Inventory.hoes, "ok": Inventory.hoes > 0}
+	if tile.tstate == FarmTileScript.TState.HARVESTED:
+		return {"act": "till", "label": "Cuốc lại đất đen sau thu hoạch (cần cuốc — đang có ×%d)" % Inventory.hoes, "ok": Inventory.hoes > 0}
+	if tile.tstate == FarmTileScript.TState.PLANTED and tile.has_pest:
+		return {"act": "catch_pest", "label": "Bắt sâu bọ 🐛 (Đang cắn phá cây!)", "ok": true}
 	if tile.tstate == FarmTileScript.TState.PLANTED and tile.is_ready():
 		var c := CropDB.get_crop(tile.crop_id)
 		return {"act": "harvest", "label": "Thu hoạch %s" % c.get("name", "?"), "ok": true}
 	if tile.tstate == FarmTileScript.TState.PLANTED and not tile.watered:
-		return {"act": "water", "label": "Tưới nước", "ok": true}
+		var has_w := Inventory.has_water()
+		var label := "Tưới nước (%d/%d)" % [Inventory.water_level, Inventory.water_max] if has_w else "Bình hết nước (ra bờ ao múc!)"
+		return {"act": "water", "label": label, "ok": has_w}
 	if tile.tstate == FarmTileScript.TState.TILLED:
 		var sid := Inventory.selected_seed
 		if sid != "" and GameState.has_crop(sid) and Inventory.seed_count(sid) > 0:
 			var cs := CropDB.get_crop(sid)
 			return {"act": "plant", "label": "Gieo hạt %s (còn ×%d)" % [cs.get("name", "?"), Inventory.seed_count(sid)], "ok": true}
-		if not tile.watered:
-			return {"act": "water", "label": "Tưới nước (đất trống)", "ok": true}
-		return {"act": "none", "label": "Chờ gieo hạt — bấm I để chọn hạt", "ok": false}
+		return {"act": "none", "label": "Chưa gieo hạt (chọn hạt ở thanh công cụ hoặc bấm I)", "ok": false}
 	if tile.tstate == FarmTileScript.TState.PLANTED:
 		var c2 := CropDB.get_crop(tile.crop_id)
 		var pct := int(clampf(tile.growth / float(c2.get("grow_sec", 1)) * 100.0, 0.0, 99.0))
@@ -66,14 +76,27 @@ func perform_at(tile) -> String:
 	if tile == null:
 		return ""
 	match str(info.act):
+		"catch_pest":
+			if not Inventory.can_hold("produce", "sau_bo"):
+				return "Túi đồ đã đầy (%d/%d)! Hãy cất đồ vào nhà kho 🏚️ trước khi bắt sâu." % [Inventory.backpack_slots_used(), Inventory.backpack_max]
+			tile.clear_pest()
+			Inventory.add_produce("sau_bo", 1)
+			return "Đã bắt được 1 Sâu bọ 🐛! Có thể dùng làm mồi câu hoặc bán."
 		"till":
 			if not Inventory.take_hoe():
 				return "Cần CUỐC để cày đất! Mua ở cửa hàng Bác Tư (20 xu)."
+			var was_harvested: bool = (tile.tstate == FarmTileScript.TState.HARVESTED)
 			tile.till()
+			if was_harvested:
+				return "Đã cuốc xới lại đất đen sau thu hoạch! (Còn %d cuốc)" % Inventory.hoes
 			return "Đã cày đất! (Còn %d cuốc)" % Inventory.hoes
 		"water":
+			if tile.tstate != FarmTileScript.TState.PLANTED:
+				return "Cần gieo hạt giống trước khi tưới nước!"
+			if not Inventory.take_water(1):
+				return "Bình tưới hết nước rồi! Hãy ra bờ ao để múc đầy bình."
 			tile.water()
-			return "Đã tưới nước!"
+			return "Đã tưới nước! (Còn %d/%d gáo)" % [Inventory.water_level, Inventory.water_max]
 		"plant":
 			var sid := Inventory.selected_seed
 			if sid == "" or not GameState.has_crop(sid):
@@ -84,6 +107,8 @@ func perform_at(tile) -> String:
 			tile.plant(sid)
 			return "Đã gieo hạt %s!" % c.get("name", "?")
 		"harvest":
+			if not Inventory.can_hold("produce", tile.crop_id):
+				return "Túi đồ đã đầy (%d/%d)! Hãy cất bớt đồ vào nhà kho 🏚️ để thu hoạch." % [Inventory.backpack_slots_used(), Inventory.backpack_max]
 			var id := str(tile.harvest())
 			var c := CropDB.get_crop(id)
 			Inventory.add_produce(id, 1)

@@ -272,6 +272,9 @@ func _build_fish_row(f: Dictionary) -> Control:
 
 func _buy_rod(tier: String) -> void:
 	var rod := FishDB.get_rod(tier)
+	if not Inventory.can_hold("rod", tier):
+		feedback.emit("Túi đồ đã đầy (%d/%d)! Cất bớt đồ vào nhà kho 🏚️" % [Inventory.backpack_slots_used(), Inventory.backpack_max])
+		return
 	if GameState.try_spend(int(rod.price)):
 		Inventory.add_rod(tier, int(rod.casts))
 		feedback.emit("Đã mua %s (+%d lượt câu)!" % [rod.name, int(rod.casts)])
