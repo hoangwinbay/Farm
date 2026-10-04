@@ -12,6 +12,9 @@ const DOT_SPACING := 26.0
 const NODES := {
 	"house": Vector2(250, 250),
 	"j_house": Vector2(250, 470),
+	"stall": Vector2(184, 440),
+	"j_stall": Vector2(184, 470),
+	"west_edge": Vector2(16, 470),
 	"j_pen": Vector2(304, 470),
 	"pen": Vector2(304, 574),
 	"farm_w": Vector2(408, 470),
@@ -26,7 +29,8 @@ const NODES := {
 	"hai": Vector2(1350, 430),
 }
 const EDGES := [
-	["house", "j_house"], ["j_house", "j_pen"], ["j_pen", "pen"],
+	["house", "j_house"], ["stall", "j_stall"], ["west_edge", "j_stall"], ["j_stall", "j_house"],
+	["j_house", "j_pen"], ["j_pen", "pen"],
 	["j_pen", "farm_w"], ["farm_w", "farm"],
 	["farm_w", "j_tu"], ["j_tu", "tu"],
 	["j_tu", "j_pond"], ["j_pond", "pond"],
@@ -38,6 +42,7 @@ const EDGES := [
 # "mlabel" là tên ngắn vẽ trên bản đồ; "mlab_above" đẩy nhãn lên trên điểm.
 const POIS := [
 	{"id": "house", "name": "Nhà (ngủ & lưu game)", "mlabel": "Nhà (ngủ & lưu)", "pos": Vector2(250, 250), "color": Color(0.98, 0.62, 0.45), "letter": "N"},
+	{"id": "stall", "name": "Sạp hàng nông sản", "mlabel": "Sạp hàng", "mlab_above": true, "pos": Vector2(184, 440), "color": Color(0.95, 0.45, 0.35), "letter": "S"},
 	{"id": "farm", "name": "Nông trại", "mlabel": "Nông trại", "pos": Vector2(648, 470), "color": Color(0.55, 0.88, 0.42), "letter": "R"},
 	{"id": "pen", "name": "Chuồng gia cầm", "mlabel": "Chuồng gia cầm", "pos": Vector2(304, 574), "color": Color(0.85, 0.65, 0.35), "letter": "C"},
 	{"id": "tu", "name": "Quầy Cô Tư (gia cầm)", "mlabel": "Cô Tư — gia cầm", "mlab_above": true, "pos": Vector2(1010, 430), "color": Color(1.0, 0.68, 0.3), "letter": "T"},

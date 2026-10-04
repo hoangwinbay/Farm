@@ -3,6 +3,8 @@ extends RefCounted
 # Mọi nơi dùng: const TextureGen := preload("res://scripts/texture_gen.gd")
 
 const CropDB := preload("res://scripts/crop_db.gd")
+const FishDB := preload("res://scripts/fish_db.gd")
+const PoultryDB := preload("res://scripts/poultry_db.gd")
 
 static var _cache: Dictionary = {}
 
@@ -110,6 +112,10 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _mailbox()
 		"stand":
 			tex = _stand()
+		"market_stall":
+			tex = _market_stall()
+		"stall_shadow":
+			tex = _stall_shadow()
 		"scarecrow":
 			tex = _scarecrow()
 		"coop":
@@ -314,6 +320,7 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 	protect_rect.call(241.0 - 72.0, 248.0 - 144.0, 160.0, 160.0, 2) # Nhà gỗ & hiên
 	protect_rect.call(120.0, 560.0, 272.0, 220.0, 2) # Chuồng gia cầm
 	protect_rect.call(944.0, 352.0, 464.0, 96.0, 2) # Khu chợ quê
+	protect_rect.call(184.0 - 56.0, 440.0 - 66.0, 112.0, 66.0, 1) # Sạp hàng nông sản (nền cỏ xanh thanh sạch)
 	protect_rect.call(pond.position.x, pond.position.y, pond.size.x, pond.size.y, 3) # Hồ nước
 	for p in paths:
 		protect_rect.call(p.position.x, p.position.y, p.size.x, p.size.y, 2)
@@ -479,8 +486,10 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 				var w_val: bool = road_grid[gy][gx - 1] if gx > 0 else false
 				var e: bool = road_grid[gy][gx + 1] if gx < gw - 1 else false
 
-				# Nối thông vào cổng ruộng và cổng chuồng không bị cỏ chắn
-				if gx == 24 and (gy >= 28 and gy <= 31):
+				# Nối thông ra mép trái bản đồ, cổng ruộng và cổng chuồng không bị cỏ chắn
+				if gx == 0 and (gy >= 28 and gy <= 30):
+					w_val = true
+				elif gx == 24 and (gy >= 28 and gy <= 31):
 					e = true
 				elif gx == 56 and (gy >= 28 and gy <= 31):
 					w_val = true
@@ -1062,6 +1071,25 @@ static func _stand() -> ImageTexture:
 	rect(img, 30, 26, 12, 10, Color(0.70, 0.50, 0.28))
 	rect(img, 30, 26, 12, 2, Color(0.58, 0.40, 0.20))
 	px(img, 33, 29, Color(0.82, 0.62, 0.36))
+	return _tex(img)
+
+
+static func _market_stall() -> ImageTexture:
+	var loaded := _load_picture("res://picture/market_stall.png")
+	if loaded != null:
+		return _tex(loaded)
+	return _stand()
+
+
+static func _stall_shadow() -> ImageTexture:
+	var loaded := _load_picture("res://picture/stall_shadow.png")
+	if loaded != null:
+		return _tex(loaded)
+	var img := _img(124, 32)
+	var shadow := Color(0.05, 0.10, 0.04, 0.42)
+	ellipse(img, 60, 16, 44, 9, shadow)
+	ellipse(img, 18, 18, 13, 7, shadow)
+	ellipse(img, 102, 18, 17, 8, shadow)
 	return _tex(img)
 
 
@@ -2587,6 +2615,89 @@ static func orb_icon(color_hex: String) -> ImageTexture:
 	px(img, 6, 8, Color(1, 1, 1, 0.55))
 	px(img, 6, 9, Color(1, 1, 1, 0.35))
 	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func egg_icon(color_hex: String) -> ImageTexture:
+	var key := "egg_icon_%s" % color_hex
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var c := Color(color_hex)
+	var light := c.lightened(0.2)
+	ellipse(img, 8, 8, 4.5, 6, c.darkened(0.15))
+	ellipse(img, 7.5, 7.5, 3.5, 5, light)
+	px(img, 6, 6, Color.WHITE)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func get_crate_fill_tex(id: String, type: String) -> ImageTexture:
+	var key := "crate_fill_%s_%s" % [id, type]
+	if _cache.has(key):
+		return _cache[key]
+
+	var canvas := _img(13, 8)
+
+	if type == "crop":
+		var path := "res://picture/crops/prod_%s.png" % id
+		var loaded := _load_picture(path)
+		if loaded != null:
+			var min_x := loaded.get_width()
+			var max_x := 0
+			var min_y := loaded.get_height()
+			var max_y := 0
+			for y in loaded.get_height():
+				for x in loaded.get_width():
+					if loaded.get_pixel(x, y).a > 0.1:
+						if x < min_x: min_x = x
+						if x > max_x: max_x = x
+						if y < min_y: min_y = y
+						if y > max_y: max_y = y
+			if min_x <= max_x and min_y <= max_y:
+				var bw := max_x - min_x + 1
+				var bh := max_y - min_y + 1
+				var crop_img := Image.create(bw, bh, false, Image.FORMAT_RGBA8)
+				crop_img.blit_rect(loaded, Rect2i(min_x, min_y, bw, bh), Vector2i.ZERO)
+				var scale_f := minf(11.0 / float(bw), 7.5 / float(bh))
+				var nw: int = maxi(2, int(round(float(bw) * scale_f)))
+				var nh: int = maxi(2, int(round(float(bh) * scale_f)))
+				crop_img.resize(nw, nh, Image.INTERPOLATE_LANCZOS)
+				var dx: int = (13 - nw) / 2
+				var dy: int = (8 - nh) / 2
+				canvas.blend_rect(crop_img, Rect2i(0, 0, nw, nh), Vector2i(dx, dy))
+		else:
+			var col := Color(0.88, 0.45, 0.15)
+			for c in CropDB.CROPS:
+				if str(c.id) == id:
+					col = Color(str(c.color))
+					break
+			circle(canvas, 4, 4, 3, col)
+			circle(canvas, 9, 4, 3, col.darkened(0.1))
+			circle(canvas, 6.5, 3, 2.5, col.lightened(0.2))
+			px(canvas, 6, 1, Color(0.3, 0.65, 0.25))
+	elif type == "fish":
+		var f_col := Color(0.4, 0.7, 0.9)
+		for f in FishDB.FISH:
+			if str(f.id) == id:
+				f_col = Color(str(f.color))
+				break
+		ellipse(canvas, 6, 4, 4.5, 2.5, f_col)
+		rect(canvas, 10, 3, 2, 3, f_col.darkened(0.3))
+		px(canvas, 3, 3.5, Color(0.1, 0.1, 0.1))
+	else:
+		var p_col := Color(0.95, 0.88, 0.7)
+		for a in PoultryDB.ANIMALS:
+			if str(a.product) == id:
+				p_col = Color(str(a.product_color))
+				break
+		ellipse(canvas, 4, 4.5, 2.2, 3.0, p_col.darkened(0.1))
+		ellipse(canvas, 9, 4.5, 2.2, 3.0, p_col.darkened(0.15))
+		ellipse(canvas, 6.5, 3.5, 2.2, 2.8, p_col.lightened(0.15))
+
+	var tex := _tex(canvas)
 	_cache[key] = tex
 	return tex
 

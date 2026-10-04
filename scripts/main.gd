@@ -12,6 +12,7 @@ const HudScript := preload("res://scripts/ui/hud.gd")
 const ShopPanelScript := preload("res://scripts/ui/shop_panel.gd")
 const FishShopScript := preload("res://scripts/ui/fish_shop.gd")
 const PoultryShopScript := preload("res://scripts/ui/poultry_shop.gd")
+const StallPanelScript := preload("res://scripts/ui/stall_panel.gd")
 const InventoryPanelScript := preload("res://scripts/ui/inventory_panel.gd")
 const DialogueBoxScript := preload("res://scripts/ui/dialogue_box.gd")
 const TitleScreenScript := preload("res://scripts/ui/title_screen.gd")
@@ -26,6 +27,7 @@ const FARM_ORIGIN := Vector2(424, 384)
 const FARM_TILES := Vector2i(14, 9)
 const HOUSE_POS := Vector2(241, 248)
 const MAILBOX_POS := Vector2(320, 246)
+const MARKET_STALL_POS := Vector2(184, 440) # sạp hàng nông sản tại góc rẽ trái
 const STAND_POS := Vector2(1180, 416)       # quầy Bác Tư
 const STAND_HAI_POS := Vector2(1350, 416)   # quầy Chú Hai
 const STAND_TU_POS := Vector2(1010, 416)    # quầy Cô Tư
@@ -52,7 +54,7 @@ const PEN_SPOTS := [                      # chỗ đứng con vật trong ô (so
 # Đại lộ đông-tây (48px = 3 ô) + các nhánh lối đi (32px = 2 ô).
 const PATHS := [
 	Rect2(240, 240, 32, 224),    # từ cửa nhà xuống đại lộ (x: 240..272, y: 240..464)
-	Rect2(224, 448, 1184, 48),   # đại lộ đông - tây qua 2 cổng ruộng (x: 224..1408, y: 448..496)
+	Rect2(0, 448, 1408, 48),     # đại lộ đông - tây qua 2 cổng ruộng, kéo dài hết map sang trái (x: 0..1408, y: 448..496)
 	Rect2(944, 352, 464, 96),    # khuôn viên chợ quê 3 quầy hàng liền sát đại lộ (x: 944..1408, y: 352..448)
 	Rect2(288, 480, 32, 96),     # nhánh tới cổng chuồng gia cầm (x: 288..320, y: 480..576)
 	Rect2(1024, 480, 32, 272),   # nhánh xuống bờ ao câu cá (x: 1024..1056, y: 480..752)
@@ -78,6 +80,10 @@ var hud: CanvasLayer
 var shop_panel: CanvasLayer
 var fish_shop: CanvasLayer
 var poultry_shop: CanvasLayer
+var stall_panel: CanvasLayer
+var stall_slots: Array = [{}, {}, {}, {}, {}, {}]
+var stall_crate_sprites: Array[Sprite2D] = []
+var _stall_customer_timer: float = 0.0
 var inv_panel: CanvasLayer
 var mailbox_panel: CanvasLayer
 var mailbox_badge: PanelContainer
@@ -139,6 +145,9 @@ func _ready() -> void:
 	fish_shop.closed.connect(_close_panels)
 	poultry_shop.feedback.connect(func(t: String) -> void: hud.toast(t, Color(1.0, 0.7, 0.6)))
 	poultry_shop.closed.connect(_close_panels)
+	stall_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
+	stall_panel.closed.connect(_close_panels)
+	stall_panel.stall_changed.connect(_on_stall_changed)
 	Inventory.changed.connect(_rebuild_pen)
 	inv_panel.closed.connect(_close_panels)
 	dialog_box.finished.connect(_on_dialog_finished)
@@ -188,6 +197,8 @@ func _build_world() -> void:
 	_build_mailbox()
 	# bù nhìn Stardew Valley
 	_add_decor(TextureGen.get_tex("scarecrow"), SCARECROW_POS, 1.5, Rect2(-6, -10, 12, 10))
+	# sạp hàng nông sản Stardew Valley tại góc rẽ trái (kèm bóng đổ mềm mại trên nền cỏ)
+	_build_market_stall()
 	# Hệ thống thực vật & cây cối mọc ngẫu nhiên trên bề mặt cỏ tự nhiên (Stardew Valley)
 	_populate_random_foliage(75)
 
@@ -234,6 +245,7 @@ func _build_world() -> void:
 	interactables = [
 		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ (sang ngày mới + lưu game)", "cb": _ask_sleep},
 		{"pos": MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": _open_mailbox},
+		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪 (Bày hàng bán cho dân làng)", "cb": _open_market_stall},
 		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư — hạt giống & nông sản", "cb": _talk_npc},
 		{"pos": CHU_HAI_POS, "r": 60.0, "label": "Chú Hai — cần câu & thu mua cá", "cb": _talk_hai},
 		{"pos": COTU_POS, "r": 60.0, "label": "Cô Tư — mua gia cầm & chuồng", "cb": _talk_tu},
@@ -522,6 +534,73 @@ func _update_mailbox_badge() -> void:
 	mailbox_badge.visible = (h_count > 0 or c_count > 0)
 
 
+func _build_market_stall() -> void:
+	var body := StaticBody2D.new()
+	body.position = MARKET_STALL_POS
+
+	# 1. Hiệu ứng bóng đổ mềm mại trên nền cỏ (Stardew Valley ground shadow)
+	var shadow := Sprite2D.new()
+	shadow.texture = TextureGen.get_tex("stall_shadow")
+	shadow.position = Vector2(2, -4)
+	body.add_child(shadow)
+
+	# 2. Thân sạp hàng gỗ
+	var spr := Sprite2D.new()
+	var tex: Texture2D = TextureGen.get_tex("market_stall")
+	spr.texture = tex
+	spr.offset = Vector2(0, -tex.get_height() / 2.0)
+	body.add_child(spr)
+
+	# 3. 6 ô chứa nông sản / cá / gia cầm trên mặt quầy gỗ (2 hàng x 3 cột)
+	stall_crate_sprites.clear()
+	var crate_offsets: Array[Vector2] = [
+		Vector2(-20.5, -36.0), Vector2(-6.5, -36.0), Vector2(7.5, -36.0),
+		Vector2(-20.5, -27.0), Vector2(-6.5, -27.0), Vector2(7.5, -27.0),
+	]
+	for i in 6:
+		var cs := Sprite2D.new()
+		cs.name = "CrateFill_%d" % i
+		cs.position = crate_offsets[i]
+		cs.visible = false
+		body.add_child(cs)
+		stall_crate_sprites.append(cs)
+
+	# 4. Va chạm (chân cột và quầy hàng)
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(104, 24)
+	col.shape = shape
+	col.position = Vector2(0, -14)
+	body.add_child(col)
+
+	world.add_child(body)
+	_update_stall_crates_visual()
+
+
+func _update_stall_crates_visual() -> void:
+	for i in 6:
+		if i >= stall_crate_sprites.size():
+			continue
+		var cs: Sprite2D = stall_crate_sprites[i]
+		if i < stall_slots.size() and stall_slots[i] != null and not stall_slots[i].is_empty():
+			var slot: Dictionary = stall_slots[i]
+			var sid: String = str(slot.get("id", ""))
+			var stype: String = str(slot.get("type", "crop"))
+			var count: int = int(slot.get("count", 0))
+			if sid != "" and count > 0:
+				cs.texture = TextureGen.get_crate_fill_tex(sid, stype)
+				cs.visible = true
+			else:
+				cs.visible = false
+		else:
+			cs.visible = false
+
+
+func _on_stall_changed() -> void:
+	_update_stall_crates_visual()
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots)
+
+
 func _add_decor(tex: Texture2D, pos: Vector2, scl: float, collide: Rect2) -> StaticBody2D:
 	var body := StaticBody2D.new()
 	body.position = pos
@@ -616,6 +695,11 @@ func _is_grass_surface(pos: Vector2) -> bool:
 	if market_box.has_point(pos):
 		return false
 
+	# 10b. Sạp hàng nông sản ở góc rẽ trái
+	var stall_box := Rect2(MARKET_STALL_POS.x - 65.0, MARKET_STALL_POS.y - 75.0, 130.0, 95.0)
+	if stall_box.has_point(pos):
+		return false
+
 	# 11. Các vạt đất trống (dirt patches) tự nhiên trên mặt đất
 	var dirt_patches: Array[Vector4i] = [
 		Vector4i(6, 14, 4, 3), Vector4i(30, 8, 5, 3), Vector4i(46, 10, 4, 3), Vector4i(70, 7, 5, 3),
@@ -693,10 +777,13 @@ func _load_foliage(saved_items: Array) -> void:
 	for item in saved_items:
 		if typeof(item) != TYPE_DICTIONARY:
 			continue
-		var f_type: String = str(item.get("type", "tree_oak"))
 		var px: float = float(item.get("x", 0.0))
 		var py: float = float(item.get("y", 0.0))
-		_spawn_foliage_item(f_type, Vector2(px, py))
+		var pt := Vector2(px, py)
+		if not _is_grass_surface(pt):
+			continue
+		var f_type: String = str(item.get("type", "tree_oak"))
+		_spawn_foliage_item(f_type, pt)
 
 
 func _sprout_random_plant() -> void:
@@ -806,6 +893,8 @@ func _build_ui() -> void:
 	add_child(fish_shop)
 	poultry_shop = PoultryShopScript.new()
 	add_child(poultry_shop)
+	stall_panel = StallPanelScript.new()
+	add_child(stall_panel)
 	inv_panel = InventoryPanelScript.new()
 	add_child(inv_panel)
 	mailbox_panel = MailboxPanelScript.new()
@@ -856,6 +945,7 @@ func _process(delta: float) -> void:
 		return
 	GameState.tick(delta)
 	Inventory.tick_animals(delta)
+	_process_stall_customers(delta)
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	_update_hint_and_highlight()
@@ -867,6 +957,46 @@ func _process(delta: float) -> void:
 			_finish_fishing()
 	if GameState.clock >= GameState.COLLAPSE_MIN and GameState.clock < GameState.DAY_START:
 		_do_sleep(true)  # 2h sáng chưa ngủ -> gục ngã
+
+
+func _process_stall_customers(delta: float) -> void:
+	if stall_slots.is_empty():
+		return
+	var t := GameState.clock
+	if t < 420.0 or t > 1140.0:
+		return
+
+	var available_indices: Array[int] = []
+	for i in stall_slots.size():
+		var slot = stall_slots[i]
+		if typeof(slot) == TYPE_DICTIONARY and not slot.is_empty() and int(slot.get("count", 0)) > 0:
+			available_indices.append(i)
+
+	if available_indices.is_empty():
+		return
+
+	_stall_customer_timer += delta
+	if _stall_customer_timer < 20.0:
+		return
+	_stall_customer_timer = 0.0
+
+	var idx: int = available_indices[randi() % available_indices.size()]
+	var slot: Dictionary = stall_slots[idx]
+	var item_name: String = str(slot.get("name", "Nông sản"))
+	var unit_price: int = int(slot.get("price", 10))
+	var count: int = int(slot.get("count", 0))
+	var qty_buy: int = mini(count, (1 if randf() < 0.7 else 2))
+	var total_earned: int = unit_price * qty_buy
+
+	GameState.add_money(total_earned)
+	slot["count"] = count - qty_buy
+	if int(slot["count"]) <= 0:
+		stall_slots[idx] = {}
+
+	_update_stall_crates_visual()
+	if stall_panel != null and stall_panel.visible:
+		stall_panel._refresh_ui()
+	hud.toast("Dân làng vừa ghé sạp mua %d %s! +%d xu 🪙" % [qty_buy, item_name, total_earned], Color(1.0, 0.88, 0.4))
 
 
 func _tint() -> Color:
@@ -905,6 +1035,17 @@ func _update_hint_and_highlight() -> void:
 				lbl = "Mở hòm thư 📬 (Có quà: %d cuốc, %d xu)" % [h_count, c_count]
 			else:
 				lbl = "Mở hòm thư 📬 (Trống)"
+		elif near.pos == MARKET_STALL_POS + Vector2(0, 16):
+			var count_items := 0
+			var occupied_crates := 0
+			for sl in stall_slots:
+				if typeof(sl) == TYPE_DICTIONARY and not sl.is_empty() and int(sl.get("count", 0)) > 0:
+					count_items += int(sl.get("count", 0))
+					occupied_crates += 1
+			if occupied_crates > 0:
+				lbl = "Sạp nông sản 🏪 (%d/6 ô đang bày %d món · Bán cho dân làng +20%%)" % [occupied_crates, count_items]
+			else:
+				lbl = "Sạp nông sản 🏪 (Trống · Bày hàng bán cho dân làng +20%%)"
 		hud.set_hint("E: " + lbl)
 		return
 	var tile = farm.tile_at_world(player.get_facing_point())
@@ -937,14 +1078,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().paused = true
 		elif pause_menu.visible:
 			_resume_from_pause()
-		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (mailbox_panel != null and mailbox_panel.visible):
+		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("interact"):
 		if mode == Mode.PLAY and not get_tree().paused:
 			_do_interact()
 		elif mode == Mode.DIALOG:
 			dialog_box.advance()
-		elif mailbox_panel != null and mailbox_panel.visible:
+		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("inventory"):
 		if mode == Mode.PLAY and not get_tree().paused:
@@ -1046,6 +1187,12 @@ func _open_shop() -> void:
 	shop_panel.open()
 
 
+func _open_market_stall() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	stall_panel.open(stall_slots)
+
+
 func _open_fish_shop() -> void:
 	mode = Mode.PANEL
 	get_tree().paused = true
@@ -1097,7 +1244,7 @@ func _open_mailbox() -> void:
 func _on_mailbox_changed() -> void:
 	_update_mailbox_badge()
 	hud.rebuild_hotbar()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots)
 
 
 func _close_panels() -> void:
@@ -1107,6 +1254,8 @@ func _close_panels() -> void:
 	inv_panel.visible = false
 	if mailbox_panel != null:
 		mailbox_panel.visible = false
+	if stall_panel != null:
+		stall_panel.visible = false
 	pause_menu.visible = false
 	get_tree().paused = false
 	if mode != Mode.TITLE:
@@ -1121,12 +1270,12 @@ func _resume_from_pause() -> void:
 
 
 func _save_now() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots)
 	hud.toast("Đã lưu game!", Color(0.6, 1.0, 0.6))
 
 
 func _back_to_title() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots)
 	_close_panels()
 	mode = Mode.TITLE
 	dialog_box.force_close()
@@ -1161,11 +1310,31 @@ func _do_sleep(forced: bool) -> void:
 	# Cây cối tự nhiên có tỉ lệ mọc thêm trên bề mặt cỏ qua đêm
 	if foliage_nodes.size() < 95 and randf() < 0.60:
 		_sprout_random_plant()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data)
+	# Dân làng mua hàng qua đêm tại sạp nông sản
+	var total_overnight_coins := 0
+	var total_overnight_items := 0
+	for i in stall_slots.size():
+		var slot = stall_slots[i]
+		if typeof(slot) == TYPE_DICTIONARY and not slot.is_empty() and int(slot.get("count", 0)) > 0:
+			var cur_count: int = int(slot.get("count", 0))
+			var u_price: int = int(slot.get("price", 10))
+			var sell_count: int = mini(cur_count, maxi(1, int(round(float(cur_count) * randf_range(0.5, 0.8)))))
+			var earned: int = u_price * sell_count
+			total_overnight_coins += earned
+			total_overnight_items += sell_count
+			slot["count"] = cur_count - sell_count
+			if int(slot["count"]) <= 0:
+				stall_slots[i] = {}
+	if total_overnight_items > 0:
+		GameState.add_money(total_overnight_coins)
+		_update_stall_crates_visual()
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots)
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	if forced:
 		hud.toast("Bạn gục ngã vì kiệt sức...", Color(1.0, 0.55, 0.45))
+	if total_overnight_items > 0:
+		hud.toast("Sạp hàng bán được %d món qua đêm, thu về +%d xu! 🏪" % [total_overnight_items, total_overnight_coins], Color(1.0, 0.9, 0.45))
 	hud.toast("Ngày mới! %d cây đã chín chờ thu hoạch." % ready_n, Color(0.65, 1.0, 0.6))
 	var tw2 := create_tween()
 	tw2.tween_property(fade_rect, "modulate:a", 0.0, 0.6)
@@ -1241,6 +1410,8 @@ func start_new_game() -> void:
 	Inventory.add_seed("rice", 2)
 	mailbox_data = {"hoes": 999, "coins": 999}
 	_update_mailbox_badge()
+	stall_slots = [{}, {}, {}, {}, {}, {}]
+	_update_stall_crates_visual()
 	farm.reset_all()
 	player.position = PLAYER_START
 	player.facing = Vector2.DOWN
@@ -1288,6 +1459,12 @@ func continue_game() -> void:
 	else:
 		mailbox_data = {"hoes": 999, "coins": 999}
 	_update_mailbox_badge()
+	var st_arr = d.get("stall", [])
+	if typeof(st_arr) == TYPE_ARRAY and st_arr.size() == 6:
+		stall_slots = st_arr.duplicate(true)
+	else:
+		stall_slots = [{}, {}, {}, {}, {}, {}]
+	_update_stall_crates_visual()
 	var farm_arr = d.get("farm", [])
 	if typeof(farm_arr) == TYPE_ARRAY:
 		farm.apply_state(farm_arr)
@@ -1529,7 +1706,7 @@ func _debug_grow() -> void:
 	print("POULTRY thu sau 95s = ", got, " trứng gà (kỳ vọng 2)")
 	print("POULTRY ready_left=", Inventory.ready_products())
 	print("POULTRY produce trung_ga=", Inventory.produce_count("trung_ga"))
-	SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data)
+	SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots)
 	var d := SaveSystem.load_data()
 	print("DEBUG save/load farm tiles = ", (d.get("farm", []) as Array).size(),
 			" hoes=", int(d.get("hoes", -1)), " rods=", d.get("rods", {}),
@@ -1727,12 +1904,65 @@ func _clicktest_step() -> void:
 					break
 			_sprout_random_plant()
 			var count_after_sprout: int = foliage_data.size()
-			SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data)
+			SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots)
 			var sd: Dictionary = SaveSystem.load_data()
 			var saved_f_size: int = (sd.get("foliage", []) as Array).size()
 			print("FOLIAGETEST initial=", f_count, " all_on_grass=", all_grass,
 					" sprouted=", (count_after_sprout == f_count + 1),
 					" saved_and_loaded=", (saved_f_size == count_after_sprout))
+		994:
+			# test sạp hàng nông sản tại góc rẽ trái và đường mòn sang bên trái
+			player.position = Vector2(184, 460)
+			var near_stall: Dictionary = _nearest_interactable()
+			var stall_lbl: String = str(near_stall.get("label", ""))
+			var stall_found: bool = "Sạp hàng" in stall_lbl
+			_open_market_stall()
+			var stall_opens_panel: bool = stall_panel.visible
+
+			# Thử nghiệm bày 2 quả cà chua lên ô 0
+			Inventory.add_produce("tomato", 5)
+			stall_panel._add_item_to_stall("tomato", "crop", "Cà chua", 18, 2)
+			var slot0_filled: bool = stall_slots[0].get("id") == "tomato" and stall_slots[0].get("count") == 2
+			var crate0_visible: bool = stall_crate_sprites[0].visible and stall_crate_sprites[0].texture != null
+
+			# Thử nghiệm bày 1 cá chép lên ô 1
+			Inventory.fish["chep"] = int(Inventory.fish.get("chep", 0)) + 1
+			stall_panel._add_item_to_stall("chep", "fish", "Cá chép", 48, 1)
+			var slot1_filled: bool = stall_slots[1].get("id") == "chep"
+			var crate1_visible: bool = stall_crate_sprites[1].visible
+
+			# Thu hồi cá chép ở ô 1 -> ô 1 trống và sprite ẩn
+			stall_panel._retrieve_from_stall(1)
+			var crate1_cleared: bool = (not stall_crate_sprites[1].visible) and stall_slots[1].is_empty()
+
+			# Lưu và nạp game xem sạp hàng có giữ được cà chua ở ô 0
+			SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots)
+			var sd_stall: Dictionary = SaveSystem.load_data()
+			var st_saved: Array = sd_stall.get("stall", [])
+			var save_has_stall: bool = st_saved.size() == 6 and st_saved[0].get("id") == "tomato"
+
+			# Thu hồi nốt cà chua ở ô 0 để sạch sạp
+			stall_panel._retrieve_from_stall(0)
+			stall_panel.close()
+
+			# Kiểm tra đường mòn kéo dài hết map sang trái, nền cỏ dưới sạp và POI minimap
+			var west_road_exists: bool = false
+			var stall_ground_has_road: bool = false
+			for p in PATHS:
+				if p.position.x <= 0.0 and p.position.y <= 450.0 and p.end.y >= 490.0:
+					west_road_exists = true
+				if p.has_point(Vector2(184, 420)):
+					stall_ground_has_road = true
+			var poi_stall_exists: bool = false
+			for p in MinimapScript.POIS:
+				if str(p.get("id", "")) == "stall":
+					poi_stall_exists = true
+			print("MARKETSTALLTEST found=", stall_found, " opens_panel=", stall_opens_panel,
+					" slot0_filled=", slot0_filled, " crate0_visual=", crate0_visible,
+					" slot1_filled=", slot1_filled, " crate1_visual=", crate1_visible,
+					" crate1_cleared=", crate1_cleared, " save_has_stall=", save_has_stall,
+					" west_road_to_edge=", west_road_exists, " ground_is_grass=", (not stall_ground_has_road),
+					" minimap_poi=", poi_stall_exists)
 		995:
 			print("CLICKTEST_DONE")
 			get_tree().quit()
