@@ -67,27 +67,31 @@ func _ready() -> void:
 	_spr.texture = TextureGen.sdv_char_tex(character_name, "right", 0)
 	add_child(_spr)
 
-	# 3. Bong bóng suy nghĩ: [ ×3 ] [ 🌾 Icon ]
+	# 3. Bong bóng nhỏ tròn, màu trắng lơ lửng phía trên đầu (không che mất đầu)
 	_bubble = PanelContainer.new()
-	_bubble.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.14, 0.08, 0.95), UIKit.COLOR_BORDER_GOLD, 4))
-	_bubble.position = Vector2(-22, -48)
+	_bubble.add_theme_stylebox_override("panel", _make_white_bubble_style())
+	_bubble.position = Vector2(-16, -66)
+	_bubble.pivot_offset = Vector2(16, 10)
+	_bubble.resized.connect(func():
+		_bubble.position.x = -_bubble.size.x / 2.0
+		_bubble.pivot_offset = _bubble.size / 2.0
+	)
 	_bubble.visible = true
 
 	var bh := HBoxContainer.new()
 	bh.alignment = BoxContainer.ALIGNMENT_CENTER
-	bh.add_theme_constant_override("separation", 3)
+	bh.add_theme_constant_override("separation", 2)
 	_bubble.add_child(bh)
 
 	_bubble_qty_label = Label.new()
 	_bubble_qty_label.text = "×%d" % buy_qty
 	_bubble_qty_label.add_theme_font_size_override("font_size", 10)
-	_bubble_qty_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_GOLD)
-	_bubble_qty_label.add_theme_color_override("font_outline_color", Color(0.1, 0.06, 0.04, 0.95))
-	_bubble_qty_label.add_theme_constant_override("outline_size", 2)
+	_bubble_qty_label.add_theme_color_override("font_color", Color(0.18, 0.12, 0.08))
+	_bubble_qty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	bh.add_child(_bubble_qty_label)
 
 	_bubble_icon = TextureRect.new()
-	_bubble_icon.custom_minimum_size = Vector2(16, 16)
+	_bubble_icon.custom_minimum_size = Vector2(14, 14)
 	_bubble_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	_bubble_icon.texture = TextureGen.get_crate_fill_tex(item_id, item_type)
 	bh.add_child(_bubble_icon)
@@ -288,3 +292,19 @@ func _show_disappointed_bubble() -> void:
 	tw.tween_interval(0.8)
 	tw.tween_property(_bubble, "modulate:a", 0.0, 0.3)
 	tw.tween_callback(func(): _bubble.visible = false; _bubble.modulate.a = 1.0)
+
+
+func _make_white_bubble_style() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(1.0, 1.0, 1.0, 0.96)
+	sb.border_color = Color(0.25, 0.20, 0.16, 0.75)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(10)
+	sb.content_margin_left = 5
+	sb.content_margin_right = 5
+	sb.content_margin_top = 2
+	sb.content_margin_bottom = 2
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.22)
+	sb.shadow_size = 2
+	sb.shadow_offset = Vector2(0, 1)
+	return sb
