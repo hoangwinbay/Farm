@@ -11,6 +11,7 @@ const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 signal arrived_at_stall
 signal purchase_completed(slot_idx: int, item_name: String, qty: int, coins: int, buyer_name: String)
+signal wait_timeout_expired(buyer_name: String, item_name: String)
 signal departed
 
 enum State { WALK_IN, SHOPPING, WAITING, WALK_OUT }
@@ -32,6 +33,7 @@ var item_type: String = "crop"
 var item_name: String = "Lúa mì"
 var buy_qty: int = 3
 var unit_price: int = 0
+var max_wait_time: float = 20.0 # Thời gian tối đa kiên nhẫn chờ món hàng (giây)
 
 var _spr: Sprite2D
 var _shadow: Sprite2D
@@ -41,6 +43,7 @@ var _bubble_icon: TextureRect
 var _anim_t: float = 0.0
 var _shop_timer: float = 0.0
 var _check_restock_timer: float = 0.0
+var _wait_elapsed: float = 0.0
 var _purchased: bool = false
 var _disappointed: bool = false
 
@@ -101,6 +104,8 @@ func _ready() -> void:
 	# Xuất phát từ đoạn đường bên trái màn hình
 	position = Vector2(-25 - randf_range(0, 20), target_stall_pos.y)
 	_spr.flip_h = false
+	max_wait_time = randf_range(16.0, 24.0)
+	_wait_elapsed = 0.0
 
 
 func _process(delta: float) -> void:
@@ -129,15 +134,11 @@ func _process(delta: float) -> void:
 					state = State.SHOPPING
 					_shop_timer = 0.0
 				else:
-					# Không có món đồ mong muốn:
-					# 20% khả năng từ chối ngay và bỏ về, 80% khả năng đứng chờ & đi lại xung quanh đến hết ngày
-					if randf() < 0.20:
-						_show_disappointed_bubble()
-						state = State.WALK_OUT
-					else:
-						state = State.WAITING
-						_is_wandering = false
-						_wander_wait_timer = randf_range(2.0, 4.0)
+					# Chưa có món đồ mong muốn: đứng chờ một lúc xem người chơi có bày hàng lên không
+					state = State.WAITING
+					_wait_elapsed = 0.0
+					_is_wandering = false
+					_wander_wait_timer = randf_range(2.0, 4.0)
 
 		State.WAITING:
 			# Trong lúc chờ, kiểm tra xem người chơi có vừa bày món hàng lên sạp không
@@ -151,6 +152,13 @@ func _process(delta: float) -> void:
 					_shop_timer = 0.0
 					_is_wandering = false
 					return
+
+			# Đếm thời gian chờ đợi: nếu quá thời gian kiên nhẫn mà vẫn chưa có đồ -> rời đi
+			_wait_elapsed += delta
+			if _wait_elapsed >= max_wait_time:
+				wait_timeout_expired.emit(display_name, item_name)
+				decline()
+				return
 
 			# Đi lại xung quanh khu vực trước sạp hàng
 			if _is_wandering:

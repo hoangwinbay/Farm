@@ -191,6 +191,7 @@ func _ready() -> void:
 
 	GameState.money_changed.connect(func(v: int) -> void: hud.set_money(v))
 	GameState.crops_changed.connect(func() -> void: hud.rebuild_hotbar())
+	GameState.stamina_changed.connect(func(cur: float, max_v: float) -> void: hud.set_stamina(cur, max_v))
 	Inventory.changed.connect(hud.rebuild_hotbar)
 	shop_panel.feedback.connect(func(t: String) -> void: hud.toast(t, Color(1.0, 0.9, 0.5)))
 	shop_panel.closed.connect(_close_panels)
@@ -204,6 +205,7 @@ func _ready() -> void:
 	stall_panel.revenue_collected.connect(_on_stall_revenue_collected)
 	Inventory.changed.connect(_rebuild_pen)
 	inv_panel.closed.connect(_close_panels)
+	inv_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
 	dialog_box.finished.connect(_on_dialog_finished)
 	dialog_box.answered.connect(_on_sleep_answer)
 	title_screen.start_requested.connect(start_new_game)
@@ -213,6 +215,7 @@ func _ready() -> void:
 	pause_menu.menu_requested.connect(_back_to_title)
 
 	hud.set_money(GameState.money)
+	hud.set_stamina(GameState.stamina, GameState.max_stamina)
 	title_screen.open(SaveSystem.has_save())
 
 
@@ -1234,6 +1237,9 @@ func _spawn_stall_customer(forced_slot_idx: int = -1) -> Node2D:
 	cust.buy_qty = int(target_item.get("qty", 1))
 
 	cust.purchase_completed.connect(_on_stall_customer_purchased)
+	cust.wait_timeout_expired.connect(func(who: String, what: String):
+		hud.toast("%s: Đợi một lúc không thấy có %s nên đành về vậy... 💨" % [who, what], Color(0.95, 0.75, 0.55))
+	)
 	cust.departed.connect(func():
 		_stall_customers.erase(cust)
 		if _active_stall_customer == cust:
@@ -1423,6 +1429,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_open_cat_panel()
 				get_viewport().set_input_as_handled()
 				return
+			elif event.keycode == KEY_F:
+				_quick_eat()
+				get_viewport().set_input_as_handled()
+				return
 			elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
 				hud.select_slot_by_index(event.keycode - KEY_1)
 		elif (storage_panel != null and storage_panel.visible and event.keycode == KEY_K) \
@@ -1439,6 +1449,71 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # ---------------- hành động ----------------
 
+func _get_action_stamina_cost(act: String) -> float:
+	match act:
+		"till": return 3.0
+		"water": return 2.0
+		"plant": return 1.0
+		"harvest": return 1.5
+		"catch_pest": return 1.0
+	return 0.0
+
+
+func _quick_eat() -> void:
+	if GameState.stamina >= GameState.max_stamina:
+		hud.toast("Thể lực đã tràn đầy (%d/%d)!" % [int(GameState.stamina), int(GameState.max_stamina)], Color(1.0, 0.88, 0.4))
+		return
+
+	var best_cat := ""
+	var best_id := ""
+	var best_rec := 0
+
+	# 1. Ưu tiên kiểm tra sản phẩm chăn nuôi (thịt gà, thịt vịt, thịt ngan, bồ câu thịt...)
+	for a in PoultryDB.ANIMALS:
+		var pid := str(a.product)
+		if Inventory.produce_count(pid) > 0:
+			var rec := GameState.get_food_stamina("poultry", pid)
+			if rec > best_rec:
+				best_rec = rec
+				best_cat = "produce"
+				best_id = pid
+
+	# 2. Kiểm tra nông sản trồng trọt
+	if best_rec == 0:
+		for c in CropDB.CROPS:
+			var cid := str(c.id)
+			if Inventory.produce_count(cid) > 0:
+				var rec := GameState.get_food_stamina("crop", cid)
+				if rec > best_rec:
+					best_rec = rec
+					best_cat = "produce"
+					best_id = cid
+
+	# 3. Kiểm tra cá
+	if best_rec == 0:
+		for f in FishDB.FISH:
+			var fid := str(f.id)
+			if Inventory.fish_count(fid) > 0:
+				var rec := GameState.get_food_stamina("fish", fid)
+				if rec > best_rec:
+					best_rec = rec
+					best_cat = "fish"
+					best_id = fid
+
+	if best_id == "":
+		hud.toast("Túi đồ không có nông sản hoặc thịt để ăn! (Bấm I xem túi)", Color(1.0, 0.65, 0.4))
+		return
+
+	var res := GameState.eat_food(best_cat, best_id)
+	if res.get("ok", false):
+		hud.toast(str(res.get("msg", "")), Color(0.4, 1.0, 0.5))
+		_spawn_effect("fx_harvest", player.position)
+		if inv_panel != null and inv_panel.visible:
+			inv_panel.refresh()
+	else:
+		hud.toast(str(res.get("msg", "")), Color(1.0, 0.65, 0.4))
+
+
 func _do_interact() -> void:
 	if fishing:
 		return
@@ -1450,11 +1525,23 @@ func _do_interact() -> void:
 	if tile == null:
 		return
 	var info: Dictionary = farm.action_at(tile)
+	var act := str(info.act)
+	if act == "none":
+		return
+
+	var cost := _get_action_stamina_cost(act)
+	if cost > 0.0 and GameState.stamina < cost:
+		hud.toast("Bạn đã kiệt sức! Hãy ăn nông sản hoặc thịt (phím F hoặc I) để hồi thể lực ⚡", Color(1.0, 0.45, 0.35))
+		return
+
 	var msg: String = farm.perform_at(tile)
 	if msg == "":
 		return
+
+	if cost > 0.0:
+		GameState.use_stamina(cost)
+
 	hud.toast(msg)
-	var act := str(info.act)
 	if act != "none":
 		_spawn_effect("fx_" + act, farm.tile_center(tile.coord))
 	player.play_action_anim(act)
@@ -1672,7 +1759,7 @@ func _do_sleep(forced: bool) -> void:
 	var tw := create_tween()
 	tw.tween_property(fade_rect, "modulate:a", 1.0, 0.45)
 	await tw.finished
-	GameState.sleep_to_morning()
+	GameState.sleep_to_morning(forced)
 	var ready_n: int = farm.ready_count()
 	# Dọn các khách NPC ngày hôm trước để ngày mới đón khách mới
 	for c in _stall_customers:
@@ -1702,10 +1789,13 @@ func _do_sleep(forced: bool) -> void:
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	if forced:
-		hud.toast("Bạn gục ngã vì kiệt sức...", Color(1.0, 0.55, 0.45))
+		hud.toast("Bạn gục ngã vì kiệt sức... Thể lực hồi 60% ⚡", Color(1.0, 0.55, 0.45))
+	else:
+		hud.toast("Ngày mới! Thể lực đã hồi phục 100% ⚡", Color(0.65, 1.0, 0.6))
 	if new_pests > 0:
 		hud.toast("⚠️ Có %d cây bị sâu cắn phá! Hãy bắt sâu bọ để cây lớn tiếp 🐛" % new_pests, Color(1.0, 0.65, 0.4))
-	hud.toast("Ngày mới! %d cây đã chín chờ thu hoạch." % ready_n, Color(0.65, 1.0, 0.6))
+	if ready_n > 0:
+		hud.toast("%d cây đã chín chờ thu hoạch!" % ready_n, Color(0.75, 1.0, 0.7))
 	var tw2 := create_tween()
 	tw2.tween_property(fade_rect, "modulate:a", 0.0, 0.6)
 	await tw2.finished
@@ -1720,6 +1810,10 @@ func _refill_water_can() -> void:
 	if Inventory.water_level >= Inventory.water_max:
 		hud.toast("Bình tưới đã đầy nước (%d/%d)!" % [Inventory.water_level, Inventory.water_max])
 		return
+	if GameState.stamina < 2.0:
+		hud.toast("Bạn đã kiệt sức! Không đủ sức múc nước (cần 2⚡). Hãy ăn nông sản hoặc thịt!", Color(1.0, 0.45, 0.35))
+		return
+	GameState.use_stamina(2.0)
 	var _added: int = Inventory.refill_water()
 	player.facing = (POND_RECT.get_center() - player.position).normalized()
 	_spawn_effect("fx_water", player.position + player.facing * 18.0)
@@ -1729,16 +1823,20 @@ func _refill_water_can() -> void:
 	await get_tree().create_timer(act_time).timeout
 	player.can_move = true
 	hud.rebuild_hotbar()
-	hud.toast("Đã múc nước từ ao! Bình tưới: %d/%d 💧" % [Inventory.water_level, Inventory.water_max], Color(0.4, 0.85, 1.0))
+	hud.toast("Đã múc nước từ ao (-2⚡)! Bình tưới: %d/%d 💧" % [Inventory.water_level, Inventory.water_max], Color(0.4, 0.85, 1.0))
 
 
 func _start_fishing() -> void:
 	if fishing:
 		return
+	if GameState.stamina < 3.0:
+		hud.toast("Bạn đã kiệt sức! Không đủ sức câu cá (cần 3⚡). Hãy ăn nông sản hoặc thịt!", Color(1.0, 0.45, 0.35))
+		return
 	var tier := str(Inventory.take_cast())
 	if tier == "":
 		hud.toast("Hết lượt câu! Mua cần câu ở Chú Hai (bờ ao).", Color(1.0, 0.6, 0.5))
 		return
+	GameState.use_stamina(3.0)
 	var rod := FishDB.get_rod(tier)
 	fishing = true
 	fishing_left = FishDB.FISH_TIME
@@ -1798,6 +1896,8 @@ func start_new_game() -> void:
 	Inventory.selected_seed = "rice"
 	Inventory.add_hoes(2)
 	Inventory.add_seed("rice", 2)
+	Inventory.add_produce("sweet_potato", 2) # Khoai lang để ăn hồi thể lực
+	Inventory.add_produce("thit_ga", 1)      # Thịt gà để ăn hồi thể lực
 	mailbox_data = _default_mailbox_data()
 	_update_mailbox_badge()
 	stall_slots = [{}, {}, {}, {}, {}, {}]
@@ -1821,7 +1921,7 @@ func start_new_game() -> void:
 	get_tree().paused = false
 	mode = Mode.PLAY
 	hud.toast("Chào mừng đến Nông Trại Việt!", Color(1.0, 0.87, 0.35))
-	hud.toast("WASD: di chuyển · E: tương tác · I: kho đồ")
+	hud.toast("WASD: di chuyển · E: tương tác · I: kho đồ · F: ăn nhanh hồi thể lực ⚡")
 
 
 func continue_game() -> void:
@@ -1832,12 +1932,15 @@ func continue_game() -> void:
 	GameState.money = int(d.get("money", 100))
 	GameState.day = int(d.get("day", 1))
 	GameState.clock = float(d.get("clock", GameState.DAY_START))
+	GameState.stamina = float(d.get("stamina", 100.0))
+	GameState.max_stamina = float(d.get("max_stamina", 100.0))
 	var unl: Array = []
 	for id in d.get("unlocked", ["rice"]):
 		unl.append(str(id))
 	GameState.unlocked = unl
 	GameState.money_changed.emit(GameState.money)
 	GameState.crops_changed.emit()
+	GameState.stamina_changed.emit(GameState.stamina, GameState.max_stamina)
 	Inventory.set_state({
 		"seeds": d.get("seeds", {}),
 		"produce": d.get("produce", {}),

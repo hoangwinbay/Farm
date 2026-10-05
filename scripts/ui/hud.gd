@@ -15,6 +15,10 @@ var day_label: Label
 var money_label: Label
 var hoe_label: Label
 var water_label: Label
+var stamina_bar: ProgressBar
+var stamina_label: Label
+var _stamina_fill_sb: StyleBoxFlat
+var _stamina_tween: Tween
 var hint_container: PanelContainer
 var hint_label: Label
 var active_label: Label
@@ -82,7 +86,7 @@ func _ready() -> void:
 	h_clk.add_child(clk_ic)
 	clock_label = UIKit.label(h_clk, "07:00", 15, Color(0.90, 0.95, 1.0))
 
-	# Hàng 2: Tiền vàng & Cuốc xới đất
+	# Hàng 2: Tiền vàng & Cuốc xới đất & Nước
 	var h_assets := HBoxContainer.new()
 	h_assets.add_theme_constant_override("separation", 10)
 	h_assets.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -133,10 +137,66 @@ func _ready() -> void:
 	h_w.add_child(w_ic)
 	water_label = UIKit.label(h_w, "Nước 20/20", 14, Color(0.70, 0.90, 1.0))
 
+	# Hàng 3: Thanh Thể Lực (Stamina Bar)
+	var stamina_pill := PanelContainer.new()
+	stamina_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.06), UIKit.COLOR_BORDER_WOOD, 6))
+	stamina_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v_status.add_child(stamina_pill)
+
+	var h_sta := HBoxContainer.new()
+	h_sta.add_theme_constant_override("separation", 6)
+	h_sta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamina_pill.add_child(h_sta)
+
+	var sta_ic := TextureRect.new()
+	sta_ic.texture = TextureGen.stamina_icon()
+	sta_ic.custom_minimum_size = Vector2(16, 16)
+	sta_ic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	h_sta.add_child(sta_ic)
+
+	var bar_container := Control.new()
+	bar_container.custom_minimum_size = Vector2(240, 16)
+	bar_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h_sta.add_child(bar_container)
+
+	stamina_bar = ProgressBar.new()
+	stamina_bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	stamina_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamina_bar.show_percentage = false
+	stamina_bar.min_value = 0.0
+	stamina_bar.max_value = 100.0
+	stamina_bar.value = 100.0
+
+	var bar_bg := StyleBoxFlat.new()
+	bar_bg.bg_color = Color(0.08, 0.05, 0.03, 0.95)
+	bar_bg.border_color = Color(0.28, 0.20, 0.12)
+	bar_bg.set_border_width_all(1)
+	bar_bg.set_corner_radius_all(4)
+	stamina_bar.add_theme_stylebox_override("background", bar_bg)
+
+	_stamina_fill_sb = StyleBoxFlat.new()
+	_stamina_fill_sb.bg_color = Color(0.24, 0.82, 0.42)
+	_stamina_fill_sb.set_corner_radius_all(4)
+	stamina_bar.add_theme_stylebox_override("fill", _stamina_fill_sb)
+	bar_container.add_child(stamina_bar)
+
+	stamina_label = Label.new()
+	stamina_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	stamina_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stamina_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stamina_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamina_label.text = "100 / 100 ⚡"
+	stamina_label.add_theme_font_size_override("font_size", 11)
+	stamina_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+	stamina_label.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.95))
+	stamina_label.add_theme_constant_override("outline_size", 2)
+	bar_container.add_child(stamina_label)
+
 	# --- 1b. NÚT NHANH CẠNH MÀN HÌNH: Quản lý Mèo [M], Nhà kho [K] ---
 	var quick_dock := PanelContainer.new()
 	quick_dock.add_theme_stylebox_override("panel", UIKit.wood_frame(6, 2, UIKit.COLOR_WOOD_DARK, UIKit.COLOR_BORDER_GOLD))
-	quick_dock.position = Vector2(16, 120)
+	quick_dock.position = Vector2(16, 148)
 	root.add_child(quick_dock)
 
 	var qv := VBoxContainer.new()
@@ -257,6 +317,34 @@ func _ready() -> void:
 
 func set_money(v: int) -> void:
 	money_label.text = "%d xu" % v
+
+
+func set_stamina(cur: float, max_v: float) -> void:
+	if stamina_bar == null or stamina_label == null:
+		return
+	stamina_bar.max_value = max_v
+	if _stamina_tween and _stamina_tween.is_valid():
+		_stamina_tween.kill()
+	_stamina_tween = create_tween()
+	_stamina_tween.tween_property(stamina_bar, "value", cur, 0.2).set_ease(Tween.EASE_OUT)
+
+	var pct := clampf(cur / maxf(max_v, 1.0), 0.0, 1.0)
+	if pct >= 0.5:
+		_stamina_fill_sb.bg_color = Color(0.24, 0.82, 0.42)
+		stamina_label.text = "%d / %d ⚡" % [int(ceil(cur)), int(max_v)]
+		stamina_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+	elif pct >= 0.2:
+		_stamina_fill_sb.bg_color = Color(0.95, 0.72, 0.20)
+		stamina_label.text = "%d / %d ⚡" % [int(ceil(cur)), int(max_v)]
+		stamina_label.add_theme_color_override("font_color", Color(1.0, 0.90, 0.6))
+	else:
+		_stamina_fill_sb.bg_color = Color(0.92, 0.32, 0.22)
+		if cur <= 0.0:
+			stamina_label.text = "KIỆT SỨC 0/%d ⚡" % int(max_v)
+			stamina_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+		else:
+			stamina_label.text = "%d / %d ⚡" % [int(ceil(cur)), int(max_v)]
+			stamina_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.6))
 
 
 func set_clock(txt: String) -> void:

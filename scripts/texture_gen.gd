@@ -3107,3 +3107,51 @@ static func backpack_icon() -> ImageTexture:
 	_cache[key] = tex
 	return tex
 
+
+static func stamina_icon() -> ImageTexture:
+	var key := "stamina_icon"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var glow := Color(1.0, 0.88, 0.25)
+	var edge := Color(0.75, 0.50, 0.08)
+	var white := Color(1.0, 1.0, 0.85)
+	# Tia sét vàng pixel 16x16
+	rect(img, 8, 2, 3, 2, edge)
+	rect(img, 7, 3, 3, 2, glow)
+	rect(img, 6, 5, 4, 2, glow)
+	rect(img, 4, 7, 9, 2, edge)
+	rect(img, 5, 7, 7, 2, glow)
+	rect(img, 7, 9, 4, 2, glow)
+	rect(img, 6, 11, 3, 2, glow)
+	rect(img, 5, 13, 2, 2, edge)
+	px(img, 5, 14, glow)
+	px(img, 8, 3, white)
+	px(img, 7, 5, white)
+	px(img, 7, 8, white)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func meat_icon(color_hex: String = "d98a4a") -> ImageTexture:
+	var key := "meat_icon_%s" % color_hex
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var c := Color(color_hex)
+	var bone := Color(0.95, 0.92, 0.85)
+	var bone_d := Color(0.75, 0.70, 0.60)
+	# Khúc xương nhô ra
+	rect(img, 2, 11, 3, 3, bone_d)
+	rect(img, 3, 10, 3, 3, bone)
+	rect(img, 1, 12, 2, 2, bone)
+	# Miếng thịt đùi gà tròn trịa
+	circle(img, 9, 6, 5, c.darkened(0.25))
+	circle(img, 9, 6, 4, c)
+	circle(img, 8, 5, 2.5, c.lightened(0.2))
+	px(img, 7, 4, Color(1, 1, 1, 0.6))
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+

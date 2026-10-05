@@ -25,6 +25,8 @@ var _is_acting := false
 var _action_tween: Tween
 
 var _sprite: Sprite2D
+var _sweat_spr: Sprite2D
+var _sweat_timer: float = 0.0
 var _dir := "down"
 var _anim_t := 0.0
 
@@ -49,6 +51,12 @@ func _ready() -> void:
 	_sprite.scale = Vector2(1.2, 1.2)
 	_sprite.offset = Vector2(0, -18)
 	add_child(_sprite)
+	_sweat_spr = Sprite2D.new()
+	_sweat_spr.texture = TextureGen.sweat_drop_icon()
+	_sweat_spr.position = Vector2(8, -32)
+	_sweat_spr.visible = false
+	_sweat_spr.z_index = 5
+	add_child(_sweat_spr)
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
 	shape.radius = 6.0
@@ -59,6 +67,15 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	var exhausted: bool = GameState.is_exhausted()
+	if exhausted:
+		_sweat_timer += delta * 4.0
+		_sweat_spr.visible = (int(_sweat_timer) % 2 == 0)
+		_sweat_spr.position = Vector2(8 if not _sprite.flip_h else -8, -32 + sin(_sweat_timer) * 2.0)
+	else:
+		_sweat_spr.visible = false
+		_sweat_timer = 0.0
+
 	if not can_move or _is_acting:
 		velocity = Vector2.ZERO
 		_anim_t = 0.0
@@ -66,7 +83,8 @@ func _physics_process(delta: float) -> void:
 			_update_tex(0)
 		return
 	var v := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	velocity = v * SPEED
+	var move_speed := SPEED * (0.6 if exhausted else 1.0)
+	velocity = v * move_speed
 	move_and_slide()
 	if v.length() > 0.01:
 		if absf(v.x) >= absf(v.y):
@@ -77,7 +95,7 @@ func _physics_process(delta: float) -> void:
 			facing = Vector2(0, signf(v.y))
 			_dir = "up" if v.y < 0 else "down"
 			_sprite.flip_h = false
-		_anim_t += delta
+		_anim_t += delta * (0.7 if exhausted else 1.0)
 		_update_tex(int(_anim_t * 8.0) % 4)
 	else:
 		_anim_t = 0.0

@@ -3,14 +3,17 @@ extends CanvasLayer
 
 const CropDB := preload("res://scripts/crop_db.gd")
 const FishDB := preload("res://scripts/fish_db.gd")
+const PoultryDB := preload("res://scripts/poultry_db.gd")
 const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 signal closed
+signal feedback(text: String, color: Color)
 
 var rows: VBoxContainer
 var scroll: ScrollContainer
 var capacity_label: Label
+var stamina_label: Label
 var _active_filter := "all" # "all", "seed", "crop", "fish"
 var _tab_all: Button
 var _tab_seed: Button
@@ -54,6 +57,20 @@ func _ready() -> void:
 	var title := UIKit.title_label(head, "🎒 Túi đồ", 20, UIKit.COLOR_TEXT_TITLE)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
+	# Thể lực hiện tại
+	var sta_box := PanelContainer.new()
+	sta_box.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.06), UIKit.COLOR_BORDER_WOOD, 6))
+	var hs := HBoxContainer.new()
+	hs.add_theme_constant_override("separation", 6)
+	sta_box.add_child(hs)
+	var sic := TextureRect.new()
+	sic.texture = TextureGen.stamina_icon()
+	sic.custom_minimum_size = Vector2(16, 16)
+	sic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	hs.add_child(sic)
+	stamina_label = UIKit.label(hs, "Thể lực: %d/%d ⚡" % [int(GameState.stamina), int(GameState.max_stamina)], 14, Color(0.35, 0.95, 0.55))
+	head.add_child(sta_box)
+
 	# Sức chứa túi đồ
 	var cap_box := PanelContainer.new()
 	cap_box.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.14, 0.08), UIKit.COLOR_BORDER_GOLD, 6))
@@ -92,7 +109,7 @@ func _ready() -> void:
 
 	_tab_all = _create_tab(tab_bar, "🌾 Tất cả", "all")
 	_tab_seed = _create_tab(tab_bar, "🌱 Hạt", "seed")
-	_tab_crop = _create_tab(tab_bar, "🧺 Nông sản", "crop")
+	_tab_crop = _create_tab(tab_bar, "🧺 Nông sản & Thịt", "crop")
 	_tab_fish = _create_tab(tab_bar, "🐟 Cá", "fish")
 
 	# Danh sách thẻ cuộn
@@ -147,6 +164,13 @@ func close() -> void:
 
 
 func refresh() -> void:
+	if stamina_label != null:
+		var cur_s := int(ceil(GameState.stamina))
+		var max_s := int(GameState.max_stamina)
+		stamina_label.text = "Thể lực: %d/%d ⚡" % [cur_s, max_s]
+		var s_col := Color(0.35, 0.95, 0.55) if cur_s >= 50 else (Color(1.0, 0.8, 0.3) if cur_s >= 20 else Color(1.0, 0.45, 0.4))
+		stamina_label.add_theme_color_override("font_color", s_col)
+
 	if capacity_label != null:
 		var used := Inventory.backpack_slots_used()
 		var cap := Inventory.backpack_max
@@ -171,11 +195,12 @@ func refresh() -> void:
 		if not any_seed:
 			_empty_placeholder("Chưa có hạt giống")
 
-	# --- 2. NÔNG SẢN ---
+	# --- 2. NÔNG SẢN & THỊT ---
 	if _active_filter == "all" or _active_filter == "crop":
-		var head_p := _section_header("🧺 Nông sản", UIKit.COLOR_TEXT_TITLE)
+		var head_p := _section_header("🧺 Nông sản & Thịt chăn nuôi", UIKit.COLOR_TEXT_TITLE)
 		rows.add_child(head_p)
 		var any_prod := false
+		# Nông sản trồng trọt
 		for crop in CropDB.CROPS:
 			var id := str(crop.id)
 			var n := Inventory.produce_count(id)
@@ -183,8 +208,21 @@ func refresh() -> void:
 				continue
 			any_prod = true
 			rows.add_child(_build_crop_card(crop, n))
+		# Sản phẩm chăn nuôi (thịt gà, vịt, ngan, bồ câu, trứng...)
+		for a in PoultryDB.ANIMALS:
+			var pid := str(a.product)
+			var n := Inventory.produce_count(pid)
+			if n < 1:
+				continue
+			any_prod = true
+			rows.add_child(_build_poultry_card(pid, n))
+		# Sâu bọ (nếu có trong kho nông sản)
+		if Inventory.produce_count("sau_bo") > 0:
+			any_prod = true
+			var sb_crop := CropDB.get_crop("sau_bo")
+			rows.add_child(_build_crop_card(sb_crop, Inventory.produce_count("sau_bo")))
 		if not any_prod:
-			_empty_placeholder("Chưa có nông sản")
+			_empty_placeholder("Chưa có nông sản hoặc thịt")
 
 	# --- 3. CÁ TƯƠI ---
 	if _active_filter == "all" or _active_filter == "fish":
@@ -275,6 +313,7 @@ func _build_seed_card(crop: Dictionary) -> Control:
 
 
 func _build_crop_card(crop: Dictionary, count: int) -> Control:
+	var id := str(crop.id)
 	var p := PanelContainer.new()
 	p.add_theme_stylebox_override("panel", UIKit.row_box())
 	var h := HBoxContainer.new()
@@ -307,10 +346,78 @@ func _build_crop_card(crop: Dictionary, count: int) -> Control:
 	UIKit.label(count_pill, "×%d" % count, 14, UIKit.COLOR_TEXT_TITLE)
 	h.add_child(count_pill)
 
+	# Nút Ăn hồi thể lực
+	var food_val := GameState.get_food_stamina("crop", id)
+	if food_val > 0:
+		var eat_btn := UIKit.styled_button(h, "🍴 Ăn (+%d⚡)" % food_val, 12, "buy")
+		eat_btn.custom_minimum_size = Vector2(92, 28)
+		eat_btn.pressed.connect(_eat.bind("crop", id))
+
+	return p
+
+
+func _build_poultry_card(prod_id: String, count: int) -> Control:
+	var info := PoultryDB.get_product_info(prod_id)
+	var p_name := str(info.get("name", prod_id))
+	var p_color := str(info.get("color", "d98a4a"))
+	var p_price := int(info.get("price", 30))
+	var is_meat := bool(info.get("is_meat", false))
+	var food_val := GameState.get_food_stamina("poultry", prod_id)
+
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UIKit.row_box())
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 12)
+	p.add_child(h)
+
+	var slot := PanelContainer.new()
+	slot.add_theme_stylebox_override("panel", UIKit.slot_box(false))
+	var icon := TextureRect.new()
+	if is_meat:
+		icon.texture = TextureGen.meat_icon(p_color)
+	else:
+		icon.texture = TextureGen.egg_icon(p_color)
+	icon.custom_minimum_size = Vector2(28, 28)
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	slot.add_child(icon)
+	h.add_child(slot)
+
+	var info_v := VBoxContainer.new()
+	info_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_v.add_theme_constant_override("separation", 2)
+	h.add_child(info_v)
+
+	var name_h := HBoxContainer.new()
+	name_h.add_theme_constant_override("separation", 8)
+	info_v.add_child(name_h)
+	UIKit.label(name_h, p_name, 15, Color(1.0, 0.88, 0.70) if is_meat else UIKit.COLOR_TEXT_BODY)
+
+	var cat_pill := PanelContainer.new()
+	cat_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.15, 0.10), UIKit.COLOR_BORDER_WOOD, 4))
+	UIKit.label(cat_pill, "Thịt chăn nuôi" if is_meat else "Gia cầm", 11, UIKit.COLOR_TEXT_ORANGE if is_meat else UIKit.COLOR_TEXT_MUTED)
+	name_h.add_child(cat_pill)
+
+	var price_pill := PanelContainer.new()
+	price_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.16, 0.08), UIKit.COLOR_BORDER_GOLD, 6))
+	UIKit.label(price_pill, "%d xu" % p_price, 13, UIKit.COLOR_TEXT_GOLD)
+	h.add_child(price_pill)
+
+	var count_pill := PanelContainer.new()
+	count_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07), UIKit.COLOR_BORDER_WOOD, 6))
+	UIKit.label(count_pill, "×%d" % count, 14, UIKit.COLOR_TEXT_TITLE)
+	h.add_child(count_pill)
+
+	# Nút Ăn thịt / trứng hồi thể lực
+	if food_val > 0:
+		var eat_btn := UIKit.styled_button(h, "🍴 Ăn (+%d⚡)" % food_val, 12, "buy")
+		eat_btn.custom_minimum_size = Vector2(92, 28)
+		eat_btn.pressed.connect(_eat.bind("poultry", prod_id))
+
 	return p
 
 
 func _build_fish_card(f: Dictionary, count: int) -> Control:
+	var fid := str(f.id)
 	var p := PanelContainer.new()
 	p.add_theme_stylebox_override("panel", UIKit.row_box())
 	var h := HBoxContainer.new()
@@ -343,7 +450,23 @@ func _build_fish_card(f: Dictionary, count: int) -> Control:
 	UIKit.label(count_pill, "×%d" % count, 14, UIKit.COLOR_TEXT_TITLE)
 	h.add_child(count_pill)
 
+	# Nút Ăn cá hồi thể lực
+	var food_val := GameState.get_food_stamina("fish", fid)
+	if food_val > 0:
+		var eat_btn := UIKit.styled_button(h, "🍴 Ăn (+%d⚡)" % food_val, 12, "buy")
+		eat_btn.custom_minimum_size = Vector2(92, 28)
+		eat_btn.pressed.connect(_eat.bind("fish", fid))
+
 	return p
+
+
+func _eat(category: String, id: String) -> void:
+	var res := GameState.eat_food(category, id)
+	if res.get("ok", false):
+		feedback.emit(str(res.get("msg", "")), Color(0.4, 1.0, 0.5))
+	else:
+		feedback.emit(str(res.get("msg", "")), Color(1.0, 0.65, 0.4))
+	refresh()
 
 
 func _select(id: String) -> void:

@@ -64,3 +64,27 @@ static func get_coop(id: String) -> Dictionary:
 		if c.id == id:
 			return c
 	return {}
+
+
+static func get_product_info(prod_id: String) -> Dictionary:
+	for a in ANIMALS:
+		if str(a.product) == prod_id:
+			return {
+				"id": prod_id,
+				"name": str(a.product_name),
+				"color": str(a.product_color),
+				"price": int(a.product_price),
+				"animal_id": str(a.id),
+				"animal_name": str(a.name),
+				"is_meat": is_meat(prod_id),
+				"is_edible": is_edible(prod_id),
+			}
+	return {}
+
+
+static func is_meat(prod_id: String) -> bool:
+	return prod_id.begins_with("thit_") or prod_id == "thit_bocau"
+
+
+static func is_edible(prod_id: String) -> bool:
+	return is_meat(prod_id) or prod_id.begins_with("trung_")
