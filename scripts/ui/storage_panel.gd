@@ -6,6 +6,7 @@ extends CanvasLayer
 const CropDB := preload("res://scripts/crop_db.gd")
 const FishDB := preload("res://scripts/fish_db.gd")
 const PoultryDB := preload("res://scripts/poultry_db.gd")
+const OreDB := preload("res://scripts/ore_db.gd")
 const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
@@ -233,6 +234,15 @@ func _refresh_shed_list() -> void:
 				total_stored_types += 1
 				shed_rows.add_child(_build_storage_row("fish", str(id), count))
 
+	# Khoáng sản trong kho
+	var o_dict = Inventory.storage.get("ores", {})
+	if typeof(o_dict) == TYPE_DICTIONARY:
+		for id in o_dict:
+			var count: int = int(o_dict[id])
+			if count > 0:
+				total_stored_types += 1
+				shed_rows.add_child(_build_storage_row("ores", str(id), count))
+
 	# Hạt giống trong kho
 	var s_dict = Inventory.storage.get("seeds", {})
 	if typeof(s_dict) == TYPE_DICTIONARY:
@@ -258,6 +268,13 @@ func _refresh_bag_list() -> void:
 		c.queue_free()
 
 	var any := false
+
+	# Khoáng sản trong túi
+	for id in Inventory.ores:
+		var count: int = int(Inventory.ores[id])
+		if count > 0:
+			any = true
+			bag_rows.add_child(_build_bag_row("ores", str(id), count))
 
 	# Nông sản trong túi
 	for id in Inventory.produce:
@@ -414,6 +431,7 @@ func _withdraw(category: String, id: String, amount: int) -> void:
 	var cat_key := "produce"
 	if category == "seeds": cat_key = "seed"
 	elif category == "fish": cat_key = "fish"
+	elif category == "ores": cat_key = "ore"
 
 	if not Inventory.can_hold(cat_key, id):
 		_set_msg("Túi đồ đã đầy (%d/%d ô)! Hãy cất bớt món khác vào kho trước." % [Inventory.backpack_slots_used(), Inventory.backpack_max], Color(1.0, 0.45, 0.4))
@@ -434,6 +452,9 @@ func _get_item_name(category: String, id: String) -> String:
 		"fish":
 			var f := FishDB.get_fish(id)
 			return str(f.get("name", id)) if not f.is_empty() else id
+		"ores":
+			var o := OreDB.get_ore(id)
+			return str(o.get("name", id)) if not o.is_empty() else id
 		"produce":
 			var c := CropDB.get_crop(id)
 			if not c.is_empty():
@@ -452,6 +473,8 @@ func _get_item_icon(category: String, id: String) -> Texture2D:
 		"fish":
 			var f := FishDB.get_fish(id)
 			return TextureGen.fish_icon(str(f.color)) if not f.is_empty() else null
+		"ores":
+			return TextureGen.ore_item_icon(id)
 		"produce":
 			var c := CropDB.get_crop(id)
 			if not c.is_empty():

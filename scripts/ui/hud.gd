@@ -4,14 +4,18 @@ extends CanvasLayer
 const CropDB := preload("res://scripts/crop_db.gd")
 const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
+const WeatherManager := preload("res://scripts/weather_manager.gd")
+const QuestDrawerScript := preload("res://scripts/ui/quest_drawer.gd")
 
 signal open_inventory_requested
 signal open_storage_requested
 signal open_cat_requested
 signal open_stall_requested
+signal open_quests_requested
 
 var clock_label: Label
 var day_label: Label
+var weather_label: Label
 var money_label: Label
 var hoe_label: Label
 var water_label: Label
@@ -25,6 +29,7 @@ var active_label: Label
 var seed_label: Label
 var toast_row: VBoxContainer
 var hotbar_row: HBoxContainer
+var quest_drawer: PanelContainer
 var _group: ButtonGroup
 var _slots_cache: Array[Dictionary] = []
 
@@ -50,7 +55,7 @@ func _ready() -> void:
 	v_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tl.add_child(v_status)
 
-	# Hàng 1: Ngày & Giờ với icon
+	# Hàng 1: Ngày, Giờ & Thời tiết
 	var h_time := HBoxContainer.new()
 	h_time.add_theme_constant_override("separation", 10)
 	h_time.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -85,6 +90,16 @@ func _ready() -> void:
 	clk_ic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	h_clk.add_child(clk_ic)
 	clock_label = UIKit.label(h_clk, "07:00", 15, Color(0.90, 0.95, 1.0))
+
+	# Huy hiệu Thời tiết
+	var weather_pill := PanelContainer.new()
+	weather_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.22, 0.15, 0.10), UIKit.COLOR_BORDER_WOOD, 6))
+	weather_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h_time.add_child(weather_pill)
+	var h_wthr := HBoxContainer.new()
+	h_wthr.add_theme_constant_override("separation", 5)
+	weather_pill.add_child(h_wthr)
+	weather_label = UIKit.label(h_wthr, "☀️ Nắng đẹp", 14, UIKit.COLOR_TEXT_TITLE)
 
 	# Hàng 2: Tiền vàng & Cuốc xới đất & Nước
 	var h_assets := HBoxContainer.new()
@@ -193,7 +208,7 @@ func _ready() -> void:
 	stamina_label.add_theme_constant_override("outline_size", 2)
 	bar_container.add_child(stamina_label)
 
-	# --- 1b. NÚT NHANH CẠNH MÀN HÌNH: Quản lý Mèo [M], Nhà kho [K] ---
+	# --- 1b. NÚT NHANH CẠNH MÀN HÌNH: Quản lý Mèo [M], Nhà kho [K], Nhiệm vụ [Q] ---
 	var quick_dock := PanelContainer.new()
 	quick_dock.add_theme_stylebox_override("panel", UIKit.wood_frame(6, 2, UIKit.COLOR_WOOD_DARK, UIKit.COLOR_BORDER_GOLD))
 	quick_dock.position = Vector2(16, 148)
@@ -209,6 +224,21 @@ func _ready() -> void:
 	_make_quick_btn(qv, "K", TextureGen.get_tex("shed"), "Nhà kho [K]", func():
 		open_storage_requested.emit()
 	)
+	_make_quick_btn(qv, "Q", TextureGen.star_icon(), "Bảng Nhiệm Vụ [Q]", func():
+		if quest_drawer != null:
+			quest_drawer.toggle_drawer()
+	)
+
+	# --- 1c. BẢNG RÚT GỌN NHIỆM VỤ CẠNH NÚT MÈO / NHÀ KHO [Q] ---
+	quest_drawer = QuestDrawerScript.new()
+	quest_drawer.position = Vector2(78, 148)
+	quest_drawer.open_full_quests_requested.connect(func():
+		open_quests_requested.emit()
+	)
+	quest_drawer.reward_claimed.connect(func(_q):
+		toast("Đã nhận thưởng nhiệm vụ! ✨", Color(1.0, 0.9, 0.4))
+	)
+	root.add_child(quest_drawer)
 
 	# --- 2. THÔNG BÁO CUỘN GIẤY PHẢI PHÍA DƯỚI BẢN ĐỒ NHỎ ---
 	var tr := MarginContainer.new()
@@ -350,6 +380,18 @@ func set_stamina(cur: float, max_v: float) -> void:
 func set_clock(txt: String) -> void:
 	clock_label.text = txt
 	day_label.text = "Ngày %d" % GameState.day
+	if weather_label != null:
+		weather_label.text = WeatherManager.get_weather_display(GameState.weather)
+
+
+func set_weather(w: String) -> void:
+	if weather_label != null:
+		weather_label.text = WeatherManager.get_weather_display(w)
+
+
+func setup_quests(qm: Node) -> void:
+	if quest_drawer != null:
+		quest_drawer.setup(qm)
 
 
 func set_hint(t: String) -> void:
@@ -417,7 +459,24 @@ func rebuild_hotbar() -> void:
 			Inventory.select_tool("rod")
 	})
 
-	# Các ô tiếp theo: Hạt giống (hotkey 4..9)
+	# Ô 4: Cúp đào mỏ (nếu đã nhận cúp từ Leah)
+	var seed_start_idx := 4
+	if Inventory.has_pickaxe():
+		var pick_active: bool = (act_t == "pickaxe")
+		_slots_cache.append({
+			"key": "4",
+			"type": "pickaxe",
+			"name": "Cúp",
+			"qty": Inventory.get_pickaxe_power(),
+			"tooltip": "Cúp khai mỏ (Cấp %d)" % Inventory.get_pickaxe_power(),
+			"icon": TextureGen.pickaxe_icon(Inventory.pickaxe),
+			"active": pick_active,
+			"action": func():
+				Inventory.select_tool("pickaxe")
+		})
+		seed_start_idx = 5
+
+	# Các ô tiếp theo: Hạt giống (hotkey 4..9 hoặc 5..9)
 	var ids: Array = Inventory.owned_seed_ids()
 	if ids.is_empty():
 		ids = GameState.unlocked.duplicate()
@@ -431,7 +490,7 @@ func rebuild_hotbar() -> void:
 			continue
 		var is_seed_active: bool = (act_t == "seed" and Inventory.selected_seed == sid)
 		_slots_cache.append({
-			"key": str(4 + i),
+			"key": str(seed_start_idx + i),
 			"type": "seed",
 			"id": sid,
 			"name": str(crop.name),
@@ -573,6 +632,9 @@ func _update_active_label() -> void:
 		"rod":
 			active_label.text = "🎣 Cần câu (%d lượt)" % Inventory.total_casts()
 			active_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.4))
+		"pickaxe":
+			active_label.text = "⛏️ Cúp khai mỏ (Cấp %d)" % Inventory.get_pickaxe_power()
+			active_label.add_theme_color_override("font_color", Color(0.85, 0.90, 1.0))
 		"seed":
 			var sid := Inventory.selected_seed
 			var c := CropDB.get_crop(sid)

@@ -4,6 +4,7 @@ extends Node
 signal money_changed(value: int)
 signal crops_changed
 signal stamina_changed(value: float, max_value: float)
+signal weather_changed(weather_id: String)
 
 const CropDB := preload("res://scripts/crop_db.gd")
 const FishDB := preload("res://scripts/fish_db.gd")
@@ -21,6 +22,7 @@ var unlocked: Array = ["rice"]
 var clock: float = DAY_START  # phải là float — kiểu int sẽ làm đồng hồ không chạy
 var stamina: float = 100.0
 var max_stamina: float = 100.0
+var weather: String = "sunny"
 
 
 func reset_new_game() -> void:
@@ -30,9 +32,11 @@ func reset_new_game() -> void:
 	unlocked = ["rice"]
 	stamina = MAX_STAMINA_DEFAULT
 	max_stamina = MAX_STAMINA_DEFAULT
+	weather = "sunny"
 	money_changed.emit(money)
 	crops_changed.emit()
 	stamina_changed.emit(stamina, max_stamina)
+	weather_changed.emit(weather)
 
 
 func add_stamina(v: float) -> void:

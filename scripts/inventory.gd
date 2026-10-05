@@ -5,6 +5,7 @@ signal changed
 
 const CropDB := preload("res://scripts/crop_db.gd")
 const PoultryDB := preload("res://scripts/poultry_db.gd")
+const OreDB := preload("res://scripts/ore_db.gd")
 
 var seeds: Dictionary = {}
 var produce: Dictionary = {}
@@ -12,13 +13,15 @@ var selected_seed := ""
 var hoes := 0
 var water_level := 20
 var water_max := 20
+var pickaxe := ""  # "basic", "copper", "iron", "gold", "" = chưa có
+var ores: Dictionary = {}  # ore_id -> số lượng
 var active_item: Dictionary = {"type": "hoe"}
 var rods: Dictionary = {}  # tier -> số lượt câu còn lại
 var fish: Dictionary = {}  # fish_id -> số lượng
 var coops: Dictionary = {"small": 0, "large": 0}  # số chuồng đã mua theo loại
 var animals: Array = []  # [{id, progress, ready}]
 var backpack_max: int = 12
-var storage: Dictionary = {"seeds": {}, "produce": {}, "fish": {}}
+var storage: Dictionary = {"seeds": {}, "produce": {}, "fish": {}, "ores": {}}
 
 
 func reset() -> void:
@@ -28,13 +31,15 @@ func reset() -> void:
 	hoes = 0
 	water_level = 20
 	water_max = 20
+	pickaxe = ""
+	ores = {}
 	active_item = {"type": "hoe"}
 	rods = {}
 	fish = {}
 	coops = {"small": 0, "large": 0}
 	animals = []
 	backpack_max = 12
-	storage = {"seeds": {}, "produce": {}, "fish": {}}
+	storage = {"seeds": {}, "produce": {}, "fish": {}, "ores": {}}
 	changed.emit()
 
 
@@ -110,6 +115,50 @@ func refill_water() -> int:
 	return added
 
 
+# ---- cúp đào mỏ (pickaxe) ----
+
+func add_pickaxe(tier: String = "basic") -> void:
+	pickaxe = tier
+	changed.emit()
+
+
+func has_pickaxe() -> bool:
+	return pickaxe != ""
+
+
+func get_pickaxe_power() -> int:
+	if not has_pickaxe():
+		return 0
+	return OreDB.pickaxe_power(pickaxe)
+
+
+# ---- khoáng sản & quặng (ores) ----
+
+func add_ore(id: String, n: int = 1) -> void:
+	ores[id] = int(ores.get(id, 0)) + n
+	changed.emit()
+
+
+func take_ore(id: String, n: int = 1) -> bool:
+	var c := ore_count(id)
+	if c < n:
+		return false
+	ores[id] = c - n
+	changed.emit()
+	return true
+
+
+func ore_count(id: String) -> int:
+	return int(ores.get(id, 0))
+
+
+func total_ores() -> int:
+	var n := 0
+	for k in ores:
+		n += int(ores[k])
+	return n
+
+
 # ---- giới hạn túi đồ (backpack slots) ----
 
 func backpack_slots_used() -> int:
@@ -117,6 +166,8 @@ func backpack_slots_used() -> int:
 	if hoes > 0:
 		slots += 1
 	if water_max > 0:
+		slots += 1
+	if has_pickaxe():
 		slots += 1
 	if total_casts() > 0:
 		slots += 1
@@ -128,6 +179,9 @@ func backpack_slots_used() -> int:
 			slots += 1
 	for k in fish:
 		if int(fish[k]) > 0:
+			slots += 1
+	for k in ores:
+		if int(ores[k]) > 0:
 			slots += 1
 	return slots
 
@@ -143,11 +197,17 @@ func can_hold(category: String, id: String) -> bool:
 		"fish":
 			if fish_count(id) > 0:
 				return true
+		"ore", "ores":
+			if ore_count(id) > 0:
+				return true
 		"hoe":
 			if hoes > 0:
 				return true
 		"rod":
 			if rod_casts(id) > 0:
+				return true
+		"pickaxe":
+			if has_pickaxe():
 				return true
 	return backpack_slots_used() < backpack_max
 
@@ -162,6 +222,8 @@ func _normalize_cat(category: String) -> String:
 			return "produce"
 		"fish":
 			return "fish"
+		"ore", "ores":
+			return "ores"
 	return category
 
 
@@ -197,6 +259,13 @@ func store_item(category: String, id: String, amount: int = 1) -> bool:
 			if amount <= 0:
 				return false
 			take_fish(id, amount)
+		"ores":
+			have = ore_count(id)
+			if have < amount:
+				amount = have
+			if amount <= 0:
+				return false
+			take_ore(id, amount)
 		_:
 			return false
 
@@ -232,6 +301,8 @@ func withdraw_item(category: String, id: String, amount: int = 1) -> bool:
 		item_cat = "seed"
 	elif cat_key == "fish":
 		item_cat = "fish"
+	elif cat_key == "ores":
+		item_cat = "ore"
 	if not can_hold(item_cat, id):
 		return false
 
@@ -246,6 +317,8 @@ func withdraw_item(category: String, id: String, amount: int = 1) -> bool:
 			add_produce(id, amount)
 		"fish":
 			add_fish(id, amount)
+		"ores":
+			add_ore(id, amount)
 
 	changed.emit()
 	return true
@@ -272,6 +345,12 @@ func store_all_category(category: String) -> int:
 				var c := int(fish.get(k, 0))
 				if c > 0:
 					store_item("fish", str(k), c)
+					total_moved += c
+		"ores":
+			for k in ores.keys():
+				var c := int(ores.get(k, 0))
+				if c > 0:
+					store_item("ores", str(k), c)
 					total_moved += c
 	return total_moved
 
@@ -437,6 +516,7 @@ func get_state() -> Dictionary:
 	return {
 		"seeds": seeds.duplicate(), "produce": produce.duplicate(), "sel": selected_seed,
 		"hoes": hoes, "water_level": water_level, "water_max": water_max,
+		"pickaxe": pickaxe, "ores": ores.duplicate(),
 		"active_item": active_item.duplicate(),
 		"rods": rods.duplicate(), "fish": fish.duplicate(),
 		"coops": coops.duplicate(), "animals": animals.duplicate(true),
@@ -450,16 +530,21 @@ func set_state(d: Dictionary) -> void:
 	produce = {}
 	rods = {}
 	fish = {}
+	ores = {}
 	animals = []
 	coops = {"small": 0, "large": 0}
-	storage = {"seeds": {}, "produce": {}, "fish": {}}
+	storage = {"seeds": {}, "produce": {}, "fish": {}, "ores": {}}
 	backpack_max = int(d.get("backpack_max", 12))
+	pickaxe = str(d.get("pickaxe", ""))
 	if d.has("seeds"):
 		for k in d["seeds"]:
 			seeds[str(k)] = int(d["seeds"][k])
 	if d.has("produce"):
 		for k in d["produce"]:
 			produce[str(k)] = int(d["produce"][k])
+	if d.has("ores"):
+		for k in d["ores"]:
+			ores[str(k)] = int(d["ores"][k])
 	if d.has("rods"):
 		for k in d["rods"]:
 			rods[str(k)] = int(d["rods"][k])
@@ -475,7 +560,7 @@ func set_state(d: Dictionary) -> void:
 					"ready": int(a.get("ready", 0))})
 	if d.has("storage") and d["storage"] is Dictionary:
 		var st: Dictionary = d["storage"]
-		for cat in ["seeds", "produce", "fish"]:
+		for cat in ["seeds", "produce", "fish", "ores"]:
 			if st.has(cat) and st[cat] is Dictionary:
 				for k in st[cat]:
 					storage[cat][str(k)] = int(st[cat][k])
