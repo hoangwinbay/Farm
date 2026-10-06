@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://p7oks3wk7y67"
-path="res://.godot/imported/Abigail.png-c0d4c39a473aa3eb3e9aea2d8ecd4b06.ctex"
+uid="uid://bjbgs5n7002o6"
+path="res://.godot/imported/sdv_pond_stardew.png-d4bc86aa0bf5fc8ef4f567efe41778c7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://picture/characters/Abigail.png"
-dest_files=["res://.godot/imported/Abigail.png-c0d4c39a473aa3eb3e9aea2d8ecd4b06.ctex"]
+source_file="res://picture/sdv_pond_stardew.png"
+dest_files=["res://.godot/imported/sdv_pond_stardew.png-d4bc86aa0bf5fc8ef4f567efe41778c7.ctex"]
 
 [params]
 

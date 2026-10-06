@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://p7oks3wk7y67"
-path="res://.godot/imported/Abigail.png-c0d4c39a473aa3eb3e9aea2d8ecd4b06.ctex"
+uid="uid://buddo2wuvxi43"
+path="res://.godot/imported/prod_sua_bo.png-deef8d74f291aa16d39dd19e5d5ea168.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://picture/characters/Abigail.png"
-dest_files=["res://.godot/imported/Abigail.png-c0d4c39a473aa3eb3e9aea2d8ecd4b06.ctex"]
+source_file="res://picture/crops/prod_sua_bo.png"
+dest_files=["res://.godot/imported/prod_sua_bo.png-deef8d74f291aa16d39dd19e5d5ea168.ctex"]
 
 [params]
 

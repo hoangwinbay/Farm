@@ -165,4 +165,3 @@ func play_action_anim(act: String = "till") -> void:
 
 func _update_tex(frame: int) -> void:
 	_sprite.texture = TextureGen.char_tex(_dir, frame, false)
-

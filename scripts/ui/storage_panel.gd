@@ -481,7 +481,7 @@ func _get_item_icon(category: String, id: String) -> Texture2D:
 				return TextureGen.prod_icon(c)
 			for a in PoultryDB.ANIMALS:
 				if str(a.product) == id:
-					return TextureGen.egg_icon(str(a.product_color))
+					return TextureGen.get_product_icon(id)
 	return null
 
 

@@ -504,9 +504,6 @@ func _get_item_icon(id: String, type: String) -> Texture2D:
 	elif type == "ore":
 		return TextureGen.ore_item_icon(id)
 	else:
-		# Gia cầm
-		for a in PoultryDB.ANIMALS:
-			if str(a.product) == id:
-				var c := CropDB.get_crop("corn") # fallback icon
-				return TextureGen.egg_icon(str(a.product_color))
+		# Sản phẩm chăn nuôi (trứng, sữa, thịt, lông)
+		return TextureGen.get_product_icon(id)
 	return null

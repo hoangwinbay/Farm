@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://p7oks3wk7y67"
-path="res://.godot/imported/Abigail.png-c0d4c39a473aa3eb3e9aea2d8ecd4b06.ctex"
+uid="uid://bu2whldhu7mg8"
+path="res://.godot/imported/coop_tier2.png-ffa0fc544eb9ea54ce5f17654ab86547.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://picture/characters/Abigail.png"
-dest_files=["res://.godot/imported/Abigail.png-c0d4c39a473aa3eb3e9aea2d8ecd4b06.ctex"]
+source_file="res://picture/coop_tier2.png"
+dest_files=["res://.godot/imported/coop_tier2.png-ffa0fc544eb9ea54ce5f17654ab86547.ctex"]
 
 [params]
 
