@@ -2,6 +2,7 @@ extends Node
 # Kho đồ: hạt giống + nông sản thu hoạch, hạt đang chọn để gieo.
 
 signal changed
+signal baby_born(species_id: String, species_name: String)
 
 const CropDB := preload("res://scripts/crop_db.gd")
 const PoultryDB := preload("res://scripts/poultry_db.gd")
@@ -18,8 +19,10 @@ var ores: Dictionary = {}  # ore_id -> số lượng
 var active_item: Dictionary = {"type": "hoe"}
 var rods: Dictionary = {}  # tier -> số lượt câu còn lại
 var fish: Dictionary = {}  # fish_id -> số lượng
-var coops: Dictionary = {"small": 0, "large": 0}  # số chuồng đã mua theo loại
-var animals: Array = []  # [{id, progress, ready}]
+var coops: Dictionary = {"small": 0, "large": 0}  # legacy
+var coop_tiers: Dictionary = {"chicken": 0, "cow": 0, "pig": 0, "sheep": 0}  # Cấp chuồng: 0=chưa mua, 1=cấp 1 (chứa 2), 2=cấp 2 (chứa 4)
+var animals: Array = []  # [{id, progress, ready, is_baby, grow_progress, is_sheared}]
+var breed_timers: Dictionary = {}  # species_id -> thời gian ghép đôi sinh sản
 var backpack_max: int = 12
 var storage: Dictionary = {"seeds": {}, "produce": {}, "fish": {}, "ores": {}}
 
@@ -37,7 +40,9 @@ func reset() -> void:
 	rods = {}
 	fish = {}
 	coops = {"small": 0, "large": 0}
+	coop_tiers = {"chicken": 0, "cow": 0, "pig": 0, "sheep": 0}
 	animals = []
+	breed_timers = {}
 	backpack_max = 12
 	storage = {"seeds": {}, "produce": {}, "fish": {}, "ores": {}}
 	changed.emit()
@@ -418,13 +423,63 @@ func take_fish(id: String, n: int = 1) -> bool:
 
 # ---- chăn nuôi ----
 
+func get_coop_tier(species_id: String) -> int:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	return int(coop_tiers.get(sid, 0))
+
+
 func coop_count(size: String) -> int:
+	var canon := PoultryDB.get_canonical_id(size)
+	if coop_tiers.has(canon):
+		return 1 if get_coop_tier(canon) > 0 else 0
+	if size == "small":
+		return 1 if get_coop_tier("chicken") > 0 else 0
+	if size == "large":
+		var cnt := 0
+		for s in ["cow", "pig", "sheep"]:
+			if get_coop_tier(s) > 0:
+				cnt += 1
+		return cnt
 	return int(coops.get(size, 0))
 
 
-func add_coop(size: String) -> void:
-	coops[size] = coop_count(size) + 1
+func coop_capacity(species_id: String) -> int:
+	var canon := PoultryDB.get_canonical_id(species_id)
+	if coop_tiers.has(canon):
+		var tier := get_coop_tier(canon)
+		if tier == 1:
+			return 2
+		elif tier >= 2:
+			return 4
+		return 0
+	if species_id == "small":
+		return coop_capacity("chicken")
+	if species_id == "large":
+		return coop_capacity("cow") + coop_capacity("pig") + coop_capacity("sheep")
+	return 0
+
+
+func add_coop(species_id: String) -> void:
+	var canon := PoultryDB.get_canonical_id(species_id)
+	if coop_tiers.has(canon):
+		coop_tiers[canon] = mini(2, get_coop_tier(canon) + 1)
+	elif species_id == "small":
+		coop_tiers["chicken"] = mini(2, get_coop_tier("chicken") + 1)
+	elif species_id == "large":
+		for s in ["cow", "pig", "sheep"]:
+			if get_coop_tier(s) == 0:
+				coop_tiers[s] = 1
+				break
 	changed.emit()
+
+
+func animals_of_species(species_id: String) -> int:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	var n := 0
+	for a in animals:
+		if PoultryDB.get_canonical_id(str(a.id)) == sid:
+			n += 1
+	return n
 
 
 func animals_of_size(size: String) -> int:
@@ -436,38 +491,143 @@ func animals_of_size(size: String) -> int:
 	return n
 
 
-func free_slots(size: String) -> int:
-	return coop_count(size) - animals_of_size(size)
+func free_slots(species_id: String) -> int:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	if coop_tiers.has(sid):
+		return coop_capacity(sid) - animals_of_species(sid)
+	if sid == "small":
+		return free_slots("chicken")
+	if sid == "large":
+		return free_slots("cow") + free_slots("pig") + free_slots("sheep")
+	return 0
 
 
-# Mua con giống: cần chuồng trống đúng cỡ. Trả về "" nếu thành công, ngược lại trả lời do.
-func buy_animal(id: String) -> String:
-	var a := PoultryDB.get_animal(id)
-	if a.is_empty():
-		return "Không có con này!"
-	var size := str(a.size)
-	if free_slots(size) < 1:
-		return "Cần mua thêm CHUỒNG %s để nuôi!" % ("LỚN" if size == "large" else "NHỎ")
-	if not GameState.try_spend(int(a.price)):
-		return "Không đủ xu mua %s!" % a.name
-	animals.append({"id": id, "progress": 0.0, "ready": 0})
+func buy_coop(species_id: String) -> String:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	var c := PoultryDB.get_coop_data(sid)
+	if c.is_empty():
+		return "Loại chuồng không tồn tại!"
+	var cur_tier := get_coop_tier(sid)
+	if cur_tier >= 1:
+		return "Đã mua %s rồi!" % str(c.name)
+	var price := int(c.tier1_price)
+	if not GameState.try_spend(price):
+		return "Không đủ xu mua %s (cần %d xu)!" % [str(c.name), price]
+	coop_tiers[sid] = 1
 	changed.emit()
 	return ""
 
 
-# Đồng hồ chăn nuôi: con nào đủ thời gian thì sinh sản phẩm (tối đa 3 chờ thu).
+func upgrade_coop(species_id: String) -> String:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	var c := PoultryDB.get_coop_data(sid)
+	if c.is_empty():
+		return "Loại chuồng không tồn tại!"
+	var cur_tier := get_coop_tier(sid)
+	if cur_tier < 1:
+		return "Cần mua %s Cấp 1 trước!" % str(c.name)
+	if cur_tier >= 2:
+		return "%s đã đạt cấp tối đa (Cấp 2)!" % str(c.name)
+	var price := int(c.tier2_price)
+	if not GameState.try_spend(price):
+		return "Không đủ xu nâng cấp (cần %d xu)!" % price
+	coop_tiers[sid] = 2
+	changed.emit()
+	return ""
+
+
+# Mua con giống: cần chuồng trống đúng loài. Trả về "" nếu thành công, ngược lại trả lời do.
+func buy_animal(id: String) -> String:
+	var canon_id := PoultryDB.get_canonical_id(id)
+	var a := PoultryDB.get_animal(canon_id)
+	if a.is_empty():
+		return "Không có con này!"
+	var c := PoultryDB.get_coop_data(canon_id)
+	var cname := str(c.get("name", "Chuồng"))
+	var tier := get_coop_tier(canon_id)
+	if tier <= 0:
+		return "Cần mua %s (Cấp 1) tại tiệm Cô Tư trước!" % cname
+	if free_slots(canon_id) < 1:
+		if tier < 2:
+			return "%s đã kín chỗ (%d/%d con)! Hãy nâng cấp lên Cấp 2." % [cname, animals_of_species(canon_id), coop_capacity(canon_id)]
+		else:
+			return "%s đã đạt giới hạn tối đa (%d/4 con)!" % [cname, animals_of_species(canon_id)]
+	if not GameState.try_spend(int(a.price)):
+		return "Không đủ xu mua %s!" % a.name
+	animals.append({
+		"id": canon_id,
+		"progress": 0.0,
+		"ready": 0,
+		"is_baby": false,
+		"grow_progress": 0.0,
+		"is_sheared": false,
+	})
+	changed.emit()
+	return ""
+
+
+# Đồng hồ chăn nuôi:
+# - Con non: lớn dần theo thời gian (grow_progress >= GROW_TIME thì thành con lớn)
+# - Con lớn: tích lũy sản phẩm (gà ra trứng, bò ra sữa, lợn ra thịt, cừu ra lông)
+# - Ghép đôi: nuôi từ 2 con lớn cùng loài trở lên, đủ thời gian sẽ sinh ra con non baby!
 func tick_animals(delta: float) -> void:
+	var had_change := false
+
+	# 1. Quản lý từng con vật
 	for a in animals:
-		var d := PoultryDB.get_animal(str(a.id))
+		var canon_id := PoultryDB.get_canonical_id(str(a.id))
+		var d := PoultryDB.get_animal(canon_id)
 		if d.is_empty():
 			continue
-		if int(a.ready) >= PoultryDB.READY_CAP:
+
+		# Con non: lớn dần
+		if bool(a.get("is_baby", false)):
+			a.grow_progress = float(a.get("grow_progress", 0.0)) + delta
+			if a.grow_progress >= PoultryDB.GROW_TIME:
+				a.is_baby = false
+				a.grow_progress = 0.0
+				had_change = true
 			continue
-		a.progress = float(a.progress) + delta
-		if a.progress >= float(d.interval):
-			a.progress = 0.0
-			a.ready = int(a.ready) + 1
-			changed.emit()
+
+		# Con trưởng thành: sản xuất sản phẩm
+		if int(a.ready) < PoultryDB.READY_CAP:
+			a.progress = float(a.progress) + delta
+			if a.progress >= float(d.interval):
+				a.progress = 0.0
+				a.ready = int(a.ready) + 1
+				# Cừu khi mọc lại bộ lông đầy đặn
+				if canon_id == "sheep":
+					a.is_sheared = false
+				had_change = true
+
+	# 2. Sinh sản: nuôi từ 2 con lớn cùng loài trở lên, có chuồng trống thì đẻ baby
+	var adult_counts := {}
+	for a in animals:
+		if not bool(a.get("is_baby", false)):
+			var sid := PoultryDB.get_canonical_id(str(a.id))
+			adult_counts[sid] = int(adult_counts.get(sid, 0)) + 1
+
+	for sid in adult_counts:
+		if adult_counts[sid] >= 2:
+			var d := PoultryDB.get_animal(sid)
+			if free_slots(sid) > 0:
+				breed_timers[sid] = float(breed_timers.get(sid, 0.0)) + delta
+				if breed_timers[sid] >= PoultryDB.BREED_TIME:
+					breed_timers[sid] = 0.0
+					# Sinh 1 con baby mới!
+					animals.append({
+						"id": sid,
+						"is_baby": true,
+						"grow_progress": 0.0,
+						"progress": 0.0,
+						"ready": 0,
+						"is_sheared": false,
+					})
+					baby_born.emit(sid, str(d.name))
+					had_change = true
+
+	if had_change:
+		changed.emit()
 
 
 func ready_products() -> int:
@@ -477,18 +637,61 @@ func ready_products() -> int:
 	return n
 
 
+func ready_products_for_species(species_id: String) -> int:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	var n := 0
+	for a in animals:
+		if PoultryDB.get_canonical_id(str(a.id)) == sid:
+			n += int(a.ready)
+	return n
+
+
 # Thu hết sản phẩm chờ -> vào kho nông sản. Trả về số đã thu.
 func collect_products() -> int:
 	var n := 0
 	for a in animals:
-		var prod_id := str(PoultryDB.get_animal(str(a.id)).product)
+		var canon_id := PoultryDB.get_canonical_id(str(a.id))
+		var d := PoultryDB.get_animal(canon_id)
+		if d.is_empty():
+			continue
+		var prod_id := str(d.product)
 		while int(a.ready) > 0:
 			if not can_hold("produce", prod_id):
 				break
 			a.ready = int(a.ready) - 1
 			add_produce(prod_id, 1)
 			n += 1
+			# Cừu sau khi xén lông chuyển sang trạng thái đã cạo lông
+			if canon_id == "sheep":
+				a.is_sheared = true
+	if n > 0:
+		changed.emit()
 	return n
+
+
+# Thu sản phẩm riêng của một loài chuồng. Trả về số đã thu.
+func collect_products_for_species(species_id: String) -> int:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	var d := PoultryDB.get_animal(sid)
+	if d.is_empty():
+		return 0
+	var prod_id := str(d.product)
+	var n := 0
+	for a in animals:
+		if PoultryDB.get_canonical_id(str(a.id)) != sid:
+			continue
+		while int(a.ready) > 0:
+			if not can_hold("produce", prod_id):
+				break
+			a.ready = int(a.ready) - 1
+			add_produce(prod_id, 1)
+			n += 1
+			if sid == "sheep":
+				a.is_sheared = true
+	if n > 0:
+		changed.emit()
+	return n
+
 
 
 func owned_seed_ids() -> Array:
@@ -519,7 +722,10 @@ func get_state() -> Dictionary:
 		"pickaxe": pickaxe, "ores": ores.duplicate(),
 		"active_item": active_item.duplicate(),
 		"rods": rods.duplicate(), "fish": fish.duplicate(),
-		"coops": coops.duplicate(), "animals": animals.duplicate(true),
+		"coops": coops.duplicate(),
+		"coop_tiers": coop_tiers.duplicate(),
+		"animals": animals.duplicate(true),
+		"breed_timers": breed_timers.duplicate(),
 		"backpack_max": backpack_max,
 		"storage": storage.duplicate(true)
 	}
@@ -532,7 +738,9 @@ func set_state(d: Dictionary) -> void:
 	fish = {}
 	ores = {}
 	animals = []
+	breed_timers = {}
 	coops = {"small": 0, "large": 0}
+	coop_tiers = {"chicken": 0, "cow": 0, "pig": 0, "sheep": 0}
 	storage = {"seeds": {}, "produce": {}, "fish": {}, "ores": {}}
 	backpack_max = int(d.get("backpack_max", 12))
 	pickaxe = str(d.get("pickaxe", ""))
@@ -554,10 +762,34 @@ func set_state(d: Dictionary) -> void:
 	if d.has("coops"):
 		for k in d["coops"]:
 			coops[str(k)] = int(d["coops"][k])
+	if d.has("coop_tiers") and d["coop_tiers"] is Dictionary:
+		for k in d["coop_tiers"]:
+			var sid := PoultryDB.get_canonical_id(str(k))
+			if coop_tiers.has(sid):
+				coop_tiers[sid] = int(d["coop_tiers"][k])
+	elif d.has("coops") and d["coops"] is Dictionary:
+		var sc: int = int(d["coops"].get("small", 0))
+		var lc: int = int(d["coops"].get("large", 0))
+		if sc > 0:
+			coop_tiers["chicken"] = 2 if sc > 1 else 1
+		if lc > 0:
+			var t := 2 if lc > 1 else 1
+			coop_tiers["cow"] = t
+			coop_tiers["pig"] = t
+			coop_tiers["sheep"] = t
+	if d.has("breed_timers") and d["breed_timers"] is Dictionary:
+		for k in d["breed_timers"]:
+			breed_timers[str(k)] = float(d["breed_timers"][k])
 	if d.has("animals") and typeof(d["animals"]) == TYPE_ARRAY:
 		for a in d["animals"]:
-			animals.append({"id": str(a.get("id", "")), "progress": float(a.get("progress", 0)),
-					"ready": int(a.get("ready", 0))})
+			animals.append({
+				"id": str(a.get("id", "")),
+				"progress": float(a.get("progress", 0)),
+				"ready": int(a.get("ready", 0)),
+				"is_baby": bool(a.get("is_baby", false)),
+				"grow_progress": float(a.get("grow_progress", 0.0)),
+				"is_sheared": bool(a.get("is_sheared", false)),
+			})
 	if d.has("storage") and d["storage"] is Dictionary:
 		var st: Dictionary = d["storage"]
 		for cat in ["seeds", "produce", "fish", "ores"]:

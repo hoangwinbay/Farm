@@ -325,5 +325,5 @@ func _get_item_info(id: String, type: String) -> Dictionary:
 		# Sản phẩm gia cầm
 		for a in PoultryDB.ANIMALS:
 			if str(a.product) == id:
-				return {"name": str(a.product_name), "icon": TextureGen.egg_icon(str(a.product_color))}
+				return {"name": str(a.product_name), "icon": TextureGen.get_product_icon(id)}
 		return {"name": id, "icon": TextureGen.star_icon()}

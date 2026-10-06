@@ -373,10 +373,7 @@ func _build_poultry_card(prod_id: String, count: int) -> Control:
 	var slot := PanelContainer.new()
 	slot.add_theme_stylebox_override("panel", UIKit.slot_box(false))
 	var icon := TextureRect.new()
-	if is_meat:
-		icon.texture = TextureGen.meat_icon(p_color)
-	else:
-		icon.texture = TextureGen.egg_icon(p_color)
+	icon.texture = TextureGen.get_product_icon(prod_id)
 	icon.custom_minimum_size = Vector2(28, 28)
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	slot.add_child(icon)
@@ -394,7 +391,8 @@ func _build_poultry_card(prod_id: String, count: int) -> Control:
 
 	var cat_pill := PanelContainer.new()
 	cat_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.15, 0.10), UIKit.COLOR_BORDER_WOOD, 4))
-	UIKit.label(cat_pill, "Thịt chăn nuôi" if is_meat else "Gia cầm", 11, UIKit.COLOR_TEXT_ORANGE if is_meat else UIKit.COLOR_TEXT_MUTED)
+	var cat_label := "Thịt" if is_meat else ("Sữa" if prod_id == "sua_bo" else ("Lông" if prod_id == "long_cuu" else "Trứng"))
+	UIKit.label(cat_pill, cat_label, 11, UIKit.COLOR_TEXT_ORANGE if is_meat else UIKit.COLOR_TEXT_MUTED)
 	name_h.add_child(cat_pill)
 
 	var price_pill := PanelContainer.new()

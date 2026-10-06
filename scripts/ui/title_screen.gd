@@ -207,7 +207,7 @@ func _build_guide() -> PanelContainer:
 	# Thẻ 2: Câu cá & Chăn nuôi
 	var c2 := _guide_card("🎣 CÂU CÁ & CHĂN NUÔI",
 		"• Câu cá: Gặp Chú Hai ở bờ ao mua cần câu. Đứng bờ ao bấm [E] thả câu (15s tự giật cần). Ban đêm có cơ hội câu được Cá Trê Vàng và Cá Chiên huyền thoại!\n" +
-		"• Chăn nuôi: Gặp Cô Tư mua chuồng & gia cầm giống (11 loại). Khi có sản phẩm, ra chuồng bấm [E] thu gom bán lại cho cô.")
+		"• Chăn nuôi: Gặp Cô Tư mua chuồng & con giống (Gà, Bò, Lợn, Cừu). Nuôi 2 con cùng loài có thể sinh ra con non baby! Gà cho trứng, bò cho sữa, lợn cho thịt, cừu cho lông. Ra chuồng bấm [E] thu gom bán lại cho cô.")
 	grid.add_child(c2)
 
 	# Thẻ 3: Thời gian & Sinh hoạt

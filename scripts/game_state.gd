@@ -70,28 +70,32 @@ func get_food_stamina(category: String, id: String) -> int:
 					"pepper": return 10
 					"rubber", "sau_bo": return 0
 					_: return 15
-			# Kiểm tra nếu là sản phẩm gia cầm trong túi produce
+			# Kiểm tra nếu là sản phẩm gia cầm / gia súc trong túi produce
 			match id:
+				"thit_lon": return 55
+				"sua_bo": return 40
+				"trung_ga": return 25
+				"thit_ga": return 45
 				"thit_ngan": return 60
 				"thit_bocau": return 55
 				"thit_vit": return 50
-				"thit_ga": return 45
 				"trung_da_dieu": return 65
 				"trung_vuon": return 25
 				"trung_vit": return 22
-				"trung_ga": return 20
 				"trung_cut": return 15
 				_: return 0
 		"poultry", "meat":
 			match id:
+				"thit_lon": return 55
+				"sua_bo": return 40
+				"trung_ga": return 25
+				"thit_ga": return 45
 				"thit_ngan": return 60
 				"thit_bocau": return 55
 				"thit_vit": return 50
-				"thit_ga": return 45
 				"trung_da_dieu": return 65
 				"trung_vuon": return 25
 				"trung_vit": return 22
-				"trung_ga": return 20
 				"trung_cut": return 15
 				_: return 0
 		"fish":
