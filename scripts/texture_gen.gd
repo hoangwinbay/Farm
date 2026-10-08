@@ -135,16 +135,27 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = mine_ladder_tex(false)
 		"rock_stone":
 			tex = mine_rock_tex("stone")
-		"rock_copper":
+		"rock_copper", "rock_copper_ore":
 			tex = mine_rock_tex("copper_ore")
-		"rock_iron":
+		"rock_iron", "rock_iron_ore":
 			tex = mine_rock_tex("iron_ore")
-		"rock_gold":
+		"rock_gold", "rock_gold_ore":
 			tex = mine_rock_tex("gold_ore")
+		"rock_coal":
+			tex = mine_rock_tex("coal")
 		"rock_ruby":
 			tex = mine_rock_tex("ruby")
 		"rock_diamond":
 			tex = mine_rock_tex("diamond")
+		"decor_cart":
+			var d_cart := _load_picture("res://picture/mine/decor_cart.png")
+			tex = _tex(d_cart) if d_cart != null else null
+		"decor_torch":
+			var d_torch := _load_picture("res://picture/mine/decor_torch.png")
+			tex = _tex(d_torch) if d_torch != null else null
+		"decor_barrel":
+			var d_bar := _load_picture("res://picture/mine/decor_barrel.png")
+			tex = _tex(d_bar) if d_bar != null else null
 		"pickaxe_icon":
 			tex = pickaxe_icon("basic")
 		"shed":
@@ -3831,11 +3842,16 @@ static func pickaxe_icon(tier: String = "basic") -> ImageTexture:
 	return tex
 
 
-static func mine_floor_tex() -> ImageTexture:
-	var loaded := _load_picture("res://picture/mine/mine_floor.png")
+static func mine_floor_tex(theme: String = "") -> ImageTexture:
+	var path := "res://picture/mine/mine_floor.png"
+	if theme != "":
+		path = "res://picture/mine/mine_floor_%s.png" % theme
+	var loaded := _load_picture(path)
+	if loaded == null and theme != "":
+		loaded = _load_picture("res://picture/mine/mine_floor.png")
 	if loaded != null:
 		return _tex(loaded)
-	var key := "mine_floor_tex"
+	var key := "mine_floor_tex_%s" % theme
 	if _cache.has(key):
 		return _cache[key]
 	var img := _img(32, 32)
@@ -3857,11 +3873,16 @@ static func mine_floor_tex() -> ImageTexture:
 	return tex
 
 
-static func mine_wall_tex() -> ImageTexture:
-	var loaded := _load_picture("res://picture/mine/mine_wall.png")
+static func mine_wall_tex(theme: String = "") -> ImageTexture:
+	var path := "res://picture/mine/mine_wall.png"
+	if theme != "":
+		path = "res://picture/mine/mine_wall_%s.png" % theme
+	var loaded := _load_picture(path)
+	if loaded == null and theme != "":
+		loaded = _load_picture("res://picture/mine/mine_wall.png")
 	if loaded != null:
 		return _tex(loaded)
-	var key := "mine_wall_tex"
+	var key := "mine_wall_tex_%s" % theme
 	if _cache.has(key):
 		return _cache[key]
 	var img := _img(32, 32)
@@ -3881,6 +3902,9 @@ static func mine_wall_tex() -> ImageTexture:
 
 
 static func mine_ladder_tex(down: bool) -> ImageTexture:
+	var loaded := _load_picture("res://picture/mine/mine_ladder_%s.png" % ("down" if down else "up"))
+	if loaded != null:
+		return _tex(loaded)
 	var key := "mine_ladder_%s" % ("down" if down else "up")
 	if _cache.has(key):
 		return _cache[key]
@@ -3914,6 +3938,10 @@ static func mine_ladder_tex(down: bool) -> ImageTexture:
 
 static func mine_rock_tex(rock_type: String) -> ImageTexture:
 	var loaded := _load_picture("res://picture/mine/rock_%s.png" % rock_type)
+	if loaded == null and not rock_type.ends_with("_ore"):
+		loaded = _load_picture("res://picture/mine/rock_%s_ore.png" % rock_type)
+	if loaded == null and rock_type.ends_with("_ore"):
+		loaded = _load_picture("res://picture/mine/rock_%s.png" % rock_type.trim_suffix("_ore"))
 	if loaded != null:
 		return _tex(loaded)
 	var key := "mine_rock_%s" % rock_type
@@ -3981,7 +4009,13 @@ static func mine_rock_tex(rock_type: String) -> ImageTexture:
 
 
 static func ore_item_icon(id: String) -> ImageTexture:
-	var loaded := _load_picture("res://picture/item_%s.png" % id)
+	var loaded := _load_picture("res://picture/mine/item_%s.png" % id)
+	if loaded == null and not id.ends_with("_ore"):
+		loaded = _load_picture("res://picture/mine/item_%s_ore.png" % id)
+	if loaded == null and id.ends_with("_ore"):
+		loaded = _load_picture("res://picture/mine/item_%s.png" % id.trim_suffix("_ore"))
+	if loaded == null:
+		loaded = _load_picture("res://picture/item_%s.png" % id)
 	if loaded != null:
 		return _tex(loaded)
 	var key := "ore_item_icon_%s" % id

@@ -4,6 +4,7 @@ extends CanvasLayer
 const CropDB := preload("res://scripts/crop_db.gd")
 const FishDB := preload("res://scripts/fish_db.gd")
 const PoultryDB := preload("res://scripts/poultry_db.gd")
+const OreDB := preload("res://scripts/ore_db.gd")
 const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
@@ -14,11 +15,12 @@ var rows: VBoxContainer
 var scroll: ScrollContainer
 var capacity_label: Label
 var stamina_label: Label
-var _active_filter := "all" # "all", "seed", "crop", "fish"
+var _active_filter := "all" # "all", "seed", "crop", "fish", "ore"
 var _tab_all: Button
 var _tab_seed: Button
 var _tab_crop: Button
 var _tab_fish: Button
+var _tab_ore: Button
 
 
 func _ready() -> void:
@@ -111,6 +113,7 @@ func _ready() -> void:
 	_tab_seed = _create_tab(tab_bar, "🌱 Hạt", "seed")
 	_tab_crop = _create_tab(tab_bar, "🧺 Nông sản & Thịt", "crop")
 	_tab_fish = _create_tab(tab_bar, "🐟 Cá", "fish")
+	_tab_ore = _create_tab(tab_bar, "⛏️ Quặng", "ore")
 
 	# Danh sách thẻ cuộn
 	scroll = ScrollContainer.new()
@@ -127,7 +130,7 @@ func _ready() -> void:
 
 func _create_tab(parent: Node, label_text: String, filter_key: String) -> Button:
 	var btn := UIKit.styled_button(parent, label_text, 13, "tab")
-	btn.custom_minimum_size = Vector2(110, 32)
+	btn.custom_minimum_size = Vector2(98, 32)
 	btn.pressed.connect(func():
 		_active_filter = filter_key
 		_update_tab_styles()
@@ -137,8 +140,8 @@ func _create_tab(parent: Node, label_text: String, filter_key: String) -> Button
 
 
 func _update_tab_styles() -> void:
-	var tabs: Array[Button] = [_tab_all, _tab_seed, _tab_crop, _tab_fish]
-	var keys: Array[String] = ["all", "seed", "crop", "fish"]
+	var tabs: Array[Button] = [_tab_all, _tab_seed, _tab_crop, _tab_fish, _tab_ore]
+	var keys: Array[String] = ["all", "seed", "crop", "fish", "ore"]
 	for i in tabs.size():
 		var is_active: bool = (keys[i] == _active_filter)
 		var bg_color := Color(0.42, 0.28, 0.16) if is_active else Color(0.20, 0.14, 0.09)
@@ -244,6 +247,61 @@ func refresh() -> void:
 		var head_p := _section_header("🌾 Thức ăn chăn nuôi", Color(1.0, 0.88, 0.45))
 		rows.add_child(head_p)
 		rows.add_child(_build_feed_card(Inventory.feed_count()))
+
+	# --- 5. KHOÁNG SẢN & QUẶNG ---
+	if _active_filter == "all" or _active_filter == "ore":
+		var head_p := _section_header("⛏️ Khoáng sản & Quặng", UIKit.COLOR_TEXT_GOLD)
+		rows.add_child(head_p)
+		var any_ore := false
+		for ore in OreDB.ORES:
+			var oid := str(ore.id)
+			var n := Inventory.ore_count(oid)
+			if n < 1:
+				continue
+			any_ore = true
+			rows.add_child(_build_ore_card(ore, n))
+		if not any_ore:
+			_empty_placeholder("Chưa có khoáng sản hoặc quặng")
+
+
+func _build_ore_card(ore: Dictionary, count: int) -> PanelContainer:
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UIKit.wood_frame(8, 2, Color(0.16, 0.12, 0.08, 0.95), Color(0.70, 0.50, 0.25)))
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 10)
+	p.add_child(h)
+
+	var slot := PanelContainer.new()
+	slot.custom_minimum_size = Vector2(40, 40)
+	slot.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.10, 0.08, 0.06), UIKit.COLOR_BORDER_WOOD, 6))
+	var icon := TextureRect.new()
+	icon.custom_minimum_size = Vector2(32, 32)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture = TextureGen.ore_item_icon(str(ore.id))
+	slot.add_child(icon)
+	h.add_child(slot)
+
+	var info_v := VBoxContainer.new()
+	info_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_v.add_theme_constant_override("separation", 2)
+	h.add_child(info_v)
+
+	UIKit.label(info_v, str(ore.name), 15, Color(1.0, 0.92, 0.70))
+	var desc_lbl := UIKit.label(info_v, str(ore.desc), 12, UIKit.COLOR_TEXT_MUTED)
+	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	var price_pill := PanelContainer.new()
+	price_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.18, 0.08), Color(0.95, 0.80, 0.30), 6))
+	UIKit.label(price_pill, "%d xu" % int(ore.price), 13, UIKit.COLOR_TEXT_GOLD)
+	h.add_child(price_pill)
+
+	var count_pill := PanelContainer.new()
+	count_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07), UIKit.COLOR_BORDER_WOOD, 6))
+	UIKit.label(count_pill, "×%d" % count, 14, UIKit.COLOR_TEXT_TITLE)
+	h.add_child(count_pill)
+
+	return p
 
 
 func _section_header(text: String, color: Color) -> PanelContainer:

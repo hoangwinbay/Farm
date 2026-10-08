@@ -3513,7 +3513,8 @@ func _clicktest_step() -> void:
 			# 1. Đi lại
 			player._is_acting = false
 			player.can_move = true
-			player.position = Vector2(500, 300)
+			player._walk_stamina_timer = 0.0
+			player.position = Vector2(600, 470)
 			Input.action_press("move_right")
 			player._physics_process(0.6)
 			player._physics_process(0.5)

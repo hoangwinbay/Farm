@@ -25,6 +25,10 @@ var _mine_hud: CanvasLayer
 var _floor_label: Label
 var _rocks_data: Array = []  # [{node, type, hits_left, pos_tile}]
 
+var _decor_node: Node2D
+var _floor_sprites: Array[Sprite2D] = []
+var _wall_entries: Array = []  # [{spr: Sprite2D, tile: Vector2i}]
+
 const LADDER_UP_TILE := Vector2i(3, 3)
 const LADDER_DOWN_TILE := Vector2i(20, 11)
 
@@ -80,47 +84,67 @@ func _build_mine_environment() -> void:
 	_wall_node.name = "MineWalls"
 	add_child(_wall_node)
 
+	_decor_node = Node2D.new()
+	_decor_node.name = "MineDecor"
+	_decor_node.y_sort_enabled = true
+	add_child(_decor_node)
+
 	_rocks_node = Node2D.new()
 	_rocks_node.name = "MineRocks"
 	_rocks_node.y_sort_enabled = true
 	add_child(_rocks_node)
 
-	# 1. Gạch nền hầm mỏ
-	var f_tex := TextureGen.get_tex("mine_floor")
+	# 1. Gạch nền hầm mỏ Stardew Valley
+	_floor_sprites.clear()
 	for y in MINE_TILES.y:
 		for x in MINE_TILES.x:
 			var s := Sprite2D.new()
-			s.texture = f_tex
+			s.texture = TextureGen.mine_floor_tex("")
 			s.position = Vector2(x * TILE + 16, y * TILE + 16)
 			_floor_node.add_child(s)
+			_floor_sprites.append(s)
 
 	# 2. Vách đá bao quanh
-	var w_tex := TextureGen.get_tex("mine_wall")
+	_wall_entries.clear()
 	for x in MINE_TILES.x:
-		_add_wall_tile(w_tex, Vector2(x * TILE + 16, 16))
-		_add_wall_tile(w_tex, Vector2(x * TILE + 16, (MINE_TILES.y - 1) * TILE + 16))
+		_add_wall_tile(Vector2(x * TILE + 16, 16), Vector2i(x, 0))
+		_add_wall_tile(Vector2(x * TILE + 16, (MINE_TILES.y - 1) * TILE + 16), Vector2i(x, MINE_TILES.y - 1))
 	for y in range(1, MINE_TILES.y - 1):
-		_add_wall_tile(w_tex, Vector2(16, y * TILE + 16))
-		_add_wall_tile(w_tex, Vector2((MINE_TILES.x - 1) * TILE + 16, y * TILE + 16))
+		_add_wall_tile(Vector2(16, y * TILE + 16), Vector2i(0, y))
+		_add_wall_tile(Vector2((MINE_TILES.x - 1) * TILE + 16, y * TILE + 16), Vector2i(MINE_TILES.x - 1, y))
 
-	# 3. Thang lên mặt đất
+	# 3. Đèn đuốc gắn vách đá (Wall Lanterns) trên tường phía Bắc thắp sáng ấm áp
+	for tx in [6, 12, 18]:
+		var torch := Sprite2D.new()
+		torch.texture = TextureGen.get_tex("decor_torch")
+		torch.position = Vector2(tx * TILE + 16, 20)
+		_decor_node.add_child(torch)
+		var tw := torch.create_tween().set_loops()
+		tw.tween_property(torch, "modulate", Color(1.0, 0.90, 0.78), 0.8).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(torch, "modulate", Color(1.0, 1.0, 1.0), 0.8).set_trans(Tween.TRANS_SINE)
+
+	# 4. Xe gòn khai khoáng và thùng gỗ Stardew Valley ở góc Đông Bắc
+	_add_decor_obstacle(TextureGen.get_tex("decor_cart"), Vector2(21 * TILE + 16, 2 * TILE + 16))
+	_add_decor_obstacle(TextureGen.get_tex("decor_barrel"), Vector2(21 * TILE + 16, 3 * TILE + 16))
+
+	# 5. Thang lên mặt đất (SDV authentic ladder sprite)
 	_ladder_up = Sprite2D.new()
 	_ladder_up.texture = TextureGen.get_tex("mine_ladder_up")
 	_ladder_up.position = Vector2(LADDER_UP_TILE.x * TILE + 16, LADDER_UP_TILE.y * TILE + 16)
 	add_child(_ladder_up)
 
-	# 4. Thang xuống tầng sâu
+	# 6. Thang xuống tầng sâu (SDV authentic ladder hole sprite)
 	_ladder_down = Sprite2D.new()
 	_ladder_down.texture = TextureGen.get_tex("mine_ladder_down")
 	_ladder_down.position = Vector2(LADDER_DOWN_TILE.x * TILE + 16, LADDER_DOWN_TILE.y * TILE + 16)
 	add_child(_ladder_down)
 
 
-func _add_wall_tile(tex: Texture2D, pos: Vector2) -> void:
+func _add_wall_tile(pos: Vector2, tile: Vector2i) -> void:
 	var body := StaticBody2D.new()
 	body.position = pos
 	var spr := Sprite2D.new()
-	spr.texture = tex
+	spr.texture = TextureGen.mine_wall_tex("")
 	body.add_child(spr)
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
@@ -128,6 +152,23 @@ func _add_wall_tile(tex: Texture2D, pos: Vector2) -> void:
 	col.shape = shape
 	body.add_child(col)
 	_wall_node.add_child(body)
+	_wall_entries.append({"spr": spr, "tile": tile})
+
+
+func _add_decor_obstacle(tex: Texture2D, pos: Vector2) -> void:
+	if tex == null:
+		return
+	var body := StaticBody2D.new()
+	body.position = pos
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	body.add_child(spr)
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(24, 24)
+	col.shape = shape
+	body.add_child(col)
+	_decor_node.add_child(body)
 
 
 func _build_mine_hud() -> void:
@@ -157,7 +198,15 @@ func _build_mine_hud() -> void:
 
 func _update_hud() -> void:
 	if _floor_label != null:
-		_floor_label.text = "⛏️ HẦM MỎ — TẦNG %d" % current_floor
+		var theme_name := "ĐẤT"
+		var icon := "⛏️"
+		if current_floor >= 8:
+			theme_name = "NHAM THẠCH 🔥"
+			icon = "🌋"
+		elif current_floor >= 5:
+			theme_name = "BĂNG GIÁ ❄️"
+			icon = "❄️"
+		_floor_label.text = "%s HẦM MỎ %s — TẦNG %d" % [icon, theme_name, current_floor]
 
 
 # Sinh ngẫu nhiên các tảng đá & quặng theo độ sâu tầng mỏ
@@ -166,6 +215,8 @@ func _generate_floor(floor_num: int) -> void:
 		child.queue_free()
 	_rocks_data.clear()
 
+	_update_floor_theme(floor_num)
+
 	var rng := RandomNumberGenerator.new()
 	rng.seed = floor_num * 997 + (GameState.day if GameState else 1) * 31
 
@@ -173,6 +224,8 @@ func _generate_floor(floor_num: int) -> void:
 	var occupied: Array[Vector2i] = [LADDER_UP_TILE, LADDER_DOWN_TILE]
 	occupied.append(LADDER_UP_TILE + Vector2i(0, 1))
 	occupied.append(LADDER_DOWN_TILE + Vector2i(0, -1))
+	occupied.append(Vector2i(21, 2))
+	occupied.append(Vector2i(21, 3))
 
 	for _i in rock_count:
 		var rx := rng.randi_range(2, MINE_TILES.x - 3)
@@ -224,6 +277,38 @@ func _generate_floor(floor_num: int) -> void:
 			"hits_left": hits,
 			"pos_tile": pt
 		})
+
+
+func _update_floor_theme(floor_num: int) -> void:
+	var theme := ""
+	if floor_num >= 8:
+		theme = "lava"
+	elif floor_num >= 5:
+		theme = "frost"
+
+	# Nền sàn hầm mỏ
+	var f_main := TextureGen.mine_floor_tex(theme)
+	var f_alt := TextureGen.mine_floor_tex("stone") if theme == "" else f_main
+	for i in _floor_sprites.size():
+		var spr := _floor_sprites[i]
+		if not is_instance_valid(spr):
+			continue
+		if theme == "" and (i * 7 + floor_num * 11) % 7 == 0:
+			spr.texture = f_alt
+		else:
+			spr.texture = f_main
+
+	# Vách đá hầm mỏ
+	var w_main := TextureGen.mine_wall_tex(theme)
+	var w_beam := TextureGen.mine_wall_tex("beam") if theme == "" else w_main
+	for w_data in _wall_entries:
+		var spr: Sprite2D = w_data.get("spr")
+		var t: Vector2i = w_data.get("tile", Vector2i.ZERO)
+		if is_instance_valid(spr):
+			if theme == "" and t.y == 0 and (t.x == 6 or t.x == 12 or t.x == 18):
+				spr.texture = w_beam
+			else:
+				spr.texture = w_main
 
 
 # Tìm tương tác khi người chơi đang trong hầm mỏ

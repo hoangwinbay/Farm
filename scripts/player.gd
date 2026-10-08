@@ -102,7 +102,7 @@ func _physics_process(delta: float) -> void:
 		_update_tex(int(_anim_t * 8.0) % 4)
 
 		# Đi lại cũng tiêu hao năng lượng, nhưng rất ít (không đáng kể: 0.1 điểm mỗi giây di chuyển)
-		if not exhausted and not is_on_wall():
+		if not exhausted:
 			_walk_stamina_timer += delta
 			if _walk_stamina_timer >= 1.0:
 				_walk_stamina_timer -= 1.0
