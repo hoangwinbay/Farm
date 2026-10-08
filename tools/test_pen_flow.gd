@@ -42,14 +42,19 @@ func _run() -> void:
 	var fed2: int = Inv.feed_all_hungry_for_species("chicken")
 	print("7. cho ăn lại -> fed=", fed2, " (kỳ vọng 1)")
 
-	# 8. Trường hợp túi đồ đầy: nhồi đầy backpack rồi thu
+	# 8. Trường hợp túi đồ đầy: nhồi đủ các loại hàng khác nhau cho kín ô rồi thu
 	Inv.tick_animals(30.0)
-	var used_before: int = Inv.backpack_slots_used()
-	for i in range(0, Inv.backpack_max + 5):
-		Inv.add_produce("rice", 1)
+	var ready_before_full: int = Inv.ready_products_for_species("chicken")
+	# Xóa hết trung_ga có sẵn để sản phẩm mới không thể chồng vào ô cũ
+	Inv.take_produce("trung_ga", Inv.produce_count("trung_ga"))
+	for pid in ["rice", "ca_ro", "ca_diuc", "sua_bo", "long_cuu", "thit_lon",
+			"trung_vit", "mong_to", "da_vo", "qua_buoi", "la_tre", "ngo_non"]:
+		Inv.add_produce(str(pid), 1)
+	var slots_full: int = Inv.backpack_slots_used()
 	var n_full: int = Inv.collect_products_for_species("chicken")
-	print("8. túi đầy -> slots=", Inv.backpack_slots_used(), "/", Inv.backpack_max,
-			" collect=", n_full, " (kỳ vọng 0 nếu đầy, sản phẩm vẫn ready=", Inv.ready_products_for_species("chicken"), ")")
+	print("8. túi đầy -> slots=", slots_full, "/", Inv.backpack_max,
+			" ready_truoc=", ready_before_full,
+			" collect=", n_full, " (kỳ vọng 0), sản phẩm vẫn ready=", Inv.ready_products_for_species("chicken"))
 
 	# 9. Test con non không sinh sản phẩm
 	Inv.animals.append({"id": "chicken", "is_baby": true, "fed": true, "progress": 0.0, "ready": 0, "grow_progress": 0.0, "is_sheared": false})

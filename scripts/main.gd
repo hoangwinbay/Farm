@@ -2167,22 +2167,26 @@ func _collect_pen_products(species_id: String) -> void:
 		if quest_mgr != null:
 			quest_mgr.advance_progress("poultry", "any", n)
 			quest_mgr.advance_progress("poultry", str(d.get("product", "")), n)
+		return
+	var all_n: int = Inventory.collect_products()
+	if all_n > 0:
+		hud.toast("Đã thu %d sản phẩm chăn nuôi! 🧺" % all_n, Color(1.0, 0.75, 0.5))
+		if quest_mgr != null:
+			quest_mgr.advance_progress("poultry", "any", all_n)
+		return
+	# Vẫn còn sản phẩm chờ mà không thu được -> túi đồ đầy, không phải hết sản phẩm
+	if Inventory.ready_products() > 0:
+		hud.toast("Túi đồ đã đầy (%d/%d)! Vui lòng cất bớt đồ vào nhà kho 🏚️ để thu hoạch." % [Inventory.backpack_slots_used(), Inventory.backpack_max], Color(1.0, 0.65, 0.4))
+		return
+	var c := PoultryDB.get_coop_data(species_id)
+	var cname := str(c.get("name", "Chuồng"))
+	var tier := Inventory.get_coop_tier(species_id)
+	if tier == 0:
+		hud.toast("%s chưa được xây! Hãy ghé tiệm Cô Tư để mua." % cname, Color(0.9, 0.75, 0.6))
+	elif Inventory.animals_of_species(species_id) == 0:
+		hud.toast("%s đang trống! Hãy mua con giống tại tiệm Cô Tư." % cname, Color(0.9, 0.8, 0.6))
 	else:
-		var all_n: int = Inventory.collect_products()
-		if all_n > 0:
-			hud.toast("Đã thu %d sản phẩm chăn nuôi! 🧺" % all_n, Color(1.0, 0.75, 0.5))
-			if quest_mgr != null:
-				quest_mgr.advance_progress("poultry", "any", all_n)
-		else:
-			var c := PoultryDB.get_coop_data(species_id)
-			var cname := str(c.get("name", "Chuồng"))
-			var tier := Inventory.get_coop_tier(species_id)
-			if tier == 0:
-				hud.toast("%s chưa được xây! Hãy ghé tiệm Cô Tư để mua." % cname, Color(0.9, 0.75, 0.6))
-			elif Inventory.animals_of_species(species_id) == 0:
-				hud.toast("%s đang trống! Hãy mua con giống tại tiệm Cô Tư." % cname, Color(0.9, 0.8, 0.6))
-			else:
-				hud.toast("%s chưa có sản phẩm nào để thu hoạch!" % cname, Color(0.9, 0.7, 0.6))
+		hud.toast("%s chưa có sản phẩm nào để thu hoạch!" % cname, Color(0.9, 0.7, 0.6))
 
 
 func _collect_products() -> void:
@@ -2192,6 +2196,8 @@ func _collect_products() -> void:
 		if quest_mgr != null:
 			quest_mgr.advance_progress("poultry", "any", n)
 			quest_mgr.advance_progress("poultry", "trung_ga", n)
+	elif Inventory.ready_products() > 0:
+		hud.toast("Túi đồ đã đầy (%d/%d)! Vui lòng cất bớt đồ vào nhà kho 🏚️ để thu hoạch." % [Inventory.backpack_slots_used(), Inventory.backpack_max], Color(1.0, 0.65, 0.4))
 	else:
 		hud.toast("Chưa có sản phẩm nào chờ thu...", Color(0.8, 0.8, 0.8))
 
@@ -2222,6 +2228,7 @@ func _interact_pen(species_id: String) -> void:
 func _harvest_single_animal(anim: PenAnimal) -> void:
 	if not is_instance_valid(anim):
 		return
+	var was_ready: bool = anim.is_ready()
 	var prod_id := anim.harvest()
 	if prod_id != "":
 		var d := PoultryDB.get_animal(anim.species_id)
@@ -2230,6 +2237,9 @@ func _harvest_single_animal(anim: PenAnimal) -> void:
 		if quest_mgr != null:
 			quest_mgr.advance_progress("poultry", "any", 1)
 			quest_mgr.advance_progress("poultry", prod_id, 1)
+	elif was_ready:
+		# Con vật có sản phẩm mà vẫn không thu được -> túi đồ đã đầy
+		hud.toast("Túi đồ đã đầy (%d/%d)! Vui lòng cất bớt đồ vào nhà kho 🏚️ để thu hoạch." % [Inventory.backpack_slots_used(), Inventory.backpack_max], Color(1.0, 0.65, 0.4))
 
 
 func _feed_single_animal(anim: PenAnimal) -> void:
