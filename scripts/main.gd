@@ -43,9 +43,9 @@ const TENT_POS := Vector2(766, 248)
 const MAILBOX_POS := Vector2(720, 246)
 const MAYOR_POS := Vector2(705, 270)
 const MARKET_STALL_POS := Vector2(584, 440) # sạp hàng nông sản tại ngã rẽ đại lộ
-const MINE_ENTRANCE_POS := Vector2(80, 440)  # cửa hầm mỏ đá ở rìa cực Tây (đi thẳng từ sạp hàng sang trái)
-const MINE_SIGN_POS := Vector2(140, 416)     # biển báo hầm mỏ
-const LEAH_MINER_POS := Vector2(140, 465)    # Leah đứng cạnh cửa mỏ hướng dẫn người chơi
+const MINE_ENTRANCE_POS := Vector2(96, 190)  # cửa hầm mỏ đá ở vạt đất cao Tây Bắc
+const MINE_SIGN_POS := Vector2(48, 210)      # biển báo hầm mỏ bên trái lối vào
+const LEAH_MINER_POS := Vector2(146, 215)    # Leah đứng bên phải lối vào mỏ hướng dẫn người chơi
 
 # Các nhân vật Stardew Valley ghé sạp mua hàng (Leah là NPC quản lý mỏ riêng)
 const SDV_CUSTOMERS_DATA := [
@@ -146,7 +146,8 @@ const PENS_CONFIG := [
 # Mạng lối đi lát đất chuẩn Stardew Valley (lưới 16px).
 const PATHS := [
 	Rect2(640, 240, 32, 224),    # từ cửa nhà xuống đại lộ (x: 640..672, y: 240..464)
-	Rect2(0, 448, 1850, 48),     # đại lộ đông - tây xuyên suốt từ hầm mỏ qua sạp hàng và 2 cổng ruộng (x: 0..1850, y: 448..496)
+	Rect2(80, 210, 32, 240),     # đường mòn từ đại lộ lên hầm mỏ đá Tây Bắc (x: 80..112, y: 210..450)
+	Rect2(0, 448, 1850, 48),     # đại lộ đông - tây xuyên suốt qua sạp hàng và 2 cổng ruộng (x: 0..1850, y: 448..496)
 	Rect2(1344, 352, 464, 96),   # khuôn viên chợ quê 3 quầy hàng liền sát đại lộ (x: 1344..1808, y: 352..448)
 	Rect2(1424, 480, 32, 252),   # nhánh xuống bờ ao câu cá (x: 1424..1456, y: 480..732)
 ]
@@ -186,6 +187,7 @@ var stall_revenue: int = 0
 var stall_coin_badge: PanelContainer
 var stall_coin_label: Label
 var _stall_customer_timer: float = 0.0
+var _next_stall_customer_delay: float = 16.0
 var _active_stall_customer: Node2D = null
 var _stall_customers: Array[Node2D] = []
 var inv_panel: CanvasLayer
@@ -1006,7 +1008,7 @@ func _is_grass_surface(pos: Vector2) -> bool:
 		return false
 
 	# 10c. Khu vực cửa hầm mỏ đá, biển báo và NPC Leah (trống hoàn toàn không bị cây che)
-	var mine_box := Rect2(0.0, 360.0, 240.0, 200.0)
+	var mine_box := Rect2(0.0, 140.0, 220.0, 160.0)
 	if mine_box.has_point(pos):
 		return false
 
@@ -1307,15 +1309,16 @@ func _process_stall_customers(delta: float) -> void:
 				c.dismiss_for_night()
 		return
 
-	# Cho phép tối đa 10 NPC xuất hiện và chờ cùng lúc
-	if _stall_customers.size() >= STALL_COUNTER_SPOTS.size():
+	# Giới hạn số lượng khách ghé sạp cùng lúc (tối đa 3 khách để sạp thoáng đãng)
+	if _stall_customers.size() >= 3:
 		return
 
 	_stall_customer_timer += delta
-	# Cứ mỗi 3.5 - 5s có một khách mới ghé sạp nếu chưa đủ 10 người
-	if _stall_customer_timer < 4.0:
+	# Giảm tần suất: khoảng 16 - 26 giây mới có một khách mới ghé sạp
+	if _stall_customer_timer < _next_stall_customer_delay:
 		return
 	_stall_customer_timer = 0.0
+	_next_stall_customer_delay = randf_range(16.0, 26.0)
 
 	_spawn_stall_customer()
 
@@ -1992,7 +1995,7 @@ func _on_exit_mine() -> void:
 			weather_mgr.visible = true
 		if is_instance_valid(hud):
 			hud.set_underground(false)
-		player.position = MINE_ENTRANCE_POS + Vector2(32, 28)
+		player.position = MINE_ENTRANCE_POS + Vector2(0, 32)
 		cam.limit_left = 0
 		cam.limit_top = 0
 		cam.limit_right = int(WORLD_SIZE.x)
@@ -3092,6 +3095,21 @@ func _clicktest_step() -> void:
 					" save_has_stall=", save_has_stall, " save_rev=", save_rev_correct,
 					" west_road_to_edge=", west_road_exists, " ground_is_grass=", (not stall_ground_has_road),
 					" minimap_poi=", poi_stall_exists)
+
+			var trail_to_mine_ok: bool = false
+			for p in PATHS:
+				if p.has_point(Vector2(96, 300)):
+					trail_to_mine_ok = true
+			var mine_in_nw: bool = (MINE_ENTRANCE_POS.y < 250.0 and MINE_ENTRANCE_POS.x <= 120.0)
+			var poi_mine_nw: bool = false
+			for p in MinimapScript.POIS:
+				if str(p.get("id", "")) == "mine" and p.get("pos", Vector2.ZERO).y < 250.0:
+					poi_mine_nw = true
+			var cust_freq_reduced: bool = (_next_stall_customer_delay >= 15.0)
+
+			print("MINE_RELOCATION_TEST trail=", trail_to_mine_ok, " pos_nw=", mine_in_nw,
+					" poi_nw=", poi_mine_nw, " cust_from_left=", cust_from_left,
+					" cust_exit_left=", decline_ok, " cust_freq_reduced=", cust_freq_reduced)
 		995:
 			# Test kiểm thử tính năng mới: Bình nước có hạn + múc nước bờ ao + thanh hotbar Stardew Valley + hoe sprites
 			# 1. Hotbar slots

@@ -24,7 +24,7 @@ var state: int = State.WALK_IN
 var speed: float = 35.0         # Tốc độ đi bộ bình thường (35 px/s)
 var wander_speed: float = 22.0  # Tốc độ đi dạo thư thả khi đứng chờ
 var target_stall_pos := Vector2(584, 468)
-var exit_pos := Vector2(1950.0, 468.0)  # Quay trở về phía thị trấn bên phải (Đông)
+var exit_pos := Vector2(-40.0, 468.0)   # Quay trở về con đường bên trái (Tây)
 var stall_slots: Array = []     # Tham chiếu đến các ô sạp hàng của main
 
 # Nhu cầu mua sắm của khách
@@ -101,8 +101,8 @@ func _ready() -> void:
 
 	add_child(_bubble)
 
-	# Xuất phát từ đoạn đường phía thị trấn bên phải (Đông)
-	position = Vector2(1920 + randf_range(0, 30), target_stall_pos.y)
+	# Xuất phát từ đoạn đường phía bên trái (Tây)
+	position = Vector2(-30.0 - randf_range(0, 30.0), target_stall_pos.y)
 	_spr.flip_h = false
 	max_wait_time = randf_range(16.0, 24.0)
 	_wait_elapsed = 0.0

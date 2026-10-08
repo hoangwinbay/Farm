@@ -382,7 +382,7 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 	protect_rect.call(240.0, 520.0, 540.0, 360.0, 2) # 4 khu chuồng gia cầm, gia súc & lối đi lát đá
 	protect_rect.call(1344.0, 352.0, 464.0, 96.0, 2) # Khu chợ quê
 	protect_rect.call(584.0 - 56.0, 440.0 - 66.0, 112.0, 66.0, 1) # Sạp hàng nông sản (nền cỏ xanh thanh sạch)
-	protect_rect.call(0.0, 360.0, 240.0, 220.0, 2) # Khu hầm mỏ đá Tây Bắc
+	protect_rect.call(32.0, 140.0, 128.0, 60.0, 1) # Khu vách núi cửa hầm mỏ đá Tây Bắc
 	protect_rect.call(pond.position.x, pond.position.y, pond.size.x, pond.size.y, 3) # Hồ nước
 	for p in paths:
 		protect_rect.call(p.position.x, p.position.y, p.size.x, p.size.y, 2)
