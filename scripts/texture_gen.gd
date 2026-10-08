@@ -3250,7 +3250,9 @@ static func springobject_icon(idx: int) -> ImageTexture:
 	var key := "sprobj_%d" % idx
 	if _cache.has(key):
 		return _cache[key]
-	var loaded := _load_picture("res://Content (unpacked)/Maps/springobjects.png")
+	var loaded := _load_picture("res://picture/springobjects.png")
+	if loaded == null:
+		loaded = _load_picture("res://Content (unpacked)/Maps/springobjects.png")
 	if loaded != null:
 		var cols: int = loaded.get_width() / 16
 		var r: int = idx / cols
