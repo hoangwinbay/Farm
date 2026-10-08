@@ -206,14 +206,12 @@ func tick(delta: float) -> void:
 
 
 # Ngủ: nếu ngủ trước 6h sáng thì dậy ngay 6h cùng ngày, sau 6h thì dậy 6h hôm sau.
-func sleep_to_morning(forced: bool = false) -> void:
+# Đi ngủ không hồi năng lượng mà chỉ để lưu game và chuyển sang ngày mới.
+func sleep_to_morning(_forced: bool = false) -> void:
 	if clock >= DAY_START:
 		day += 1
 	clock = DAY_START
-	if forced:
-		stamina = max_stamina * 0.6  # gục ngã vì kiệt sức chỉ hồi 60% thể lực
-	else:
-		stamina = max_stamina        # ngủ đủ giấc hồi 100% thể lực
+	stamina = clampf(stamina, 0.0, max_stamina)
 	stamina_changed.emit(stamina, max_stamina)
 
 

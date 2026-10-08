@@ -438,7 +438,7 @@ func _build_world() -> void:
 	_build_pen()
 
 	interactables = [
-		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ", "cb": _ask_sleep},
+		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ 🛏️ (Lưu game)", "cb": _ask_sleep},
 		{"pos": SHED_POS + Vector2(0, -6), "r": 50.0, "label": "Nhà kho 🏚️", "cb": _open_storage},
 		{"pos": MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": _open_mailbox},
 		{"pos": MAYOR_POS, "r": 50.0, "label": "Trưởng Thôn 📜", "cb": _talk_mayor},
@@ -2270,7 +2270,7 @@ func _back_to_title() -> void:
 func _ask_sleep() -> void:
 	mode = Mode.DIALOG
 	get_tree().paused = true
-	dialog_box.ask("Ngủ đến ngày mai? (Game sẽ tự lưu — cây vẫn lớn khi đất còn ẩm)")
+	dialog_box.ask("Đi ngủ và lưu game? (Lưu ý: Ngủ không hồi thể lực, hãy ăn nông sản hoặc thịt ⚡)")
 
 
 func _on_sleep_answer(yes: bool) -> void:
@@ -2346,9 +2346,9 @@ func _do_sleep(forced: bool) -> void:
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	if forced:
-		hud.toast("Bạn gục ngã vì kiệt sức... Thể lực hồi 60% ⚡", Color(1.0, 0.55, 0.45))
+		hud.toast("Bạn gục ngã vì quá khuya... Đã lưu game 💾 (Ăn thức ăn để hồi thể lực)", Color(1.0, 0.55, 0.45))
 	else:
-		hud.toast("Ngày mới! Thể lực đã hồi phục 100% ⚡", Color(0.65, 1.0, 0.6))
+		hud.toast("Ngày mới! Đã lưu game thành công 💾 (Ăn thức ăn để hồi thể lực)", Color(0.65, 1.0, 0.6))
 	if new_pests > 0:
 		hud.toast("⚠️ Có %d cây bị sâu cắn phá! Hãy bắt sâu bọ để cây lớn tiếp 🐛" % new_pests, Color(1.0, 0.65, 0.4))
 	if ready_n > 0:
@@ -3506,6 +3506,13 @@ func _clicktest_step() -> void:
 			_close_panels()
 			var panel_closed: bool = (tool_upgrade_panel != null and not tool_upgrade_panel.visible)
 
+			# 7. Kiểm tra đi ngủ không hồi thể lực mà chỉ để lưu game
+			GameState.stamina = 35.0
+			GameState.sleep_to_morning(false)
+			var sleep_no_heal_ok: bool = is_equal_approx(GameState.stamina, 35.0)
+			GameState.sleep_to_morning(true)
+			var forced_no_heal_ok: bool = is_equal_approx(GameState.stamina, 35.0)
+
 			print("MINING_AND_WALKING_STAMINA_TEST walk_ok=", walk_stamina_ok,
 					" hit_ok=", hit_stamina_ok, " rock_damaged=", rock_damaged,
 					" exhausted_prevented=", exhausted_prevented)
@@ -3513,6 +3520,7 @@ func _clicktest_step() -> void:
 					" water_5=", water_cost_ok, " fish_15=", fish_cost_ok, " mine_5=", mine_cost_ok)
 			print("TOOL_UPGRADE_TEST hoe_up=", hoe_reduced_ok, " pick_up=", pick_reduced_ok,
 					" panel_open=", panel_opened, " panel_close=", panel_closed)
+			print("SLEEP_NO_HEAL_TEST sleep_no_heal=", sleep_no_heal_ok, " forced_no_heal=", forced_no_heal_ok)
 
 			print("CLICKTEST_DONE")
 			get_tree().quit()
