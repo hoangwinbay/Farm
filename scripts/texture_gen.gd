@@ -261,10 +261,10 @@ static func _autotile_terrain(img: Image, atlas: Image, grid: Array, gw: int, gh
 
 			# Mở thông tại các vị trí cổng kết nối với đường đi (không bị chặn cỏ)
 			if is_dirt:
-				if gx == fgx0 and (gy >= 28 and gy <= 31):
-					w_val = true # Cổng Tây ruộng nối đại lộ
-				elif gx == (fgx1 - 1) and (gy >= 28 and gy <= 31):
-					e = true # Cổng Đông ruộng nối đại lộ
+				if (gx in [64, 65, 66]) and gy == 27:
+					s = true # Cổng Nam thửa Bắc mở ra đại lộ ở giữa
+				elif (gx in [64, 65, 66]) and gy == 31:
+					n = true # Cổng Bắc thửa Nam mở ra đại lộ ở giữa
 				elif gy == 41 and (gx in [22, 23, 39, 40]):
 					s = true # Cổng chuồng Bò và Gà mở về phía nam ra đường đá
 				elif gy == 45 and (gx in [22, 23, 39, 40]):
@@ -380,8 +380,8 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 				protected[py][px] = true
 
 	# Bảo vệ các công trình, ruộng đồng, 4 khu chuồng trại & đường đá, khu chợ, ao hồ, hầm mỏ và đường đi
-	protect_rect.call(0.0, 0.0, float(w), 100.0, 0) # Rặng vách núi nhô lên biên phía Bắc
-	protect_rect.call(farm_rect.position.x, farm_rect.position.y, farm_rect.size.x, farm_rect.size.y, 2)
+	protect_rect.call(800.0, 288.0, 496.0, 160.0, 1) # Thửa Bắc
+	protect_rect.call(800.0, 496.0, 496.0, 160.0, 1) # Thửa Nam
 	protect_rect.call(641.0 - 72.0, 248.0 - 144.0, 160.0, 160.0, 2) # Nhà gỗ & hiên
 	protect_rect.call(240.0, 520.0, 540.0, 360.0, 2) # 4 khu chuồng gia cầm, gia súc & lối đi lát đá
 	protect_rect.call(1344.0, 352.0, 464.0, 96.0, 2) # Khu chợ quê
@@ -462,11 +462,10 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 				if cnt < 2:
 					dirt_grid[gy][gx] = false
 
-	# 4. Đất nông trại (Farm field) - phủ trọn vẹn toàn bộ khu đất trong hàng rào (x: 800..1296, y: 368..688)
+	# 4. Đất nông trại (Farm fields) - 2 thửa riêng biệt có diện tích bằng nhau:
+	# Thửa Bắc (x: 800..1296, y: 288..448) và Thửa Nam (x: 800..1296, y: 496..656)
 	var fgx0: int = 50
 	var fgx1: int = 81
-	var fgy0: int = 23
-	var fgy1: int = 43
 
 	var farm_grid: Array = []
 	for y in gh:
@@ -475,7 +474,15 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 		row.fill(false)
 		farm_grid.append(row)
 
-	for gy in range(fgy0, fgy1):
+	# Thửa Bắc: gy từ 18 đến 28 (y: 288..448)
+	for gy in range(18, 28):
+		for gx in range(fgx0, fgx1):
+			if gy < gh and gx < gw:
+				farm_grid[gy][gx] = true
+				dark_grid[gy][gx] = false
+
+	# Thửa Nam: gy từ 31 đến 41 (y: 496..656)
+	for gy in range(31, 41):
 		for gx in range(fgx0, fgx1):
 			if gy < gh and gx < gw:
 				farm_grid[gy][gx] = true
@@ -542,7 +549,7 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 			for ty in range(ty0, ty1):
 				for tx in range(tx0, tx1):
 					# Không đặt đường đất đè lên lòng ruộng đất trồng
-					if tx >= (fgx0 + 1) and tx < (fgx1 - 1) and ty >= (fgy0 + 1) and ty < (fgy1 - 1):
+					if farm_grid[ty][tx]:
 						continue
 					road_grid[ty][tx] = true
 

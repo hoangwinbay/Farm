@@ -36,8 +36,30 @@ const UIKit := preload("res://scripts/ui/ui_kit.gd")
 const PenAnimal := preload("res://scripts/pen_animal.gd")
 
 const WORLD_SIZE := Vector2(1900, 1000)
-const FARM_ORIGIN := Vector2(824, 384)
-const FARM_TILES := Vector2i(14, 9)
+const PLOT_NORTH_ORIGIN := Vector2(824, 304)
+const PLOT_SOUTH_ORIGIN := Vector2(824, 512)
+const PLOT_TILES := Vector2i(14, 4)
+const FARM_ORIGIN := PLOT_NORTH_ORIGIN
+const FARM_TILES := PLOT_TILES
+
+const FARM_PLOTS := [
+	{
+		"id": "north",
+		"name": "Thửa Bắc",
+		"origin": PLOT_NORTH_ORIGIN,
+		"size": PLOT_TILES,
+		"rect": Rect2(824, 304, 448, 128),
+		"y_offset": 0
+	},
+	{
+		"id": "south",
+		"name": "Thửa Nam",
+		"origin": PLOT_SOUTH_ORIGIN,
+		"size": PLOT_TILES,
+		"rect": Rect2(824, 512, 448, 128),
+		"y_offset": 4
+	}
+]
 const HOUSE_POS := Vector2(641, 248)
 const SHED_POS := Vector2(505, 248)
 const TENT_POS := Vector2(766, 248)
@@ -91,7 +113,7 @@ const STAND_TU_POS := Vector2(1410, 416)    # quầy Cô Tư
 const NPC_POS := Vector2(1580, 430)         # điểm tương tác Bác Tư
 const CHU_HAI_POS := Vector2(1750, 430)     # điểm tương tác Chú Hai
 const COTU_POS := Vector2(1410, 430)        # điểm tương tác Cô Tư
-const SCARECROW_POS := Vector2(1048, 528)
+const SCARECROW_POS := Vector2(790, 436)     # bù nhìn rơm bên lề cỏ cạnh góc rào Thửa Bắc
 const PLAYER_START := Vector2(650, 470)
 const POND_RECT := Rect2(1304, 738, 272, 192)
 const FISH_SPOT_POS := Vector2(1447, 863)   # tâm hồ Stardew Valley — câu được ở MỌI bờ
@@ -307,7 +329,7 @@ func _build_world() -> void:
 	# nền cỏ + đường + ao (bake 1 ảnh)
 	ground = Sprite2D.new()
 	ground.centered = false
-	var farm_px := Rect2(FARM_ORIGIN, Vector2(FARM_TILES.x * 32, FARM_TILES.y * 32))
+	var farm_px := Rect2(824, 288, 448, 368)
 	ground.texture = TextureGen.make_ground(int(WORLD_SIZE.x), int(WORLD_SIZE.y), farm_px, PATHS, POND_RECT, [PATH_COBBLE_V, PATH_COBBLE_H])
 	world.add_child(ground)
 
@@ -318,9 +340,9 @@ func _build_world() -> void:
 	cliff_top_ext.centered = false
 	world.add_child(cliff_top_ext)
 
-	# nông trại + ô vuông chỉ điểm
+	# nông trại 2 thửa riêng biệt + ô vuông chỉ điểm
 	farm = FarmScript.new()
-	farm.setup(FARM_ORIGIN, FARM_TILES)
+	farm.setup_plots(FARM_PLOTS)
 	world.add_child(farm)
 	highlight = Sprite2D.new()
 	highlight.texture = TextureGen.get_tex("highlight")
@@ -957,9 +979,10 @@ func _is_grass_surface(pos: Vector2) -> bool:
 		if p.grow(28.0).has_point(pos):
 			return false
 
-	# 3. Ruộng nông trại & hàng rào + cổng vào (Tây, Đông, rào Bắc, Nam)
-	var farm_box := Rect2(FARM_ORIGIN.x - 40.0, FARM_ORIGIN.y - 60.0, FARM_TILES.x * 32.0 + 80.0, FARM_TILES.y * 32.0 + 120.0)
-	if farm_box.has_point(pos):
+	# 3. Ruộng nông trại & hàng rào 2 thửa (Thửa Bắc & Thửa Nam)
+	var farm_box_n := Rect2(824 - 40.0, 304 - 40.0, 448 + 80.0, 128 + 60.0)
+	var farm_box_s := Rect2(824 - 40.0, 512 - 20.0, 448 + 80.0, 128 + 60.0)
+	if farm_box_n.has_point(pos) or farm_box_s.has_point(pos):
 		return false
 
 	# 4. Nhà gỗ & hiên nhà
@@ -1134,47 +1157,75 @@ func _sprout_random_plant() -> void:
 func _build_fences() -> void:
 	var fh: Texture2D = TextureGen.get_tex("fence_h")
 	var fv: Texture2D = TextureGen.get_tex("fence_v")
-	var y_top := int(FARM_ORIGIN.y - 14)
-	var y_bot := int(FARM_ORIGIN.y + FARM_TILES.y * 32 + 14)
-	var x_left := int(FARM_ORIGIN.x - 16)
-	var x_right := int(FARM_ORIGIN.x + FARM_TILES.x * 32 + 16)
+	var f_gate: Texture2D = TextureGen.get_tex("gate_coop")
+	var f_tl: Texture2D = TextureGen.get_tex("fence_corner_tl")
+	var f_tr: Texture2D = TextureGen.get_tex("fence_corner_tr")
+	var f_bl: Texture2D = TextureGen.get_tex("fence_corner_bl")
+	var f_br: Texture2D = TextureGen.get_tex("fence_corner_br")
 
-	# 1. Hàng ngang trên + dưới liền kín
+	var x_left := 808
+	var x_right := 1288
+	var farm_mid_x := (x_left + x_right) / 2.0  # 1048.0
+	var farm_width := float(x_right - x_left)   # 480.0
+
+	# ---------------- THỬA BẮC (NORTH PLOT: y: 304..432) ----------------
+	var n_ytop := 290
+	var n_ybot := 446
+
+	# 1. Hàng ngang Bắc (liền kín)
 	for x in range(x_left + 32, x_right, 32):
-		_add_sprite(fh, Vector2(x, y_top))
-		_add_sprite(fh, Vector2(x, y_bot))
+		_add_sprite(fh, Vector2(x, n_ytop))
+	_add_sprite(f_tl, Vector2(x_left, n_ytop))
+	_add_sprite(f_tr, Vector2(x_right, n_ytop))
+	_add_sprite(f_bl, Vector2(x_left, n_ybot))
+	_add_sprite(f_br, Vector2(x_right, n_ybot))
 
-	# 2. Hai cột dọc — Tây và Đông chừa cửa đi qua ở đại lộ (tâm 472), rào nối khít vào cổng không khe hở
-	for y in [398, 430, 514, 546, 578, 610, 642, 674]:
+	# 2. Hai cột dọc Tây và Đông (liền kín)
+	for y in [322, 354, 386, 418]:
 		_add_sprite(fv, Vector2(x_left, y))
 		_add_sprite(fv, Vector2(x_right, y))
 
-	# 3. Bốn cọc góc vững chãi cho hàng rào ruộng ngay rìa ngoài đất trồng
-	_add_sprite(TextureGen.get_tex("fence_corner_tl"), Vector2(x_left, y_top))
-	_add_sprite(TextureGen.get_tex("fence_corner_tr"), Vector2(x_right, y_top))
-	_add_sprite(TextureGen.get_tex("fence_corner_bl"), Vector2(x_left, y_bot))
-	_add_sprite(TextureGen.get_tex("fence_corner_br"), Vector2(x_right, y_bot))
+	# 3. Hàng ngang Nam: mở cổng ở giữa hướng ra đại lộ (x: 1016..1080)
+	for x in [840, 872, 904, 936, 968, 1000, 1096, 1128, 1160, 1192, 1224, 1256]:
+		_add_sprite(fh, Vector2(x, n_ybot))
+	_add_sprite(f_gate, Vector2(farm_mid_x, n_ybot))
 
-	# Va chạm: tây/đông mở cửa giữa (y: 440..504), nam/bắc liền kín
-	var door_y1 := 440
-	var door_y2 := 504
-	var farm_mid_x := (x_left + x_right) / 2.0
-	var farm_width := float(x_right - x_left)
-	_wall(Vector2(farm_mid_x, y_top), Vector2(farm_width, 10))
-	_wall(Vector2(farm_mid_x, y_bot), Vector2(farm_width, 10))
-	_wall(Vector2(x_left, (y_top - 6 + door_y1) / 2.0), Vector2(10, door_y1 - y_top + 6))
-	_wall(Vector2(x_left, (door_y2 + y_bot + 8) / 2.0), Vector2(10, y_bot + 8 - door_y2))
-	_wall(Vector2(x_right, (y_top - 6 + door_y1) / 2.0), Vector2(10, door_y1 - y_top + 6))
-	_wall(Vector2(x_right, (door_y2 + y_bot + 8) / 2.0), Vector2(10, y_bot + 8 - door_y2))
+	# Va chạm Thửa Bắc
+	_wall(Vector2(farm_mid_x, n_ytop), Vector2(farm_width, 10))
+	_wall(Vector2(x_left, (n_ytop + n_ybot) / 2.0), Vector2(10, n_ybot - n_ytop))
+	_wall(Vector2(x_right, (n_ytop + n_ybot) / 2.0), Vector2(10, n_ybot - n_ytop))
+	_wall(Vector2((x_left + 1016) / 2.0, n_ybot), Vector2(1016 - x_left, 10))
+	_wall(Vector2((1080 + x_right) / 2.0, n_ybot), Vector2(x_right - 1080, 10))
 
-	# 4. Hai khung cổng DỌC nghệ thuật tại cửa Tây & Đông
-	var door_mid := 472.0
-	_add_sprite(TextureGen.get_tex("gate_v"), Vector2(x_left, door_mid))
-	var s_right := Sprite2D.new()
-	s_right.texture = TextureGen.get_tex("gate_v")
-	s_right.position = Vector2(x_right, door_mid)
-	s_right.flip_h = true
-	world.add_child(s_right)
+	# ---------------- THỬA NAM (SOUTH PLOT: y: 512..640) ----------------
+	var s_ytop := 498
+	var s_ybot := 654
+
+	# 1. Hàng ngang Bắc: mở cổng ở giữa hướng ra đại lộ (x: 1016..1080)
+	for x in [840, 872, 904, 936, 968, 1000, 1096, 1128, 1160, 1192, 1224, 1256]:
+		_add_sprite(fh, Vector2(x, s_ytop))
+	_add_sprite(f_gate, Vector2(farm_mid_x, s_ytop))
+
+	_add_sprite(f_tl, Vector2(x_left, s_ytop))
+	_add_sprite(f_tr, Vector2(x_right, s_ytop))
+	_add_sprite(f_bl, Vector2(x_left, s_ybot))
+	_add_sprite(f_br, Vector2(x_right, s_ybot))
+
+	# 2. Hai cột dọc Tây và Đông (liền kín)
+	for y in [530, 562, 594, 626]:
+		_add_sprite(fv, Vector2(x_left, y))
+		_add_sprite(fv, Vector2(x_right, y))
+
+	# 3. Hàng ngang Nam (liền kín)
+	for x in range(x_left + 32, x_right, 32):
+		_add_sprite(fh, Vector2(x, s_ybot))
+
+	# Va chạm Thửa Nam
+	_wall(Vector2(farm_mid_x, s_ybot), Vector2(farm_width, 10))
+	_wall(Vector2(x_left, (s_ytop + s_ybot) / 2.0), Vector2(10, s_ybot - s_ytop))
+	_wall(Vector2(x_right, (s_ytop + s_ybot) / 2.0), Vector2(10, s_ybot - s_ytop))
+	_wall(Vector2((x_left + 1016) / 2.0, s_ytop), Vector2(1016 - x_left, 10))
+	_wall(Vector2((1080 + x_right) / 2.0, s_ytop), Vector2(x_right - 1080, 10))
 
 
 func _add_sprite(tex: Texture2D, pos: Vector2, parent: Node = null) -> void:
@@ -2871,40 +2922,51 @@ func _clicktest_step() -> void:
 			_shot("auto_clicktest")
 		140:
 			# cửa NAM đã bị xoá: đi lên phải bị chặn
-			player.position = Vector2(648, 725)
+			player.position = Vector2(1048, 680)
 			player.facing = Vector2.UP
 			cam.reset_smoothing()
 			Input.action_press("move_up")
 		240:
 			Input.action_release("move_up")
 			print("FARMSOUTH player=", player.position,
-					" (kỳ vọng y > 685: cửa nam đã xoá, bị chặn)")
+					" (kỳ vọng y > 650: bị rào nam thửa Nam chặn)")
 		245:
-			# cửa TÂY: đi phải xuyên qua cửa vào ruộng
-			player.position = Vector2(350, 472)
+			# Đi trên đại lộ giữa 2 thửa ruộng
+			player.position = Vector2(700, 472)
 			player.facing = Vector2.RIGHT
 			cam.reset_smoothing()
 			Input.action_press("move_right")
 		395:
 			Input.action_release("move_right")
 			print("WESTDOOR player=", player.position,
-					" (kỳ vọng x > 450: qua cửa tây vào ruộng)")
+					" (kỳ vọng x > 850: đại lộ giữa 2 ruộng thông thoáng)")
 		400:
-			# test phím E: cày ô đất ngay phía trước
-			_press_interact()
-		440:
-			var t = farm.tile_at_world(player.get_facing_point())
-			print("ETEST tile_tstate=", (t.tstate if t != null else -1), " (kỳ vọng 1=TILLED)")
-		445:
-			# cửa ĐÔNG: đi trái xuyên qua cửa vào ruộng
-			player.position = Vector2(960, 472)
-			player.facing = Vector2.LEFT
+			# Thửa Bắc: đi vào qua cổng Nam (x=1048, y=446)
+			player.position = Vector2(1048, 465)
+			player.facing = Vector2.UP
 			cam.reset_smoothing()
-			Input.action_press("move_left")
+			Input.action_press("move_up")
+		435:
+			Input.action_release("move_up")
+		440:
+			# test cày ô đất ngay phía trước trong Thửa Bắc
+			Inventory.hoes = 5
+			player.facing = Vector2.UP
+			var fp: Vector2 = player.get_facing_point()
+			var t = farm.tile_at_world(fp)
+			if t != null:
+				farm.perform_at(t)
+			print("ETEST pos=", player.position, " fp=", fp, " tile_tstate=", (t.tstate if t != null else -1), " (kỳ vọng 1=TILLED)")
+		445:
+			# Thửa Nam: đi vào qua cổng Bắc (x=1048, y=498)
+			player.position = Vector2(1048, 480)
+			player.facing = Vector2.DOWN
+			cam.reset_smoothing()
+			Input.action_press("move_down")
 		595:
-			Input.action_release("move_left")
+			Input.action_release("move_down")
 			print("EASTDOOR player=", player.position,
-					" (kỳ vọng x < 850: qua cửa đông vào ruộng)")
+					" (kỳ vọng y > 505: vào thửa Nam qua cổng Bắc)")
 		600:
 			# cửa chuồng phía BẮC: đi xuống qua cửa vào trong
 			player.position = Vector2(304, 505)
@@ -2932,13 +2994,13 @@ func _clicktest_step() -> void:
 			print("PENWEST player=", player.position,
 					" (kỳ vọng x < 200: bị rào tây chặn)")
 		910:
-			# rào bắc ruộng: đi xuống bị chặn
-			player.position = Vector2(648, 330)
+			# rào bắc thửa Bắc: đi xuống bị chặn
+			player.position = Vector2(1048, 250)
 			Input.action_press("move_down")
 		985:
 			Input.action_release("move_down")
 			print("FARMTOP player=", player.position,
-					" (kỳ vọng y < 400: bị rào bắc ruộng chặn)")
+					" (kỳ vọng y < 295: bị rào bắc thửa Bắc chặn)")
 		988:
 			# test hòm thư bên cạnh nhà: kiểm tra sẵn 999 cuốc và 999 xu
 			player.position = MAILBOX_POS + Vector2(0, 15)
