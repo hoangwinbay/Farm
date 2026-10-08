@@ -1968,6 +1968,10 @@ func _enter_mine() -> void:
 		player.reparent(mine_manager)
 		world.process_mode = Node.PROCESS_MODE_DISABLED
 		world.visible = false
+		if is_instance_valid(weather_mgr):
+			weather_mgr.visible = false
+		if is_instance_valid(hud):
+			hud.set_underground(true)
 		mine_manager.process_mode = Node.PROCESS_MODE_PAUSABLE
 		mine_manager.enter_mine(1)
 		cam.limit_left = 0
@@ -1988,6 +1992,10 @@ func _on_exit_mine() -> void:
 		mine_manager.visible = false
 		world.process_mode = Node.PROCESS_MODE_PAUSABLE
 		world.visible = true
+		if is_instance_valid(weather_mgr):
+			weather_mgr.visible = true
+		if is_instance_valid(hud):
+			hud.set_underground(false)
 		player.position = MINE_ENTRANCE_POS + Vector2(32, 28)
 		cam.limit_left = 0
 		cam.limit_top = 0
@@ -2217,6 +2225,10 @@ func _do_sleep(forced: bool) -> void:
 			mine_manager.visible = false
 		world.process_mode = Node.PROCESS_MODE_PAUSABLE
 		world.visible = true
+		if is_instance_valid(weather_mgr):
+			weather_mgr.visible = true
+		if is_instance_valid(hud):
+			hud.set_underground(false)
 		player.position = HOUSE_POS + Vector2(15, 10)
 		cam.limit_left = 0
 		cam.limit_top = 0

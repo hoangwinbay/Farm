@@ -227,9 +227,17 @@ func _process(delta: float) -> void:
 			_overlay.queue_redraw()
 		return
 
-	# Tự động làm ẩm và tưới toàn bộ ruộng khi mưa
+	# Tự động làm ẩm và tưới toàn bộ ruộng ngoài trời khi mưa (vẫn tiếp tục tưới ruộng trên mặt đất)
 	if current_weather in [DRIZZLE, RAIN, STORM]:
 		_auto_water_farm_crops()
+
+	# Khi người chơi đang ở dưới hầm mỏ, tắt toàn bộ hiệu ứng hình ảnh (mưa, sét, lá bay) trên màn hình
+	if main_node.in_mine:
+		if _lightning_flash != null:
+			_lightning_flash.modulate.a = 0.0
+		if _overlay != null:
+			_overlay.queue_redraw()
+		return
 
 	# Cập nhật hạt mưa
 	if current_weather in [DRIZZLE, RAIN, STORM]:
@@ -328,6 +336,9 @@ func _update_storm_lightning(delta: float) -> void:
 
 
 func _trigger_lightning_strike() -> void:
+	if is_instance_valid(main_node) and main_node.in_mine:
+		return
+
 	# Chớp sáng màn hình cực đại
 	_lightning_alpha = 0.88
 	if _lightning_flash != null:
@@ -426,6 +437,8 @@ func _remove_ground_item(body: Node2D, world_pos: Vector2) -> void:
 
 func _on_overlay_draw() -> void:
 	if _overlay == null:
+		return
+	if is_instance_valid(main_node) and main_node.in_mine:
 		return
 
 	# 1. Vẽ các hạt mưa
