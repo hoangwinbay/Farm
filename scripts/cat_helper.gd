@@ -38,7 +38,7 @@ const ROAD_JUNCTION_POS := Vector2(656, 472)
 const SPAWN_POS := Vector2(370, 472)
 const TENT_SLEEP_POS := Vector2(766, 246)
 const SHED_DOOR_POS := Vector2(505, 258)
-const POND_REFILL_POS := Vector2(1410, 750)
+const POND_REFILL_POS := Vector2(1440, 730)
 const FARM_GATE_WEST := Vector2(824, 472)
 
 var state: int = State.ARRIVING

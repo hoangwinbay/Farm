@@ -117,8 +117,8 @@ const SCARECROW_NORTH_POS := Vector2(1048, 368) # bù nhìn rơm ở giữa Th�
 const SCARECROW_SOUTH_POS := Vector2(1048, 576) # bù nhìn rơm ở giữa Thửa Nam
 const SCARECROW_POS := SCARECROW_NORTH_POS      # bù nhìn rơm (tương thích)
 const PLAYER_START := Vector2(650, 470)
-const POND_RECT := Rect2(1304, 738, 272, 192)
-const FISH_SPOT_POS := Vector2(1447, 863)   # tâm hồ Stardew Valley — câu được ở MỌI bờ
+const POND_RECT := Rect2(1232, 720, 416, 368)
+const FISH_SPOT_POS := Vector2(1440, 880)   # tâm hồ Stardew Valley hình tròn tràn biên Nam
 
 # 4 Chuồng riêng biệt theo bố trí 2x2 chuẩn theo sơ đồ:
 # Top-Left: BÒ    | Top-Right: GÀ
@@ -449,15 +449,15 @@ func _build_world() -> void:
 
 	# ao cá tròn Stardew Valley: bờ đá phía bắc và mặt nước sâu
 	var cliff_body := StaticBody2D.new()
-	cliff_body.position = Vector2(1447, 794)
+	cliff_body.position = Vector2(1440, 765)
 	var cliff_col := CollisionShape2D.new()
 	var cliff_shape := RectangleShape2D.new()
-	cliff_shape.size = Vector2(176, 28)
+	cliff_shape.size = Vector2(200, 20)
 	cliff_col.shape = cliff_shape
 	cliff_body.add_child(cliff_col)
 	world.add_child(cliff_body)
 
-	_add_ellipse_wall(FISH_SPOT_POS, 85, 48)
+	_add_ellipse_wall(Vector2(1440, 900), 160.0, 140.0)
 
 	# khu chuồng nuôi: hàng rào + nhà chuồng + nơi con vật đứng
 	_build_pen()
@@ -478,7 +478,7 @@ func _build_world() -> void:
 		{"pos": PEN_CHICKEN.get_center(), "r": 85.0, "label": "Chuồng Gà", "cb": func(): _interact_pen("chicken")},
 		{"pos": PEN_SHEEP.get_center(), "r": 85.0, "label": "Chuồng Cừu", "cb": func(): _interact_pen("sheep")},
 		{"pos": PEN_PIG.get_center(), "r": 85.0, "label": "Chuồng Lợn", "cb": func(): _interact_pen("pig")},
-		{"pos": FISH_SPOT_POS, "r": 150.0, "label": "Câu cá", "cb": _start_fishing},
+		{"pos": FISH_SPOT_POS, "r": 180.0, "label": "Câu cá", "cb": _start_fishing},
 	]
 
 
