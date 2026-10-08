@@ -280,6 +280,17 @@ func _hit_rock(rock_data: Dictionary) -> void:
 			main_game.hud.toast("Cần có Cúp khai mỏ để đập đá! (Nói chuyện với Leah)", Color(1.0, 0.6, 0.5))
 		return
 
+	var cost: float = 2.0
+	if main_game != null and main_game.has_method("_get_action_stamina_cost"):
+		cost = main_game._get_action_stamina_cost("mine")
+
+	if GameState.stamina < cost:
+		if main_game != null and main_game.hud != null:
+			main_game.hud.toast("Bạn đã kiệt sức! Hãy ăn nông sản hoặc thịt (phím F hoặc I) để hồi thể lực ⚡", Color(1.0, 0.45, 0.35))
+		return
+
+	GameState.use_stamina(cost)
+
 	var power: int = Inventory.get_pickaxe_power()
 	rock_data.hits_left = int(rock_data.hits_left) - power
 

@@ -1715,6 +1715,7 @@ func _get_action_stamina_cost(act: String) -> float:
 		"plant": return 1.0
 		"harvest": return 1.5
 		"catch_pest": return 1.0
+		"mine": return 2.0
 	return 0.0
 
 
@@ -3423,6 +3424,46 @@ func _clicktest_step() -> void:
 					" ready=", ready_harvest, " stands_still=", stands_still,
 					" harvest_bubble=", harvest_bubble_visible, " prod=", prod_ok,
 					" feed_again=", (can_feed_immediately and feed_again_ok))
+
+			# Test: Đi lại trừ thể lực rất ít & Đập đá trong mỏ trừ thể lực
+			GameState.stamina = 100.0
+			# 1. Đi lại
+			player._is_acting = false
+			player.can_move = true
+			player.position = Vector2(500, 300)
+			Input.action_press("move_right")
+			player._physics_process(0.6)
+			player._physics_process(0.5)
+			Input.action_release("move_right")
+			var walk_stamina_ok: bool = (GameState.stamina < 100.0 and GameState.stamina >= 99.8)
+
+			# 2. Đập đá
+			Inventory.add_pickaxe("basic")
+			var mock_rock_body := StaticBody2D.new()
+			var mock_rock_spr := Sprite2D.new()
+			mock_rock_body.add_child(mock_rock_spr)
+			world.add_child(mock_rock_body)
+			var mock_rock: Dictionary = {
+				"body": mock_rock_body,
+				"spr": mock_rock_spr,
+				"type": "stone",
+				"hits_left": 2,
+				"pos_tile": Vector2i(10, 10)
+			}
+			var stam_before_hit := GameState.stamina
+			mine_manager._hit_rock(mock_rock)
+			var hit_stamina_ok: bool = (is_equal_approx(GameState.stamina, stam_before_hit - 2.0))
+			var rock_damaged: bool = (int(mock_rock.hits_left) == 1)
+
+			# 3. Kiệt sức không đập được
+			GameState.stamina = 1.0
+			mine_manager._hit_rock(mock_rock)
+			var exhausted_prevented: bool = (int(mock_rock.hits_left) == 1 and is_equal_approx(GameState.stamina, 1.0))
+			mock_rock_body.queue_free()
+
+			print("MINING_AND_WALKING_STAMINA_TEST walk_ok=", walk_stamina_ok,
+					" hit_ok=", hit_stamina_ok, " rock_damaged=", rock_damaged,
+					" exhausted_prevented=", exhausted_prevented)
 
 			print("CLICKTEST_DONE")
 			get_tree().quit()
