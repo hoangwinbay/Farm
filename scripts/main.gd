@@ -939,8 +939,8 @@ func _random_foliage_type(rng: RandomNumberGenerator) -> String:
 
 
 func _is_grass_surface(pos: Vector2) -> bool:
-	# 1. Giới hạn biên bản đồ
-	if pos.x < 45.0 or pos.x > WORLD_SIZE.x - 45.0 or pos.y < 50.0 or pos.y > WORLD_SIZE.y - 50.0:
+	# 1. Giới hạn biên bản đồ (phía Bắc chừa khoảng cho vách núi nhô lên cao 96px)
+	if pos.x < 45.0 or pos.x > WORLD_SIZE.x - 45.0 or pos.y < 105.0 or pos.y > WORLD_SIZE.y - 50.0:
 		return false
 
 	# 2. Toàn bộ mạng lưới đường đi (PATHS) + hành lang an toàn 28px
@@ -1177,7 +1177,8 @@ func _add_sprite(tex: Texture2D, pos: Vector2, parent: Node = null) -> void:
 
 func _build_walls() -> void:
 	var t := 40.0
-	_wall(Vector2(WORLD_SIZE.x / 2, -t / 2), Vector2(WORLD_SIZE.x + t * 2, t))
+	# Chặn biên Bắc tại chân vách núi Stardew Valley (y = 80px)
+	_wall(Vector2(WORLD_SIZE.x / 2, 20.0), Vector2(WORLD_SIZE.x + t * 2, 120.0))
 	_wall(Vector2(WORLD_SIZE.x / 2, WORLD_SIZE.y + t / 2), Vector2(WORLD_SIZE.x + t * 2, t))
 	_wall(Vector2(-t / 2, WORLD_SIZE.y / 2), Vector2(t, WORLD_SIZE.y + t * 2))
 	_wall(Vector2(WORLD_SIZE.x + t / 2, WORLD_SIZE.y / 2), Vector2(t, WORLD_SIZE.y + t * 2))

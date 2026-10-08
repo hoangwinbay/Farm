@@ -377,6 +377,7 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 				protected[py][px] = true
 
 	# Bảo vệ các công trình, ruộng đồng, 4 khu chuồng trại & đường đá, khu chợ, ao hồ, hầm mỏ và đường đi
+	protect_rect.call(0.0, 0.0, float(w), 100.0, 0) # Rặng vách núi nhô lên biên phía Bắc
 	protect_rect.call(farm_rect.position.x, farm_rect.position.y, farm_rect.size.x, farm_rect.size.y, 2)
 	protect_rect.call(641.0 - 72.0, 248.0 - 144.0, 160.0, 160.0, 2) # Nhà gỗ & hiên
 	protect_rect.call(240.0, 520.0, 540.0, 360.0, 2) # 4 khu chuồng gia cầm, gia súc & lối đi lát đá
@@ -637,6 +638,11 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 	if pond_img != null:
 		var px_pos := Vector2i(int(pond.position.x), int(pond.position.y))
 		img.blend_rect(pond_img, Rect2i(Vector2i.ZERO, pond_img.get_size()), px_pos)
+
+	# Rặng vách núi nhô lên biên phía Bắc (chuẩn địa hình Stardew Valley)
+	var cliff_img := _load_picture("res://picture/sdv_north_cliff.png")
+	if cliff_img != null:
+		img.blend_rect(cliff_img, Rect2i(Vector2i.ZERO, cliff_img.get_size()), Vector2i.ZERO)
 
 	var tex := _tex(img)
 	_cache[key] = tex
