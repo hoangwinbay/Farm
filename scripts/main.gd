@@ -32,6 +32,7 @@ const QuestPanelScript := preload("res://scripts/ui/quest_panel.gd")
 const QuestDB := preload("res://scripts/quest_db.gd")
 const OreDB := preload("res://scripts/ore_db.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
+const PenAnimal := preload("res://scripts/pen_animal.gd")
 
 const WORLD_SIZE := Vector2(1900, 1000)
 const FARM_ORIGIN := Vector2(824, 384)
@@ -166,6 +167,7 @@ var quest_mgr: Node
 var mine_manager: Node2D
 var in_mine: bool = false
 var pen_node: Node2D
+var active_pen_animals: Array = []
 var cam: Camera2D
 var ground: Sprite2D
 var canvas_mod: CanvasModulate
@@ -436,10 +438,10 @@ func _build_world() -> void:
 		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư", "cb": _talk_npc},
 		{"pos": CHU_HAI_POS, "r": 60.0, "label": "Chú Hai", "cb": _talk_hai},
 		{"pos": COTU_POS, "r": 60.0, "label": "Cô Tư", "cb": _talk_tu},
-		{"pos": PEN_COW.get_center(), "r": 85.0, "label": "Thu hoạch", "cb": func(): _collect_pen_products("cow")},
-		{"pos": PEN_CHICKEN.get_center(), "r": 85.0, "label": "Thu hoạch", "cb": func(): _collect_pen_products("chicken")},
-		{"pos": PEN_SHEEP.get_center(), "r": 85.0, "label": "Thu hoạch", "cb": func(): _collect_pen_products("sheep")},
-		{"pos": PEN_PIG.get_center(), "r": 85.0, "label": "Thu hoạch", "cb": func(): _collect_pen_products("pig")},
+		{"pos": PEN_COW.get_center(), "r": 85.0, "label": "Chuồng Bò", "cb": func(): _interact_pen("cow")},
+		{"pos": PEN_CHICKEN.get_center(), "r": 85.0, "label": "Chuồng Gà", "cb": func(): _interact_pen("chicken")},
+		{"pos": PEN_SHEEP.get_center(), "r": 85.0, "label": "Chuồng Cừu", "cb": func(): _interact_pen("sheep")},
+		{"pos": PEN_PIG.get_center(), "r": 85.0, "label": "Chuồng Lợn", "cb": func(): _interact_pen("pig")},
 		{"pos": FISH_SPOT_POS, "r": 150.0, "label": "Câu cá", "cb": _start_fishing},
 	]
 
@@ -503,6 +505,7 @@ func _build_pen() -> void:
 func _rebuild_pen() -> void:
 	if pen_node == null:
 		return
+	active_pen_animals.clear()
 	for c in pen_node.get_children():
 		c.queue_free()
 
@@ -615,7 +618,7 @@ func _rebuild_pen() -> void:
 			if tier >= 2:
 				_add_sprite(TextureGen.get_tex("hay_bale"), Vector2(rx + 168, ry + 40), pen_node)
 
-		# 4. Các con vật thuộc loài này đứng trong chuồng
+		# 4. Các con vật thuộc loài này di chuyển và ăn trong chuồng
 		var species_animals: Array = []
 		for a in Inventory.animals:
 			if PoultryDB.get_canonical_id(str(a.id)) == sid:
@@ -634,58 +637,11 @@ func _rebuild_pen() -> void:
 		for idx in species_animals.size():
 			var a: Dictionary = species_animals[idx]
 			var spot: Vector2 = anim_spots[idx % anim_spots.size()] + Vector2(rng.randf_range(-5, 5), rng.randf_range(-3, 3))
-			var animal_node := Node2D.new()
+			var animal_node := PenAnimal.new()
 			animal_node.position = spot
+			animal_node.setup(sid, a, idx, r, Vector2(rx + 126, ry + 40))
 			pen_node.add_child(animal_node)
-
-			var is_baby: bool = bool(a.get("is_baby", false))
-			var is_sheared: bool = bool(a.get("is_sheared", false))
-			var tex: Texture2D = TextureGen.get_animal_tex(sid, is_baby, is_sheared)
-			if tex == null:
-				tex = TextureGen.get_animal_icon(sid, is_baby, is_sheared)
-
-			var spr := Sprite2D.new()
-			spr.texture = tex
-			spr.hframes = int(d.get("hframes", 4))
-			spr.vframes = int(d.get("baby_vframes", 5) if is_baby else d.get("vframes", 5))
-
-			if sid == "chicken":
-				spr.scale = Vector2(1.2, 1.2) if is_baby else Vector2(1.6, 1.6)
-			else:
-				spr.scale = Vector2(1.0, 1.0) if is_baby else Vector2(1.4, 1.4)
-
-			var base_frame: int = [0, 4][rng.randi() % 2]
-			spr.frame = base_frame
-			animal_node.add_child(spr)
-
-			# Chuyển động / mổ thóc tự nhiên
-			var atw := animal_node.create_tween().set_loops()
-			var delay := rng.randf_range(0.4, 2.5)
-			atw.tween_interval(delay)
-			atw.tween_property(spr, "position:y", 1.5, 0.15)
-			atw.tween_callback(func():
-				if is_instance_valid(spr):
-					spr.frame = base_frame + 1
-			)
-			atw.tween_interval(0.12)
-			atw.tween_property(spr, "position:y", 0.0, 0.15)
-			atw.tween_callback(func():
-				if is_instance_valid(spr):
-					spr.frame = base_frame
-			)
-			atw.tween_interval(rng.randf_range(1.5, 3.5))
-
-			# Bong bóng sản phẩm trên đầu từng con vật khi sẵn sàng thu hoạch (KHÔNG CHỮ)
-			if not is_baby and int(a.get("ready", 0)) > 0:
-				var animal_bubble := Sprite2D.new()
-				animal_bubble.texture = TextureGen.get_harvest_bubble(str(d.product))
-				animal_bubble.scale = Vector2(1.0, 1.0)
-				animal_bubble.position = Vector2(0, -22 if sid != "chicken" else -18)
-				animal_node.add_child(animal_bubble)
-
-				var btw := animal_bubble.create_tween().set_loops()
-				btw.tween_property(animal_bubble, "position:y", animal_bubble.position.y - 3.0, 0.5).set_trans(Tween.TRANS_SINE)
-				btw.tween_property(animal_bubble, "position:y", animal_bubble.position.y, 0.5).set_trans(Tween.TRANS_SINE)
+			active_pen_animals.append(animal_node)
 
 		# 5. Biểu tượng thu hoạch chung nổi trên chuồng khi có sản phẩm (KHÔNG ĐƯỢC CÓ CHỮ GÌ THÊM)
 		var ready_count := Inventory.ready_products_for_species(sid)
@@ -749,6 +705,7 @@ func _default_mailbox_data() -> Dictionary:
 	return {
 		"hoes": 999,
 		"coins": 9999,
+		"feed": 30,
 		"produce": {
 			"tomato": 50,
 			"corn": 50,
@@ -1310,7 +1267,8 @@ func _process(delta: float) -> void:
 		_debug_step()
 	if _clicktest != "":
 		_clicktest_step()
-	minimap.visible = (mode == Mode.PLAY) and (not in_mine)
+	if minimap != null:
+		minimap.visible = (mode == Mode.PLAY) and (not in_mine)
 	if touch_ui != null:
 		touch_ui.visible = mode == Mode.PLAY
 	if mode != Mode.PLAY or get_tree().paused:
@@ -1537,8 +1495,14 @@ func _update_hint_and_highlight() -> void:
 				var sid: String = str(pcfg.id)
 				var r_count := Inventory.ready_products_for_species(sid)
 				var cname: String = str(pcfg.name)
+				var hungry_count := Inventory.hungry_animals_for_species(sid)
 				if r_count > 0:
-					lbl = "Thu hoạch %s (%d)" % [cname, r_count]
+					lbl = "Thu hoạch %s (%d) ⭐" % [cname, r_count]
+				elif hungry_count > 0:
+					if Inventory.feed_count() > 0:
+						lbl = "Cho %s ăn 🌾 (%d con đói · Cám x%d)" % [cname, hungry_count, Inventory.feed_count()]
+					else:
+						lbl = "%s (Đói · Cần mua Túi Cám ở Cửa Hàng)" % cname
 				else:
 					var tier := Inventory.get_coop_tier(sid)
 					if tier == 0:
@@ -1615,18 +1579,50 @@ func _nearest_interactable() -> Dictionary:
 					"label": "%s · [E] Báo hết hàng" % c.display_name,
 					"cb": func(): _decline_stall_customer(c)
 				}
-	# Kiểm tra chú mèo tam thể làm nông
-	if is_instance_valid(cat_helper):
-		var d_cat: float = player.position.distance_to(cat_helper.position)
-		if d_cat <= 45.0 and d_cat < best_d:
-			best_d = d_cat
-			var cat_lbl := "Nói chuyện với Mèo Tam Thể 🐱" if not cat_helper.is_hired else "Quản lý việc làm của Mèo 🐱"
-			best = {
-				"pos": cat_helper.position,
-				"r": 45.0,
-				"label": cat_lbl,
-				"cb": _open_cat_panel
-			}
+	# Kiểm tra từng con vật trong chuồng (cho ăn / thu hoạch trực tiếp)
+	for anim in active_pen_animals:
+		if is_instance_valid(anim):
+			var d_anim: float = player.position.distance_to(anim.position)
+			if d_anim <= 42.0 and d_anim < best_d:
+				best_d = d_anim
+				var aname: String = anim.get_animal_name()
+				if anim.is_ready():
+					best = {
+						"pos": anim.position,
+						"r": 42.0,
+						"label": "Thu hoạch %s (%s) ⭐" % [aname, anim.get_product_name()],
+						"cb": func(): _harvest_single_animal(anim)
+					}
+				elif not anim.is_fed():
+					if Inventory.feed_count() > 0:
+						best = {
+							"pos": anim.position,
+							"r": 42.0,
+							"label": "Cho %s ăn 🌾 (Cám x%d)" % [aname, Inventory.feed_count()],
+							"cb": func(): _feed_single_animal(anim)
+						}
+					else:
+						best = {
+							"pos": anim.position,
+							"r": 42.0,
+							"label": "Cho %s ăn 🌾 (Cần mua Túi Cám ở Cửa Hàng)" % aname,
+							"cb": func(): hud.toast("Bạn cần mua Túi Cám ở tiệm Cô Tư để cho ăn!", Color(1.0, 0.65, 0.4))
+						}
+				elif anim.state == PenAnimal.State.EATING or anim.state == PenAnimal.State.WALK_TO_TROUGH:
+					best = {
+						"pos": anim.position,
+						"r": 42.0,
+						"label": "%s (Đang ăn trong máng 🌾)" % aname,
+						"cb": func(): pass
+					}
+				else:
+					var rem: int = int(ceil(anim.get_remaining_wait_time()))
+					best = {
+						"pos": anim.position,
+						"r": 42.0,
+						"label": "%s (Đang lớn... còn %ds) ⏳" % [aname, rem],
+						"cb": func(): pass
+					}
 	return best
 
 
@@ -2084,6 +2080,52 @@ func _collect_products() -> void:
 			quest_mgr.advance_progress("poultry", "trung_ga", n)
 	else:
 		hud.toast("Chưa có sản phẩm nào chờ thu...", Color(0.8, 0.8, 0.8))
+
+
+func _interact_pen(species_id: String) -> void:
+	var r_count := Inventory.ready_products_for_species(species_id)
+	if r_count > 0:
+		_collect_pen_products(species_id)
+		return
+	var hungry_count := Inventory.hungry_animals_for_species(species_id)
+	if hungry_count > 0:
+		if Inventory.feed_count() > 0:
+			var fed := Inventory.feed_all_hungry_for_species(species_id)
+			if fed > 0:
+				var c := PoultryDB.get_coop_data(species_id)
+				hud.toast("Đã cho %d con ở %s ăn 🌾! Chúng đang tiến tới máng ăn." % [fed, c.get("name", "Chuồng")], Color(1.0, 0.9, 0.4))
+				for anim in active_pen_animals:
+					if is_instance_valid(anim) and anim.species_id == species_id and anim.is_fed() and anim.state != PenAnimal.State.EATING:
+						anim.target_pos = anim.get_trough_eating_spot()
+						anim.state = PenAnimal.State.WALK_TO_TROUGH
+						anim._play_heart_effect()
+		else:
+			hud.toast("Bạn cần mua Túi Cám ở Cửa Hàng Cô Tư để cho ăn!", Color(1.0, 0.65, 0.4))
+		return
+	_collect_pen_products(species_id)
+
+
+func _harvest_single_animal(anim: PenAnimal) -> void:
+	if not is_instance_valid(anim):
+		return
+	var prod_id := anim.harvest()
+	if prod_id != "":
+		var d := PoultryDB.get_animal(anim.species_id)
+		var pname := str(d.get("product_name", "sản phẩm"))
+		hud.toast("Đã thu hoạch 1 %s từ %s! 🧺 (Có thể cho ăn tiếp ngay)" % [pname, anim.get_animal_name()], Color(1.0, 0.92, 0.55))
+		if quest_mgr != null:
+			quest_mgr.advance_progress("poultry", "any", 1)
+			quest_mgr.advance_progress("poultry", prod_id, 1)
+
+
+func _feed_single_animal(anim: PenAnimal) -> void:
+	if not is_instance_valid(anim):
+		return
+	if Inventory.feed_count() <= 0:
+		hud.toast("Bạn cần mua Túi Cám ở Cửa Hàng để cho ăn!", Color(1.0, 0.65, 0.4))
+		return
+	if anim.feed():
+		hud.toast("Đã cho %s ăn 1 Túi Cám! Đang đi tới máng ăn 🌾 (Cám còn: ×%d)" % [anim.get_animal_name(), Inventory.feed_count()], Color(1.0, 0.92, 0.45))
 
 
 func _open_inventory() -> void:
@@ -2718,6 +2760,8 @@ func _debug_grow() -> void:
 	print("POULTRY mua gà 1: '", Inventory.buy_animal("chicken"), "' (kỳ vọng trống)")
 	print("POULTRY mua gà 2: '", Inventory.buy_animal("chicken"), "' (trống)")
 	print("POULTRY mua bò (không có chuồng lớn): '", Inventory.buy_animal("cow"), "'")
+	Inventory.add_feed(10)
+	Inventory.feed_all_hungry_for_species("chicken")
 	Inventory.tick_animals(95)
 	var got: int = Inventory.collect_products()
 	print("POULTRY thu sau 95s = ", got, " trứng gà (kỳ vọng 2)")
@@ -3295,6 +3339,52 @@ func _clicktest_step() -> void:
 			print("WEATHER_SYSTEM_TEST sunny=", w_sunny_ok, " rain_water=", w_rain_watered,
 					" storm=", w_storm_ok, " windy=", w_windy_ok, " drizzle=", w_drizzle_ok,
 					" saved=", w_saved_ok)
+
+			# 10. Kiểm thử Hệ thống Cho Động Vật Ăn Cám & Thu Hoạch
+			var f_icon_ok: bool = (TextureGen.get_feed_icon() != null and TextureGen.get_feed_icon().get_width() > 0)
+			var f_bubble_ok: bool = (TextureGen.get_feed_bubble() != null and TextureGen.get_feed_bubble().get_width() > 0)
+			var prev_feed_count: int = Inventory.feed_count()
+			Inventory.add_feed(5)
+			var feed_added_ok: bool = (Inventory.feed_count() == prev_feed_count + 5)
+			Inventory.coop_tiers["chicken"] = 1
+			Inventory.buy_animal("chicken")
+			_rebuild_pen()
+			var test_anim: PenAnimal = null
+			for pa in active_pen_animals:
+				if pa.species_id == "chicken":
+					test_anim = pa
+					break
+			var anim_found: bool = (test_anim != null)
+			test_anim._process(0.016)
+			var hungry_bubble_ok: bool = (test_anim.bubble_spr.visible and not test_anim.is_fed())
+			var feed_before: int = Inventory.feed_count()
+			var feed_act_ok: bool = test_anim.feed()
+			var feed_decremented: bool = (Inventory.feed_count() == feed_before - 1)
+			var walking_to_trough: bool = (test_anim.state == PenAnimal.State.WALK_TO_TROUGH)
+			test_anim.position = test_anim.target_pos
+			test_anim._process(0.016)
+			var eating_at_trough: bool = (test_anim.state == PenAnimal.State.EATING)
+			test_anim.eating_timer = 0.0
+			test_anim._process(0.016)
+			var idle_after_eating: bool = (test_anim.state == PenAnimal.State.IDLE)
+			Inventory.tick_animals(25.0)
+			test_anim._process(0.016)
+			var ready_harvest: bool = (test_anim.state == PenAnimal.State.READY)
+			var stands_still: bool = (test_anim.velocity == Vector2.ZERO)
+			var harvest_bubble_visible: bool = test_anim.bubble_spr.visible
+			var prod_harvested: String = test_anim.harvest()
+			var prod_ok: bool = (prod_harvested == "trung_ga")
+			test_anim._process(0.016)
+			var can_feed_immediately: bool = (not test_anim.is_fed() and test_anim.bubble_spr.visible)
+			var feed_again_ok: bool = test_anim.feed()
+
+			print("ANIMAL_FEEDING_HARVEST_TEST icon=", f_icon_ok, " bubble=", f_bubble_ok,
+					" feed_inv=", (feed_added_ok and feed_decremented), " anim_found=", anim_found,
+					" hungry_bubble=", hungry_bubble_ok, " to_trough=", walking_to_trough,
+					" eating=", eating_at_trough, " idle=", idle_after_eating,
+					" ready=", ready_harvest, " stands_still=", stands_still,
+					" harvest_bubble=", harvest_bubble_visible, " prod=", prod_ok,
+					" feed_again=", (can_feed_immediately and feed_again_ok))
 
 			print("CLICKTEST_DONE")
 			get_tree().quit()

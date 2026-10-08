@@ -160,6 +160,8 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _market_stall()
 		"stall_shadow":
 			tex = _stall_shadow()
+		"shadow":
+			tex = shadow_tex()
 		"scarecrow":
 			tex = _scarecrow()
 		"coop":
@@ -180,6 +182,8 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _trough()
 		"water_trough":
 			tex = _water_trough()
+		"feed", "feed_bag":
+			tex = get_feed_icon()
 		"hay_bale":
 			tex = _hay_bale()
 		"nest_box":
@@ -1267,6 +1271,13 @@ static func _stall_shadow() -> ImageTexture:
 	ellipse(img, 60, 16, 44, 9, shadow)
 	ellipse(img, 18, 18, 13, 7, shadow)
 	ellipse(img, 102, 18, 17, 8, shadow)
+	return _tex(img)
+
+
+static func shadow_tex() -> ImageTexture:
+	var img := _img(20, 10)
+	var shadow := Color(0.0, 0.0, 0.0, 0.45)
+	ellipse(img, 10, 5, 8, 4, shadow)
 	return _tex(img)
 
 
@@ -3267,6 +3278,69 @@ static func get_harvest_bubble(prod_id: String) -> Texture2D:
 			var off_x := int(13 - pw / 2.0)
 			var off_y := int(11 - ph / 2.0)
 			img.blend_rect(prod_img, Rect2i(0, 0, pw, ph), Vector2i(off_x, off_y))
+
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+# Icon túi cám Stardew Valley (lấy từ springobjects sprite index 246 hoặc res://picture/feed_bag.png)
+static func get_feed_icon() -> ImageTexture:
+	var key := "feed_icon"
+	if _cache.has(key):
+		return _cache[key]
+	var loaded := _load_picture("res://picture/feed_bag.png")
+	if loaded != null:
+		var tex := _tex(loaded)
+		_cache[key] = tex
+		return tex
+	var sp := springobject_icon(246)
+	if sp != null:
+		_cache[key] = sp
+		return sp
+	var img := _img(16, 16)
+	var bag_c := Color(0.76, 0.58, 0.38)
+	var tie_c := Color(0.85, 0.25, 0.25)
+	rect(img, 4, 5, 8, 9, bag_c)
+	rect(img, 5, 3, 6, 2, tie_c)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+# Bong bóng suy nghĩ túi cám khi vật nuôi đói (chuẩn Stardew Valley)
+static func get_feed_bubble() -> Texture2D:
+	var key := "feed_bubble"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(26, 26)
+	# Bóng đổ mờ phía dưới
+	circle(img, 13.0, 13.0, 11.5, Color(0.10, 0.08, 0.05, 0.45))
+	# Viền ngoài nâu ấm sắc nét
+	circle(img, 13.0, 11.0, 11.0, Color(0.24, 0.16, 0.08, 0.95))
+	# Nền bong bóng trắng sáng
+	circle(img, 13.0, 11.0, 9.5, Color(1.0, 1.0, 1.0, 0.95))
+	# Điểm sáng bóng viền trên trái
+	circle(img, 9.5, 7.5, 3.0, Color(1.0, 1.0, 1.0, 1.0))
+	# Đuôi bong bóng chỉ xuống con vật
+	px(img, 11, 21, Color(0.24, 0.16, 0.08, 0.95))
+	px(img, 12, 21, Color(1.0, 1.0, 1.0, 0.95))
+	px(img, 13, 21, Color(1.0, 1.0, 1.0, 0.95))
+	px(img, 14, 21, Color(0.24, 0.16, 0.08, 0.95))
+	px(img, 12, 22, Color(0.24, 0.16, 0.08, 0.95))
+	px(img, 13, 22, Color(1.0, 1.0, 1.0, 0.95))
+	px(img, 13, 23, Color(0.24, 0.16, 0.08, 0.95))
+
+	# Ghép icon túi cám 16x16 vào chính giữa bong bóng (tâm tại 13, 11)
+	var feed_tex := get_feed_icon()
+	if feed_tex != null:
+		var feed_img: Image = feed_tex.get_image()
+		if feed_img != null:
+			var pw := mini(16, feed_img.get_width())
+			var ph := mini(16, feed_img.get_height())
+			var off_x := int(13 - pw / 2.0)
+			var off_y := int(11 - ph / 2.0)
+			img.blend_rect(feed_img, Rect2i(0, 0, pw, ph), Vector2i(off_x, off_y))
 
 	var tex := _tex(img)
 	_cache[key] = tex

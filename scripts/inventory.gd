@@ -23,6 +23,7 @@ var coops: Dictionary = {"small": 0, "large": 0}  # legacy
 var coop_tiers: Dictionary = {"chicken": 0, "cow": 0, "pig": 0, "sheep": 0}  # Cấp chuồng: 0=chưa mua, 1=cấp 1 (chứa 2), 2=cấp 2 (chứa 4)
 var animals: Array = []  # [{id, progress, ready, is_baby, grow_progress, is_sheared}]
 var breed_timers: Dictionary = {}  # species_id -> thời gian ghép đôi sinh sản
+var feed: int = 0  # Túi cám Stardew Valley cho gia súc, gia cầm
 var backpack_max: int = 12
 var storage: Dictionary = {"seeds": {}, "produce": {}, "fish": {}, "ores": {}}
 
@@ -39,6 +40,7 @@ func reset() -> void:
 	active_item = {"type": "hoe"}
 	rods = {}
 	fish = {}
+	feed = 0
 	coops = {"small": 0, "large": 0}
 	coop_tiers = {"chicken": 0, "cow": 0, "pig": 0, "sheep": 0}
 	animals = []
@@ -46,6 +48,23 @@ func reset() -> void:
 	backpack_max = 12
 	storage = {"seeds": {}, "produce": {}, "fish": {}, "ores": {}}
 	changed.emit()
+
+
+func feed_count() -> int:
+	return feed
+
+
+func add_feed(n: int = 1) -> void:
+	feed += n
+	changed.emit()
+
+
+func take_feed(n: int = 1) -> bool:
+	if feed >= n:
+		feed -= n
+		changed.emit()
+		return true
+	return false
 
 
 func add_seed(id: String, n: int = 1) -> void:
@@ -188,11 +207,16 @@ func backpack_slots_used() -> int:
 	for k in ores:
 		if int(ores[k]) > 0:
 			slots += 1
+	if feed > 0:
+		slots += 1
 	return slots
 
 
 func can_hold(category: String, id: String) -> bool:
 	match category:
+		"feed", "cam":
+			if feed > 0:
+				return true
 		"seed", "seeds":
 			if seed_count(id) > 0:
 				return true
@@ -221,6 +245,8 @@ func can_hold(category: String, id: String) -> bool:
 
 func _normalize_cat(category: String) -> String:
 	match category:
+		"feed", "cam":
+			return "feed"
 		"seed", "seeds":
 			return "seeds"
 		"produce", "crop", "poultry":
@@ -558,6 +584,7 @@ func buy_animal(id: String) -> String:
 		"id": canon_id,
 		"progress": 0.0,
 		"ready": 0,
+		"fed": false,
 		"is_baby": false,
 		"grow_progress": 0.0,
 		"is_sheared": false,
@@ -568,7 +595,7 @@ func buy_animal(id: String) -> String:
 
 # Đồng hồ chăn nuôi:
 # - Con non: lớn dần theo thời gian (grow_progress >= GROW_TIME thì thành con lớn)
-# - Con lớn: tích lũy sản phẩm (gà ra trứng, bò ra sữa, lợn ra thịt, cừu ra lông)
+# - Con lớn: sau khi được cho ăn cám (fed == true), tiến hành tích lũy để ra sản phẩm
 # - Ghép đôi: nuôi từ 2 con lớn cùng loài trở lên, đủ thời gian sẽ sinh ra con non baby!
 func tick_animals(delta: float) -> void:
 	var had_change := false
@@ -586,15 +613,20 @@ func tick_animals(delta: float) -> void:
 			if a.grow_progress >= PoultryDB.GROW_TIME:
 				a.is_baby = false
 				a.grow_progress = 0.0
+				a.fed = false
 				had_change = true
 			continue
 
-		# Con trưởng thành: sản xuất sản phẩm
-		if int(a.ready) < PoultryDB.READY_CAP:
-			a.progress = float(a.progress) + delta
-			if a.progress >= float(d.interval):
+		# Con trưởng thành:
+		# CHỈ sản xuất sản phẩm sau khi đã được cho ăn (fed == true) và chưa có sản phẩm sẵn sàng
+		var is_fed: bool = bool(a.get("fed", false))
+		var is_ready: bool = int(a.get("ready", 0)) > 0
+		if is_fed and not is_ready:
+			a.progress = float(a.get("progress", 0.0)) + delta
+			var interval: float = float(d.get("interval", 25.0))
+			if a.progress >= interval:
 				a.progress = 0.0
-				a.ready = int(a.ready) + 1
+				a.ready = 1
 				# Cừu khi mọc lại bộ lông đầy đặn
 				if canon_id == "sheep":
 					a.is_sheared = false
@@ -621,6 +653,7 @@ func tick_animals(delta: float) -> void:
 						"grow_progress": 0.0,
 						"progress": 0.0,
 						"ready": 0,
+						"fed": false,
 						"is_sheared": false,
 					})
 					baby_born.emit(sid, str(d.name))
@@ -646,6 +679,67 @@ func ready_products_for_species(species_id: String) -> int:
 	return n
 
 
+func hungry_animals_for_species(species_id: String) -> int:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	var n := 0
+	for a in animals:
+		if PoultryDB.get_canonical_id(str(a.id)) == sid:
+			if not bool(a.get("fed", false)) and int(a.get("ready", 0)) == 0:
+				n += 1
+	return n
+
+
+# Cho 1 con cụ thể ăn cám
+func feed_animal_by_dict(a: Dictionary) -> bool:
+	if bool(a.get("fed", false)) or int(a.get("ready", 0)) > 0:
+		return false
+	if not take_feed(1):
+		return false
+	a["fed"] = true
+	a["progress"] = 0.0
+	changed.emit()
+	return true
+
+
+# Cho tất cả các con đang đói trong chuồng ăn
+func feed_all_hungry_for_species(species_id: String) -> int:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	var fed_cnt := 0
+	for a in animals:
+		if PoultryDB.get_canonical_id(str(a.get("id", ""))) == sid:
+			if not bool(a.get("fed", false)) and int(a.get("ready", 0)) == 0:
+				if take_feed(1):
+					a["fed"] = true
+					a["progress"] = 0.0
+					fed_cnt += 1
+				else:
+					break
+	if fed_cnt > 0:
+		changed.emit()
+	return fed_cnt
+
+
+# Thu hoạch 1 con cụ thể: ngay lập tức có thể cho ăn tiếp!
+func collect_animal_by_dict(a: Dictionary) -> String:
+	if int(a.get("ready", 0)) <= 0:
+		return ""
+	var canon_id := PoultryDB.get_canonical_id(str(a.get("id", "")))
+	var d := PoultryDB.get_animal(canon_id)
+	if d.is_empty():
+		return ""
+	var prod_id := str(d.product)
+	if not can_hold("produce", prod_id):
+		return ""
+	a["ready"] = 0
+	a["fed"] = false  # Thu hoạch xong ngay lập tức có thể cho ăn tiếp!
+	a["progress"] = 0.0
+	if canon_id == "sheep":
+		a["is_sheared"] = true
+	add_produce(prod_id, 1)
+	changed.emit()
+	return prod_id
+
+
 # Thu hết sản phẩm chờ -> vào kho nông sản. Trả về số đã thu.
 func collect_products() -> int:
 	var n := 0
@@ -659,6 +753,8 @@ func collect_products() -> int:
 			if not can_hold("produce", prod_id):
 				break
 			a.ready = int(a.ready) - 1
+			a.fed = false  # Thu hoạch xong lập tức cho ăn tiếp!
+			a.progress = 0.0
 			add_produce(prod_id, 1)
 			n += 1
 			# Cừu sau khi xén lông chuyển sang trạng thái đã cạo lông
@@ -684,6 +780,8 @@ func collect_products_for_species(species_id: String) -> int:
 			if not can_hold("produce", prod_id):
 				break
 			a.ready = int(a.ready) - 1
+			a.fed = false  # Thu hoạch xong lập tức cho ăn tiếp!
+			a.progress = 0.0
 			add_produce(prod_id, 1)
 			n += 1
 			if sid == "sheep":
@@ -722,6 +820,7 @@ func get_state() -> Dictionary:
 		"pickaxe": pickaxe, "ores": ores.duplicate(),
 		"active_item": active_item.duplicate(),
 		"rods": rods.duplicate(), "fish": fish.duplicate(),
+		"feed": feed,
 		"coops": coops.duplicate(),
 		"coop_tiers": coop_tiers.duplicate(),
 		"animals": animals.duplicate(true),
@@ -737,6 +836,7 @@ func set_state(d: Dictionary) -> void:
 	rods = {}
 	fish = {}
 	ores = {}
+	feed = int(d.get("feed", 0))
 	animals = []
 	breed_timers = {}
 	coops = {"small": 0, "large": 0}
@@ -786,6 +886,7 @@ func set_state(d: Dictionary) -> void:
 				"id": str(a.get("id", "")),
 				"progress": float(a.get("progress", 0)),
 				"ready": int(a.get("ready", 0)),
+				"fed": bool(a.get("fed", false)),
 				"is_baby": bool(a.get("is_baby", false)),
 				"grow_progress": float(a.get("grow_progress", 0.0)),
 				"is_sheared": bool(a.get("is_sheared", false)),

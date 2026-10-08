@@ -476,7 +476,23 @@ func rebuild_hotbar() -> void:
 		})
 		seed_start_idx = 5
 
-	# Các ô tiếp theo: Hạt giống (hotkey 4..9 hoặc 5..9)
+	# Ô Túi Cám (nếu có trong túi)
+	if Inventory.feed_count() > 0:
+		var feed_active: bool = (act_t == "feed")
+		_slots_cache.append({
+			"key": str(seed_start_idx),
+			"type": "feed",
+			"name": "Túi Cám",
+			"qty": Inventory.feed_count(),
+			"tooltip": "Túi Cám Stardew Valley (×%d)" % Inventory.feed_count(),
+			"icon": TextureGen.get_feed_icon(),
+			"active": feed_active,
+			"action": func():
+				Inventory.active_item = {"type": "feed"}
+		})
+		seed_start_idx += 1
+
+	# Các ô tiếp theo: Hạt giống (hotkey)
 	var ids: Array = Inventory.owned_seed_ids()
 	if ids.is_empty():
 		ids = GameState.unlocked.duplicate()
@@ -644,6 +660,9 @@ func _update_active_label() -> void:
 			else:
 				active_label.text = "🌱 Hạt: %s (×%d)" % [c.name, Inventory.seed_count(sid)]
 				active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_GREEN)
+		"feed":
+			active_label.text = "🌾 Túi Cám (×%d) · Đến gần vật nuôi bấm E" % Inventory.feed_count()
+			active_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 		_:
 			active_label.text = "Đang cầm: Trống"
 			active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_MUTED)

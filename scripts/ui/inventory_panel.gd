@@ -239,6 +239,12 @@ func refresh() -> void:
 		if not any_fish:
 			_empty_placeholder("Chưa có cá")
 
+	# --- 4. THỨC ĂN CHĂN NUÔI ---
+	if (_active_filter == "all" or _active_filter == "crop") and Inventory.feed_count() > 0:
+		var head_p := _section_header("🌾 Thức ăn chăn nuôi", Color(1.0, 0.88, 0.45))
+		rows.add_child(head_p)
+		rows.add_child(_build_feed_card(Inventory.feed_count()))
+
 
 func _section_header(text: String, color: Color) -> PanelContainer:
 	var p := PanelContainer.new()
@@ -352,6 +358,38 @@ func _build_crop_card(crop: Dictionary, count: int) -> Control:
 		var eat_btn := UIKit.styled_button(h, "🍴 Ăn (+%d⚡)" % food_val, 12, "buy")
 		eat_btn.custom_minimum_size = Vector2(92, 28)
 		eat_btn.pressed.connect(_eat.bind("crop", id))
+
+	return p
+
+
+func _build_feed_card(count: int) -> Control:
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UIKit.row_box())
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 12)
+	p.add_child(h)
+
+	var slot := PanelContainer.new()
+	slot.add_theme_stylebox_override("panel", UIKit.slot_box(false))
+	var icon := TextureRect.new()
+	icon.texture = TextureGen.get_feed_icon()
+	icon.custom_minimum_size = Vector2(28, 28)
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	slot.add_child(icon)
+	h.add_child(slot)
+
+	var info_v := VBoxContainer.new()
+	info_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_v.add_theme_constant_override("separation", 2)
+	h.add_child(info_v)
+
+	UIKit.label(info_v, "Túi Cám Chăn Nuôi", 15, UIKit.COLOR_TEXT_TITLE)
+	UIKit.label(info_v, "Cám Stardew Valley. Đến chuồng bấm [E] cho vật nuôi ăn.", 12, UIKit.COLOR_TEXT_MUTED)
+
+	var count_pill := PanelContainer.new()
+	count_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07), UIKit.COLOR_BORDER_WOOD, 6))
+	UIKit.label(count_pill, "×%d" % count, 14, UIKit.COLOR_TEXT_TITLE)
+	h.add_child(count_pill)
 
 	return p
 

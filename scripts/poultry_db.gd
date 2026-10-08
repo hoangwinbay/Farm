@@ -12,7 +12,7 @@ const ANIMALS := [
 		"product": "trung_ga",
 		"product_name": "Trứng gà",
 		"product_color": "f2e3b6",
-		"interval": 60.0,
+		"interval": 25.0,
 		"product_price": 35,
 		"texture_adult": "res://Content (unpacked)/Animals/White Chicken.png",
 		"texture_baby": "res://Content (unpacked)/Animals/BabyWhite Chicken.png",
@@ -32,7 +32,7 @@ const ANIMALS := [
 		"product": "sua_bo",
 		"product_name": "Sữa bò",
 		"product_color": "f5f5f5",
-		"interval": 90.0,
+		"interval": 45.0,
 		"product_price": 70,
 		"texture_adult": "res://Content (unpacked)/Animals/White Cow.png",
 		"texture_baby": "res://Content (unpacked)/Animals/BabyWhite Cow.png",
@@ -52,7 +52,7 @@ const ANIMALS := [
 		"product": "thit_lon",
 		"product_name": "Thịt lợn",
 		"product_color": "e06d6d",
-		"interval": 80.0,
+		"interval": 35.0,
 		"product_price": 55,
 		"texture_adult": "res://Content (unpacked)/Animals/Pig.png",
 		"texture_baby": "res://Content (unpacked)/Animals/BabyPig.png",
@@ -72,7 +72,7 @@ const ANIMALS := [
 		"product": "long_cuu",
 		"product_name": "Lông cừu",
 		"product_color": "e8e8f0",
-		"interval": 100.0,
+		"interval": 50.0,
 		"product_price": 65,
 		"texture_adult": "res://Content (unpacked)/Animals/Sheep.png",
 		"texture_sheared": "res://Content (unpacked)/Animals/ShearedSheep.png",
@@ -84,6 +84,14 @@ const ANIMALS := [
 		"baby_vframes": 5,
 	},
 ]
+
+const FEED_PRICE := 15
+const FEED_DATA := {
+	"id": "feed",
+	"name": "Túi Cám",
+	"price": 15,
+	"desc": "Cám dinh dưỡng cho vật nuôi chuồng. Cho ăn để vật nuôi no bụng và cho sản phẩm thu hoạch!",
+}
 
 const COOP_DATA := {
 	"chicken": {

@@ -168,6 +168,17 @@ func refresh() -> void:
 			refresh()
 		)
 
+	# 2.5 Túi cám chăn nuôi
+	var feed := int(data.get("feed", 0))
+	if feed > 0:
+		total_items += 1
+		_add_row(TextureGen.get_feed_icon(), "Túi Cám", "×%d" % feed, UIKit.COLOR_TEXT_GOLD, func() -> void:
+			Inventory.add_feed(feed)
+			data["feed"] = 0
+			changed.emit()
+			refresh()
+		)
+
 	# 3. Nông sản & Gia cầm
 	var prod = data.get("produce", {})
 	if typeof(prod) == TYPE_DICTIONARY:
@@ -255,6 +266,11 @@ func _claim_all() -> void:
 	if h > 0:
 		Inventory.add_hoes(h)
 		data["hoes"] = 0
+
+	var f := int(data.get("feed", 0))
+	if f > 0:
+		Inventory.add_feed(f)
+		data["feed"] = 0
 
 	var prod = data.get("produce", {})
 	if typeof(prod) == TYPE_DICTIONARY:

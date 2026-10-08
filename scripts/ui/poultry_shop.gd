@@ -112,12 +112,16 @@ func refresh() -> void:
 		if not cdata.is_empty():
 			rows.add_child(_build_coop_row(cdata))
 
-	# 2. Con giống
+	# 2. Thức ăn chăn nuôi (Túi cám Stardew Valley)
+	rows.add_child(_section_title("🌾 THỨC ĂN CHĂN NUÔI (TÚI CÁM)", Color(1.0, 0.88, 0.45)))
+	rows.add_child(_build_feed_row())
+
+	# 3. Con giống
 	rows.add_child(_section_title("🐣 CON GIỐNG (GÀ, BÒ, LỢN, CỪU)", UIKit.COLOR_TEXT_GREEN))
 	for a in PoultryDB.ANIMALS:
 		rows.add_child(_build_animal_row(a))
 
-	# 3. Sản phẩm chăn nuôi
+	# 4. Sản phẩm chăn nuôi
 	var prod_head := HBoxContainer.new()
 	var prod_title := _section_title("🧺 THU MUA SẢN PHẨM CHĂN NUÔI", UIKit.COLOR_TEXT_TITLE)
 	prod_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -252,6 +256,61 @@ func _build_coop_row(coop: Dictionary) -> Control:
 		var max_btn := UIKit.styled_button(h, "✔ Đã đạt tối đa", 13, "secondary")
 		max_btn.custom_minimum_size = Vector2(175, 34)
 		max_btn.disabled = true
+	return p
+
+
+func _build_feed_row() -> Control:
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UIKit.row_box())
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 12)
+	p.add_child(h)
+
+	var slot := PanelContainer.new()
+	slot.add_theme_stylebox_override("panel", UIKit.slot_box(false))
+	var icon := TextureRect.new()
+	icon.texture = TextureGen.get_feed_icon()
+	icon.custom_minimum_size = Vector2(32, 32)
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	slot.add_child(icon)
+	h.add_child(slot)
+
+	var info_v := VBoxContainer.new()
+	info_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_v.add_theme_constant_override("separation", 2)
+	h.add_child(info_v)
+
+	var name_h := HBoxContainer.new()
+	name_h.add_theme_constant_override("separation", 8)
+	info_v.add_child(name_h)
+	UIKit.label(name_h, "Túi Cám Chăn Nuôi", 15, UIKit.COLOR_TEXT_TITLE)
+
+	var count_pill := PanelContainer.new()
+	count_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.15, 0.10), UIKit.COLOR_BORDER_GOLD, 4))
+	UIKit.label(count_pill, "Đang có: %d túi" % Inventory.feed_count(), 12, UIKit.COLOR_TEXT_GOLD)
+	name_h.add_child(count_pill)
+
+	var price_tag := "%d xu / túi · Cám dinh dưỡng Stardew Valley. Cho ăn để vật nuôi no bụng và cho sản phẩm!" % PoultryDB.FEED_PRICE
+	UIKit.label(info_v, price_tag, 12, UIKit.COLOR_TEXT_MUTED)
+
+	var btn_h := HBoxContainer.new()
+	btn_h.add_theme_constant_override("separation", 6)
+	h.add_child(btn_h)
+
+	for qty: int in [1, 5, 10]:
+		var q: int = qty
+		var total_cost: int = q * int(PoultryDB.FEED_PRICE)
+		var b := UIKit.styled_button(btn_h, "Mua x%d (%d xu)" % [q, total_cost], 12, "buy")
+		b.disabled = GameState.money < total_cost
+		b.pressed.connect(func():
+			if GameState.try_spend(total_cost):
+				Inventory.add_feed(q)
+				feedback.emit("Đã mua %d Túi Cám (-%d xu)! Hãy ra chuồng bấm [E] để cho vật nuôi ăn." % [q, total_cost])
+				refresh()
+			else:
+				feedback.emit("Không đủ xu để mua Túi Cám!")
+		)
+
 	return p
 
 
