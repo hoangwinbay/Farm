@@ -118,6 +118,9 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _tree_variant("tree_stump")
 		"house":
 			tex = _house()
+		"sdv_north_cliff_top":
+			var c_img := _load_picture("res://picture/sdv_north_cliff_top.png")
+			tex = _tex(c_img) if c_img != null else null
 		"cave_entrance":
 			tex = cave_entrance_tex()
 		"mine_sign":

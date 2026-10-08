@@ -309,6 +309,13 @@ func _build_world() -> void:
 	ground.texture = TextureGen.make_ground(int(WORLD_SIZE.x), int(WORLD_SIZE.y), farm_px, PATHS, POND_RECT, [PATH_COBBLE_V, PATH_COBBLE_H])
 	world.add_child(ground)
 
+	# Vách núi đá mở rộng lên phía trên biên Bắc (chống lộ khoảng trống khi màn hình kéo dãn)
+	var cliff_top_ext := Sprite2D.new()
+	cliff_top_ext.texture = TextureGen.get_tex("sdv_north_cliff_top")
+	cliff_top_ext.position = Vector2(0, -160)
+	cliff_top_ext.centered = false
+	world.add_child(cliff_top_ext)
+
 	# nông trại + ô vuông chỉ điểm
 	farm = FarmScript.new()
 	farm.setup(FARM_ORIGIN, FARM_TILES)
