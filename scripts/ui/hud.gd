@@ -377,16 +377,34 @@ func set_stamina(cur: float, max_v: float) -> void:
 			stamina_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.6))
 
 
+var is_underground: bool = false
+
+
+func set_underground(val: bool) -> void:
+	is_underground = val
+	if weather_label != null:
+		if is_underground:
+			weather_label.text = "⛏️ Hầm mỏ"
+		else:
+			weather_label.text = WeatherManager.get_weather_display(GameState.weather)
+
+
 func set_clock(txt: String) -> void:
 	clock_label.text = txt
 	day_label.text = "Ngày %d" % GameState.day
 	if weather_label != null:
-		weather_label.text = WeatherManager.get_weather_display(GameState.weather)
+		if is_underground:
+			weather_label.text = "⛏️ Hầm mỏ"
+		else:
+			weather_label.text = WeatherManager.get_weather_display(GameState.weather)
 
 
 func set_weather(w: String) -> void:
 	if weather_label != null:
-		weather_label.text = WeatherManager.get_weather_display(w)
+		if is_underground:
+			weather_label.text = "⛏️ Hầm mỏ"
+		else:
+			weather_label.text = WeatherManager.get_weather_display(w)
 
 
 func setup_quests(qm: Node) -> void:
