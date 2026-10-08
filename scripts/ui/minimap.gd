@@ -10,7 +10,7 @@ const DOT_SPACING := 26.0
 
 # Đồ thị nút giao nằm trên mạng lối đi PATHS (xem main.gd) — dùng tính đường đi.
 const NODES := {
-	"mine": Vector2(96, 210),
+	"mine": Vector2(96, 96),
 	"j_mine_road": Vector2(96, 470),
 	"west_edge": Vector2(20, 470),
 	"j_stall": Vector2(584, 470),
@@ -57,7 +57,7 @@ const EDGES := [
 # Địa điểm bấm được trên bản đồ (id trùng với nút đích trong NODES).
 # "mlabel" là tên ngắn vẽ trên bản đồ; "mlab_above" đẩy nhãn lên trên điểm.
 const POIS := [
-	{"id": "mine", "name": "Hầm mỏ (khai thác quặng)", "mlabel": "Hầm mỏ", "mlab_above": true, "pos": Vector2(96, 190), "color": Color(0.70, 0.70, 0.85), "letter": "M"},
+	{"id": "mine", "name": "Hầm mỏ (khai thác quặng)", "mlabel": "Hầm mỏ", "mlab_above": false, "pos": Vector2(96, 90), "color": Color(0.70, 0.70, 0.85), "letter": "M"},
 	{"id": "shed", "name": "Nhà kho (cất đồ)", "mlabel": "Nhà kho", "pos": Vector2(505, 250), "color": Color(0.75, 0.55, 0.35), "letter": "K"},
 	{"id": "house", "name": "Nhà (ngủ & lưu game)", "mlabel": "Nhà (ngủ & lưu)", "pos": Vector2(650, 250), "color": Color(0.98, 0.62, 0.45), "letter": "N"},
 	{"id": "tent", "name": "Lều của Mèo (ngủ đêm)", "mlabel": "Lều Mèo", "pos": Vector2(766, 250), "color": Color(0.95, 0.78, 0.42), "letter": "L"},

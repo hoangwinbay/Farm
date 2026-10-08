@@ -66,9 +66,9 @@ const TENT_POS := Vector2(766, 248)
 const MAILBOX_POS := Vector2(720, 246)
 const MAYOR_POS := Vector2(705, 270)
 const MARKET_STALL_POS := Vector2(584, 440) # sạp hàng nông sản tại ngã rẽ đại lộ
-const MINE_ENTRANCE_POS := Vector2(96, 190)  # cửa hầm mỏ đá ở vạt đất cao Tây Bắc
-const MINE_SIGN_POS := Vector2(48, 210)      # biển báo hầm mỏ bên trái lối vào
-const LEAH_MINER_POS := Vector2(146, 215)    # Leah đứng bên phải lối vào mỏ hướng dẫn người chơi
+const MINE_ENTRANCE_POS := Vector2(96, 64)   # cửa hầm mỏ đá khoét sâu vào vách núi biên Bắc
+const MINE_SIGN_POS := Vector2(56, 96)       # biển báo hầm mỏ bên trái lối vào ở chân vách núi
+const LEAH_MINER_POS := Vector2(136, 96)     # Leah đứng bên phải lối vào mỏ hướng dẫn người chơi
 
 # Các nhân vật Stardew Valley ghé sạp mua hàng (Leah là NPC quản lý mỏ riêng)
 const SDV_CUSTOMERS_DATA := [
@@ -171,7 +171,7 @@ const PENS_CONFIG := [
 # Mạng lối đi lát đất chuẩn Stardew Valley (lưới 16px).
 const PATHS := [
 	Rect2(640, 240, 32, 224),    # từ cửa nhà xuống đại lộ (x: 640..672, y: 240..464)
-	Rect2(80, 210, 32, 240),     # đường mòn từ đại lộ lên hầm mỏ đá Tây Bắc (x: 80..112, y: 210..450)
+	Rect2(80, 80, 32, 370),      # đường mòn từ đại lộ lên thẳng cửa hầm mỏ vách núi biên Bắc (x: 80..112, y: 80..450)
 	Rect2(0, 448, 1850, 48),     # đại lộ đông - tây xuyên suốt qua sạp hàng và 2 cổng ruộng (x: 0..1850, y: 448..496)
 	Rect2(1344, 352, 464, 96),   # khuôn viên chợ quê 3 quầy hàng liền sát đại lộ (x: 1344..1808, y: 352..448)
 	Rect2(1424, 480, 32, 252),   # nhánh xuống bờ ao câu cá (x: 1424..1456, y: 480..732)
@@ -468,7 +468,7 @@ func _build_world() -> void:
 		{"pos": MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": _open_mailbox},
 		{"pos": MAYOR_POS, "r": 50.0, "label": "Trưởng Thôn 📜", "cb": _talk_mayor},
 		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪", "cb": _open_market_stall},
-		{"pos": MINE_ENTRANCE_POS + Vector2(0, 10), "r": 45.0, "label": "Vào Hầm Mỏ ⛏️", "cb": _enter_mine},
+		{"pos": MINE_ENTRANCE_POS + Vector2(0, 24), "r": 50.0, "label": "Vào Hầm Mỏ ⛏️", "cb": _enter_mine},
 		{"pos": MINE_SIGN_POS, "r": 40.0, "label": "Biển báo Hầm Mỏ 📜", "cb": _read_mine_sign},
 		{"pos": LEAH_MINER_POS, "r": 45.0, "label": "Leah ⛏️ (Nâng cấp Nông Cụ)", "cb": _talk_leah},
 		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư", "cb": _talk_npc},
@@ -884,18 +884,17 @@ func _on_stall_changed() -> void:
 
 
 func _build_mine_entrance() -> void:
-	# 1. Cửa hang đá khoét vào vách núi ở rìa Tây
+	# 1. Cửa hang đá khoét trực tiếp vào vách núi biên Bắc
 	var cave_spr := Sprite2D.new()
 	cave_spr.texture = TextureGen.get_tex("cave_entrance")
 	cave_spr.position = MINE_ENTRANCE_POS
 	world.add_child(cave_spr)
 
-	# Va chạm vách núi bao quanh cửa hang
-	_wall(MINE_ENTRANCE_POS + Vector2(-32, 0), Vector2(32, 48))
-	_wall(MINE_ENTRANCE_POS + Vector2(32, 0), Vector2(32, 48))
-	_wall(MINE_ENTRANCE_POS + Vector2(0, -26), Vector2(96, 24))
+	# Chân vách đá 2 bên cửa mỏ ngăn người chơi đi xuyên núi
+	_wall(Vector2(56, 76), Vector2(48, 24))
+	_wall(Vector2(136, 76), Vector2(48, 24))
 
-	# 2. Biển báo gỗ cạnh hang
+	# 2. Biển báo gỗ cạnh hang ở chân vách núi
 	var sign_spr := Sprite2D.new()
 	sign_spr.texture = TextureGen.get_tex("mine_sign")
 	sign_spr.position = MINE_SIGN_POS
