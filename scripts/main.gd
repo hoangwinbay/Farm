@@ -25,22 +25,55 @@ const MailboxPanelScript := preload("res://scripts/ui/mailbox_panel.gd")
 const StoragePanelScript := preload("res://scripts/ui/storage_panel.gd")
 const CatHelperScript := preload("res://scripts/cat_helper.gd")
 const CatPanelScript := preload("res://scripts/ui/cat_panel.gd")
+const MineManagerScript := preload("res://scripts/mine_manager.gd")
+const WeatherManagerScript := preload("res://scripts/weather_manager.gd")
+const QuestManagerScript := preload("res://scripts/quest_manager.gd")
+const QuestPanelScript := preload("res://scripts/ui/quest_panel.gd")
+const QuestDB := preload("res://scripts/quest_db.gd")
+const OreDB := preload("res://scripts/ore_db.gd")
+const ToolUpgradePanelScript := preload("res://scripts/ui/tool_upgrade_panel.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
+const PenAnimal := preload("res://scripts/pen_animal.gd")
 
-const WORLD_SIZE := Vector2(1500, 1000)
-const FARM_ORIGIN := Vector2(424, 384)
-const FARM_TILES := Vector2i(14, 9)
-const HOUSE_POS := Vector2(241, 248)
-const SHED_POS := Vector2(105, 248)
-const TENT_POS := Vector2(366, 248)
-const MAILBOX_POS := Vector2(320, 246)
-const MARKET_STALL_POS := Vector2(184, 440) # sạp hàng nông sản tại góc rẽ trái
+const WORLD_SIZE := Vector2(1900, 1000)
+const PLOT_NORTH_ORIGIN := Vector2(824, 304)
+const PLOT_SOUTH_ORIGIN := Vector2(824, 512)
+const PLOT_TILES := Vector2i(14, 4)
+const FARM_ORIGIN := PLOT_NORTH_ORIGIN
+const FARM_TILES := PLOT_TILES
 
-# 10 nhân vật Stardew Valley với tên Việt Nam thân thiện
+const FARM_PLOTS := [
+	{
+		"id": "north",
+		"name": "Thửa Bắc",
+		"origin": PLOT_NORTH_ORIGIN,
+		"size": PLOT_TILES,
+		"rect": Rect2(824, 304, 448, 128),
+		"y_offset": 0
+	},
+	{
+		"id": "south",
+		"name": "Thửa Nam",
+		"origin": PLOT_SOUTH_ORIGIN,
+		"size": PLOT_TILES,
+		"rect": Rect2(824, 512, 448, 128),
+		"y_offset": 4
+	}
+]
+const HOUSE_POS := Vector2(641, 248)
+const SHED_POS := Vector2(505, 248)
+const TENT_POS := Vector2(766, 248)
+const MAILBOX_POS := Vector2(720, 246)
+const MAYOR_POS := Vector2(705, 270)
+const MARKET_STALL_POS := Vector2(584, 440) # sạp hàng nông sản tại ngã rẽ đại lộ
+const MINE_ENTRANCE_POS := Vector2(96, 64)   # cửa hầm mỏ đá khoét sâu vào vách núi biên Bắc
+const MINE_SIGN_POS := Vector2(56, 96)       # biển báo hầm mỏ bên trái lối vào ở chân vách núi
+const LEAH_MINER_POS := Vector2(136, 96)     # Leah đứng bên phải lối vào mỏ hướng dẫn người chơi
+
+# Các nhân vật Stardew Valley ghé sạp mua hàng (Leah là NPC quản lý mỏ riêng)
 const SDV_CUSTOMERS_DATA := [
 	{"name": "Bé Lan", "asset": "Abigail"},
 	{"name": "Cô Mai", "asset": "Haley"},
-	{"name": "Chị Thảo", "asset": "Leah"},
 	{"name": "Em Cúc", "asset": "Penny"},
 	{"name": "Anh Nam", "asset": "Sam"},
 	{"name": "Anh Dũng", "asset": "Alex"},
@@ -49,14 +82,14 @@ const SDV_CUSTOMERS_DATA := [
 	{"name": "Bé Linh", "asset": "Maru"},
 	{"name": "Anh Phong", "asset": "Sebastian"},
 ]
-const SDV_CUSTOMERS := ["Abigail", "Haley", "Leah", "Penny", "Sam", "Alex", "Emily", "Harvey", "Maru", "Sebastian"]
+const SDV_CUSTOMERS := ["Abigail", "Haley", "Penny", "Sam", "Alex", "Emily", "Harvey", "Maru", "Sebastian"]
 
 # Các vị trí đứng trước sạp hàng để tối đa 10 NPC ghé cùng lúc
 const STALL_COUNTER_SPOTS := [
-	Vector2(146, 468), Vector2(165, 468), Vector2(184, 468),
-	Vector2(203, 468), Vector2(222, 468), Vector2(155, 482),
-	Vector2(174, 482), Vector2(193, 482), Vector2(212, 482),
-	Vector2(230, 482)
+	Vector2(546, 468), Vector2(565, 468), Vector2(584, 468),
+	Vector2(603, 468), Vector2(622, 468), Vector2(555, 482),
+	Vector2(574, 482), Vector2(593, 482), Vector2(612, 482),
+	Vector2(630, 482)
 ]
 
 const STALL_WISHLIST_ITEMS := [
@@ -69,39 +102,79 @@ const STALL_WISHLIST_ITEMS := [
 	{"id": "cabbage", "type": "crop", "name": "Bắp cải", "base_price": 110},
 	{"id": "watermelon", "type": "crop", "name": "Dưa hấu", "base_price": 155},
 	{"id": "chep", "type": "fish", "name": "Cá chép", "base_price": 40},
-	{"id": "trung_ga", "type": "poultry", "name": "Trứng gà", "base_price": 30},
-	{"id": "trung_vit", "type": "poultry", "name": "Trứng vịt", "base_price": 45},
+	{"id": "trung_ga", "type": "poultry", "name": "Trứng gà", "base_price": 35},
+	{"id": "sua_bo", "type": "poultry", "name": "Sữa bò", "base_price": 70},
+	{"id": "thit_lon", "type": "poultry", "name": "Thịt lợn", "base_price": 55},
+	{"id": "long_cuu", "type": "poultry", "name": "Lông cừu", "base_price": 65},
 ]
-const STAND_POS := Vector2(1180, 416)       # quầy Bác Tư
-const STAND_HAI_POS := Vector2(1350, 416)   # quầy Chú Hai
-const STAND_TU_POS := Vector2(1010, 416)    # quầy Cô Tư
-const NPC_POS := Vector2(1180, 430)         # điểm tương tác Bác Tư
-const CHU_HAI_POS := Vector2(1350, 430)     # điểm tương tác Chú Hai
-const COTU_POS := Vector2(1010, 430)        # điểm tương tác Cô Tư
-const SCARECROW_POS := Vector2(648, 528)
-const PLAYER_START := Vector2(250, 470)
-const POND_RECT := Rect2(940, 760, 180, 100)
-const FISH_SPOT_POS := Vector2(1030, 810)   # tâm hồ — câu được ở MỌI bờ
-# Khu chuồng: sân trong (y 560..660) + lưới ô chuồng 3 cột bên dưới.
-# Mỗi LOẠI gia cầm một ô riêng; chuồng co/giãn theo số loại đang nuôi.
-const PEN_RECT := Rect2(120, 560, 272, 108)
-const PEN_COL_X := [128.0, 216.0, 304.0]  # mép trái 3 cột ô
-const PEN_CELL := Vector2(80, 64)         # cỡ 1 ô chuồng
-const PEN_GRID_TOP := 668.0               # mép trên hàng ô đầu tiên
-const PEN_ROW_STEP := 72.0                # 64 ô + 8 divider
-const PEN_SPOTS := [                      # chỗ đứng con vật trong ô (so tâm ô)
-	Vector2(0, -8), Vector2(-18, 8), Vector2(18, 10),
-	Vector2(-8, 18), Vector2(22, -6), Vector2(-24, -4),
+const STAND_POS := Vector2(1580, 416)       # quầy Bác Tư
+const STAND_HAI_POS := Vector2(1750, 416)   # quầy Chú Hai
+const STAND_TU_POS := Vector2(1410, 416)    # quầy Cô Tư
+const NPC_POS := Vector2(1580, 430)         # điểm tương tác Bác Tư
+const CHU_HAI_POS := Vector2(1750, 430)     # điểm tương tác Chú Hai
+const COTU_POS := Vector2(1410, 430)        # điểm tương tác Cô Tư
+const SCARECROW_NORTH_POS := Vector2(1048, 368) # bù nhìn rơm ở giữa Thửa Bắc
+const SCARECROW_SOUTH_POS := Vector2(1048, 576) # bù nhìn rơm ở giữa Thửa Nam
+const SCARECROW_POS := SCARECROW_NORTH_POS      # bù nhìn rơm (tương thích)
+const PLAYER_START := Vector2(650, 470)
+const POND_RECT := Rect2(1232, 720, 416, 368)
+const FISH_SPOT_POS := Vector2(1440, 880)   # tâm hồ Stardew Valley hình tròn tràn biên Nam
+
+# 4 Chuồng riêng biệt theo bố trí 2x2 chuẩn theo sơ đồ:
+# Top-Left: BÒ    | Top-Right: GÀ
+# Bottom-Left: CỪU | Bottom-Right: LỢN
+const PEN_COW := Rect2(256, 544, 224, 128)      # Chuồng Bò (Tây Bắc)
+const PEN_CHICKEN := Rect2(528, 544, 224, 128)  # Chuồng Gà (Đông Bắc)
+const PEN_SHEEP := Rect2(256, 720, 224, 128)    # Chuồng Cừu (Tây Nam)
+const PEN_PIG := Rect2(528, 720, 224, 128)      # Chuồng Lợn (Đông Nam)
+const PEN_RECT := PEN_CHICKEN                    # fallback tham chiếu cũ
+
+# Lối đi lát đá (Cobblestone) chữ thập giữa 4 chuồng
+const PATH_COBBLE_V := Rect2(480, 480, 48, 384)  # đường dọc nối từ đại lộ xuống đáy 4 chuồng
+const PATH_COBBLE_H := Rect2(240, 672, 528, 48)  # đường ngang phân cách tầng chuồng trên và dưới
+
+const PENS_CONFIG := [
+	{
+		"id": "cow",
+		"name": "Chuồng Bò",
+		"rect": PEN_COW,
+		"gate_axis": "south",
+		"bldg_pos": Vector2(310, 584),
+		"bldg_type": "barn",
+	},
+	{
+		"id": "chicken",
+		"name": "Chuồng Gà",
+		"rect": PEN_CHICKEN,
+		"gate_axis": "south",
+		"bldg_pos": Vector2(582, 584),
+		"bldg_type": "coop",
+	},
+	{
+		"id": "sheep",
+		"name": "Chuồng Cừu",
+		"rect": PEN_SHEEP,
+		"gate_axis": "north",
+		"bldg_pos": Vector2(310, 760),
+		"bldg_type": "barn",
+	},
+	{
+		"id": "pig",
+		"name": "Chuồng Lợn",
+		"rect": PEN_PIG,
+		"gate_axis": "north",
+		"bldg_pos": Vector2(582, 760),
+		"bldg_type": "barn",
+	},
 ]
 
 # Mạng lối đi lát đất chuẩn Stardew Valley (lưới 16px).
-# Đại lộ đông-tây (48px = 3 ô) + các nhánh lối đi (32px = 2 ô).
 const PATHS := [
-	Rect2(240, 240, 32, 224),    # từ cửa nhà xuống đại lộ (x: 240..272, y: 240..464)
-	Rect2(0, 448, 1408, 48),     # đại lộ đông - tây qua 2 cổng ruộng, kéo dài hết map sang trái (x: 0..1408, y: 448..496)
-	Rect2(944, 352, 464, 96),    # khuôn viên chợ quê 3 quầy hàng liền sát đại lộ (x: 944..1408, y: 352..448)
-	Rect2(288, 480, 32, 96),     # nhánh tới cổng chuồng gia cầm (x: 288..320, y: 480..576)
-	Rect2(1024, 480, 32, 272),   # nhánh xuống bờ ao câu cá (x: 1024..1056, y: 480..752)
+	Rect2(640, 240, 32, 224),    # từ cửa nhà xuống đại lộ (x: 640..672, y: 240..464)
+	Rect2(80, 80, 32, 370),      # đường mòn từ đại lộ lên thẳng cửa hầm mỏ vách núi biên Bắc (x: 80..112, y: 80..450)
+	Rect2(0, 448, 1850, 48),     # đại lộ đông - tây xuyên suốt qua sạp hàng và 2 cổng ruộng (x: 0..1850, y: 448..496)
+	Rect2(1344, 352, 464, 96),   # khuôn viên chợ quê 3 quầy hàng liền sát đại lộ (x: 1344..1808, y: 352..448)
+	Rect2(1424, 480, 32, 252),   # nhánh xuống bờ ao câu cá (x: 1424..1456, y: 480..732)
 ]
 
 enum Mode { TITLE, PLAY, DIALOG, PANEL }
@@ -114,16 +187,25 @@ var farm: Node2D
 var npc: StaticBody2D
 var npc_hai: StaticBody2D
 var npc_tu: StaticBody2D
+var npc_leah: StaticBody2D
+var npc_mayor: StaticBody2D
+var quest_mgr: Node
+var mine_manager: Node2D
+var in_mine: bool = false
 var pen_node: Node2D
+var active_pen_animals: Array = []
 var cam: Camera2D
 var ground: Sprite2D
 var canvas_mod: CanvasModulate
 var highlight: Sprite2D
+var weather_mgr: CanvasLayer
 
 var hud: CanvasLayer
 var shop_panel: CanvasLayer
 var fish_shop: CanvasLayer
 var poultry_shop: CanvasLayer
+var quest_panel: CanvasLayer
+var tool_upgrade_panel: CanvasLayer
 var stall_panel: CanvasLayer
 var stall_slots: Array = [{}, {}, {}, {}, {}, {}]
 var stall_crate_sprites: Array[Sprite2D] = []
@@ -131,6 +213,7 @@ var stall_revenue: int = 0
 var stall_coin_badge: PanelContainer
 var stall_coin_label: Label
 var _stall_customer_timer: float = 0.0
+var _next_stall_customer_delay: float = 16.0
 var _active_stall_customer: Node2D = null
 var _stall_customers: Array[Node2D] = []
 var inv_panel: CanvasLayer
@@ -151,6 +234,8 @@ var interactables: Array = []
 var _npc_met := false
 var _npc_hai_met := false
 var _npc_tu_met := false
+var _leah_met := false
+var _mayor_met := false
 var _dialog_next := "shop"
 
 var foliage_nodes: Array = []
@@ -172,6 +257,9 @@ var fishing := false
 var fishing_left := 0.0
 var _rod_spr: Sprite2D
 var _bobber_spr: Sprite2D
+var _fishing_line: Line2D
+var _lake_ripple_timer: float = 0.5
+var _bobber_ripple_timer: float = 0.0
 
 var _debug_mode := ""
 var _debug_frame := 0
@@ -189,8 +277,17 @@ func _ready() -> void:
 	_build_world()
 	_build_ui()
 
-	GameState.money_changed.connect(func(v: int) -> void: hud.set_money(v))
+	GameState.money_changed.connect(func(v: int) -> void:
+		hud.set_money(v)
+		if quest_mgr != null:
+			quest_mgr.update_money_milestones(v)
+	)
 	GameState.crops_changed.connect(func() -> void: hud.rebuild_hotbar())
+	GameState.stamina_changed.connect(func(cur: float, max_v: float) -> void: hud.set_stamina(cur, max_v))
+	GameState.weather_changed.connect(func(w: String) -> void:
+		if is_instance_valid(hud):
+			hud.set_weather(w)
+	)
 	Inventory.changed.connect(hud.rebuild_hotbar)
 	shop_panel.feedback.connect(func(t: String) -> void: hud.toast(t, Color(1.0, 0.9, 0.5)))
 	shop_panel.closed.connect(_close_panels)
@@ -203,7 +300,11 @@ func _ready() -> void:
 	stall_panel.stall_changed.connect(_on_stall_changed)
 	stall_panel.revenue_collected.connect(_on_stall_revenue_collected)
 	Inventory.changed.connect(_rebuild_pen)
+	Inventory.baby_born.connect(func(_sid: String, sname: String) -> void:
+		hud.toast("🐣 Tin vui: Đàn %s vừa sinh một chú con non (baby)!" % sname, Color(1.0, 0.85, 0.3))
+	)
 	inv_panel.closed.connect(_close_panels)
+	inv_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
 	dialog_box.finished.connect(_on_dialog_finished)
 	dialog_box.answered.connect(_on_sleep_answer)
 	title_screen.start_requested.connect(start_new_game)
@@ -213,6 +314,7 @@ func _ready() -> void:
 	pause_menu.menu_requested.connect(_back_to_title)
 
 	hud.set_money(GameState.money)
+	hud.set_stamina(GameState.stamina, GameState.max_stamina)
 	title_screen.open(SaveSystem.has_save())
 
 
@@ -232,13 +334,20 @@ func _build_world() -> void:
 	# nền cỏ + đường + ao (bake 1 ảnh)
 	ground = Sprite2D.new()
 	ground.centered = false
-	var farm_px := Rect2(FARM_ORIGIN, Vector2(FARM_TILES.x * 32, FARM_TILES.y * 32))
-	ground.texture = TextureGen.make_ground(int(WORLD_SIZE.x), int(WORLD_SIZE.y), farm_px, PATHS, POND_RECT)
+	var farm_px := Rect2(824, 288, 448, 368)
+	ground.texture = TextureGen.make_ground(int(WORLD_SIZE.x), int(WORLD_SIZE.y), farm_px, PATHS, POND_RECT, [PATH_COBBLE_V, PATH_COBBLE_H])
 	world.add_child(ground)
 
-	# nông trại + ô vuông chỉ điểm
+	# Vách núi đá mở rộng lên phía trên biên Bắc (chống lộ khoảng trống khi màn hình kéo dãn)
+	var cliff_top_ext := Sprite2D.new()
+	cliff_top_ext.texture = TextureGen.get_tex("sdv_north_cliff_top")
+	cliff_top_ext.position = Vector2(0, -160)
+	cliff_top_ext.centered = false
+	world.add_child(cliff_top_ext)
+
+	# nông trại 2 thửa riêng biệt + ô vuông chỉ điểm
 	farm = FarmScript.new()
-	farm.setup(FARM_ORIGIN, FARM_TILES)
+	farm.setup_plots(FARM_PLOTS)
 	world.add_child(farm)
 	highlight = Sprite2D.new()
 	highlight.texture = TextureGen.get_tex("highlight")
@@ -253,10 +362,13 @@ func _build_world() -> void:
 	_add_decor(TextureGen.get_tex("tent"), TENT_POS, 1.0, Rect2(-20, -56, 40, 42))
 	# hòm thư Stardew Valley cạnh bậc thềm hiên nhà
 	_build_mailbox()
-	# bù nhìn Stardew Valley
-	_add_decor(TextureGen.get_tex("scarecrow"), SCARECROW_POS, 1.5, Rect2(-6, -10, 12, 10))
+	# bù nhìn Stardew Valley ở giữa mỗi thửa ruộng
+	_add_decor(TextureGen.get_tex("scarecrow"), SCARECROW_NORTH_POS, 1.2, Rect2(-4, -6, 8, 6))
+	_add_decor(TextureGen.get_tex("scarecrow"), SCARECROW_SOUTH_POS, 1.2, Rect2(-4, -6, 8, 6))
 	# sạp hàng nông sản Stardew Valley tại góc rẽ trái (kèm bóng đổ mềm mại trên nền cỏ)
 	_build_market_stall()
+	# Khu vực cửa hầm mỏ đá & Leah phía Tây Bắc
+	_build_mine_entrance()
 	# Hệ thống thực vật & cây cối mọc ngẫu nhiên trên bề mặt cỏ tự nhiên (Stardew Valley)
 	_populate_random_foliage(75)
 
@@ -283,11 +395,44 @@ func _build_world() -> void:
 	player.position = PLAYER_START
 	world.add_child(player)
 
+	# Quản lý hầm mỏ khai thác quặng
+	mine_manager = MineManagerScript.new()
+	mine_manager.visible = false
+	mine_manager.setup(self, player)
+	mine_manager.exit_requested.connect(_on_exit_mine)
+	add_child(mine_manager)
+
+	# Quản lý Hệ Thống Nhiệm Vụ (Ngày, Tuần, Thành Tựu)
+	quest_mgr = QuestManagerScript.new()
+	quest_mgr.setup(self)
+	quest_mgr.quest_completed.connect(func(q: Dictionary):
+		hud.toast("🎉 Xong nhiệm vụ: %s! Nhận thưởng [Q] hoặc gặp Trưởng Thôn" % str(q.get("title", "")), Color(1.0, 0.85, 0.35))
+		_update_npc_mayor_indicator()
+	)
+	quest_mgr.quests_refreshed.connect(_update_npc_mayor_indicator)
+	quest_mgr.quest_claimed.connect(func(_q: Dictionary):
+		_update_npc_mayor_indicator()
+		_save_now()
+	)
+	add_child(quest_mgr)
+
 	# Chú mèo tam thể làm nông
 	cat_helper = CatHelperScript.new()
 	cat_helper.farm = farm
 	cat_helper.toast_requested.connect(func(txt: String, col: Color): hud.toast(txt, col))
+	cat_helper.action_performed.connect(func(act_type: String, target_id: String):
+		if quest_mgr != null:
+			quest_mgr.advance_progress(act_type, target_id)
+	)
 	world.add_child(cat_helper)
+
+	# Bác Trưởng Thôn đứng trước sân nhà chính
+	npc_mayor = NpcScript.new()
+	npc_mayor.npc_name = "Trưởng Thôn"
+	npc_mayor.position = MAYOR_POS
+	world.add_child(npc_mayor)
+	_update_npc_mayor_indicator()
+
 	cam = Camera2D.new()
 	cam.zoom = Vector2(2, 2)
 	cam.position_smoothing_enabled = true
@@ -300,22 +445,43 @@ func _build_world() -> void:
 	cam.make_current()
 	cam.reset_smoothing()
 
-	# ao: hồ là ellipse — chặn đi xuống nước bằng tường ellipse, nhưng câu được ở mọi bờ
-	_add_ellipse_wall(POND_RECT.get_center(), 88, 48)
+	# Quản lý thời tiết & hiệu ứng hạt
+	weather_mgr = WeatherManagerScript.new()
+	add_child(weather_mgr)
+	weather_mgr.setup(self, player, farm)
+
+	# ao cá tròn Stardew Valley: bờ đá phía bắc và mặt nước sâu
+	var cliff_body := StaticBody2D.new()
+	cliff_body.position = Vector2(1440, 765)
+	var cliff_col := CollisionShape2D.new()
+	var cliff_shape := RectangleShape2D.new()
+	cliff_shape.size = Vector2(200, 20)
+	cliff_col.shape = cliff_shape
+	cliff_body.add_child(cliff_col)
+	world.add_child(cliff_body)
+
+	_add_ellipse_wall(Vector2(1440, 900), 160.0, 140.0)
 
 	# khu chuồng nuôi: hàng rào + nhà chuồng + nơi con vật đứng
 	_build_pen()
 
 	interactables = [
-		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ", "cb": _ask_sleep},
+		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ 🛏️ (Lưu game)", "cb": _ask_sleep},
 		{"pos": SHED_POS + Vector2(0, -6), "r": 50.0, "label": "Nhà kho 🏚️", "cb": _open_storage},
 		{"pos": MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": _open_mailbox},
+		{"pos": MAYOR_POS, "r": 50.0, "label": "Trưởng Thôn 📜", "cb": _talk_mayor},
 		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪", "cb": _open_market_stall},
+		{"pos": MINE_ENTRANCE_POS + Vector2(0, 24), "r": 50.0, "label": "Vào Hầm Mỏ ⛏️", "cb": _enter_mine},
+		{"pos": MINE_SIGN_POS, "r": 40.0, "label": "Biển báo Hầm Mỏ 📜", "cb": _read_mine_sign},
+		{"pos": LEAH_MINER_POS, "r": 45.0, "label": "Leah ⛏️ (Nâng cấp Nông Cụ)", "cb": _talk_leah},
 		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư", "cb": _talk_npc},
 		{"pos": CHU_HAI_POS, "r": 60.0, "label": "Chú Hai", "cb": _talk_hai},
 		{"pos": COTU_POS, "r": 60.0, "label": "Cô Tư", "cb": _talk_tu},
-		{"pos": PEN_RECT.get_center() + Vector2(0, 4), "r": 75.0, "label": "Thu hoạch chuồng", "cb": _collect_products},
-		{"pos": FISH_SPOT_POS, "r": 152.0, "label": "Câu cá", "cb": _start_fishing},
+		{"pos": PEN_COW.get_center(), "r": 85.0, "label": "Chuồng Bò", "cb": func(): _interact_pen("cow")},
+		{"pos": PEN_CHICKEN.get_center(), "r": 85.0, "label": "Chuồng Gà", "cb": func(): _interact_pen("chicken")},
+		{"pos": PEN_SHEEP.get_center(), "r": 85.0, "label": "Chuồng Cừu", "cb": func(): _interact_pen("sheep")},
+		{"pos": PEN_PIG.get_center(), "r": 85.0, "label": "Chuồng Lợn", "cb": func(): _interact_pen("pig")},
+		{"pos": FISH_SPOT_POS, "r": 180.0, "label": "Câu cá", "cb": _start_fishing},
 	]
 
 
@@ -365,186 +531,169 @@ func _add_ellipse_wall(center: Vector2, rx: float, ry: float) -> void:
 func _build_pen() -> void:
 	pen_node = Node2D.new()
 	pen_node.name = "Pen"
-	pen_node.position = Vector2(120, 560)
+	pen_node.position = Vector2.ZERO
 	world.add_child(pen_node)
 	_rebuild_pen()
 
 
-# Dựng lại toàn khu chuồng: rào ngoại vi, sân trong, lưới ô chuồng
-# (mỗi LOẠI gia cầm một ô riêng) và các con vật trong ô của chúng.
+# Dựng lại 4 khu chuồng riêng biệt (Bò, Gà, Cừu, Lợn) theo bố trí 2x2:
+# Ban đầu là hàng rào gỗ với nền đất trống (Cấp 0).
+# Khi mua Cấp 1: xuất hiện nhà chuồng, máng ăn/nước, nền rơm.
+# Khi nâng cấp Cấp 2: nhà chuồng lớn hơn (Big Coop / Big Barn), thêm máng ăn & trang trí.
+# Khi có sản phẩm: bong bóng hình icon sản phẩm nổi bồng bềnh, KHÔNG CÓ CHỮ NÀO THÊM.
 func _rebuild_pen() -> void:
 	if pen_node == null:
 		return
+	active_pen_animals.clear()
 	for c in pen_node.get_children():
 		c.queue_free()
 
 	var fh := TextureGen.get_tex("fence_h")
 	var fv := TextureGen.get_tex("fence_v")
-	var fc := TextureGen.get_tex("fence_corner")
-	var org := Vector2(120, 560)  # mọi toạ độ con là toạ độ thế giới trừ org
+	var f_tl := TextureGen.get_tex("fence_corner_tl")
+	var f_tr := TextureGen.get_tex("fence_corner_tr")
+	var f_bl := TextureGen.get_tex("fence_corner_bl")
+	var f_br := TextureGen.get_tex("fence_corner_br")
+	var f_gate := TextureGen.get_tex("gate_coop")
 
-	# Các loại đang nuôi, xếp theo thứ tự DB để ô không đổi chỗ khi mua/bán
-	var species: Array = []
-	for d in PoultryDB.ANIMALS:
-		for a in Inventory.animals:
-			if str(a.id) == str(d.id):
-				species.append(str(d.id))
-				break
-	var rows: int = int(ceil(species.size() / float(PEN_COL_X.size())))
-	var y_s := 660.0 + PEN_ROW_STEP * rows  # mép trên dải rào đóng đáy chuồng
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 2026
 
-	# 1. Nền rơm phủ toàn khu chuồng
-	var bedding := Sprite2D.new()
-	bedding.texture = TextureGen.get_tex("pen_bedding")
-	bedding.position = Vector2(136.0, (y_s - 552.0) / 2.0)
-	bedding.scale = Vector2(272.0 / 224.0, (y_s - 552.0) / 128.0)
-	bedding.z_index = -1
-	pen_node.add_child(bedding)
+	for pcfg in PENS_CONFIG:
+		var sid: String = str(pcfg.id)
+		var r: Rect2 = pcfg.rect
+		var rx: float = r.position.x
+		var ry: float = r.position.y
+		var rw: float = r.size.x
+		var rh: float = r.size.y
+		var tier: int = Inventory.get_coop_tier(sid)
+		var gate_axis: String = str(pcfg.gate_axis)
 
-	# 2. Hàng rào ngoại vi — cổng giữ nguyên ở x 280..328
-	for x in [136, 168, 200, 232, 264, 344, 376]:
-		_add_sprite(fh, Vector2(x, 560.0) - org, pen_node)
-	_add_sprite(TextureGen.get_tex("gate_coop"), Vector2(304, 560.0) - org, pen_node)
-	for y in range(576, int(y_s) + 8, 32):
-		_add_sprite(fv, Vector2(120.0, y) - org, pen_node)
-		_add_sprite(fv, Vector2(392.0, y) - org, pen_node)
-	for x in [136, 168, 200, 232, 264, 296, 328, 360, 376]:
-		_add_sprite(fh, Vector2(x, y_s + 8.0) - org, pen_node)
-	_add_sprite(TextureGen.get_tex("fence_corner_tl"), Vector2(120, 560) - org, pen_node)
-	_add_sprite(TextureGen.get_tex("fence_corner_tr"), Vector2(392, 560) - org, pen_node)
-	_add_sprite(TextureGen.get_tex("fence_corner_bl"), Vector2(120, y_s + 8) - org, pen_node)
-	_add_sprite(TextureGen.get_tex("fence_corner_br"), Vector2(392, y_s + 8) - org, pen_node)
+		# 1. Mặt sàn chuồng: Cấp 0 là nền đất trống; Cấp 1 & 2 là nền rơm vàng
+		var bedding := Sprite2D.new()
+		bedding.texture = TextureGen.get_tex("pen_dirt_bedding" if tier == 0 else "pen_bedding")
+		bedding.position = Vector2(rx + rw / 2.0, ry + rh / 2.0)
+		bedding.z_index = -1
+		pen_node.add_child(bedding)
 
-	# 3. Sân trong: nhà chuồng, máng ăn/nước, ổ đẻ, đống rơm
-	var coop := StaticBody2D.new()
-	coop.position = Vector2(56, 54)
-	var coop_spr := Sprite2D.new()
-	coop_spr.texture = TextureGen.get_tex("coop")
-	coop.add_child(coop_spr)
-	var col := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = Vector2(44, 26)
-	col.shape = shape
-	col.position = Vector2(0, -2)
-	coop.add_child(col)
-	pen_node.add_child(coop)
-	_add_sprite(TextureGen.get_tex("hay_bale"), Vector2(234, 82), pen_node)
-	_add_sprite(TextureGen.get_tex("trough"), Vector2(130, 52), pen_node)
-	_add_sprite(TextureGen.get_tex("water_trough"), Vector2(130, 70), pen_node)
-	_add_sprite(TextureGen.get_tex("nest_box"), Vector2(212, 52), pen_node)
+		# 2. Hàng rào gỗ ngoại vi bao quanh chuồng & Cổng chuồng
+		# Bốn góc rào
+		_add_sprite(f_tl, Vector2(rx, ry), pen_node)
+		_add_sprite(f_tr, Vector2(rx + rw, ry), pen_node)
+		_add_sprite(f_bl, Vector2(rx, ry + rh), pen_node)
+		_add_sprite(f_br, Vector2(rx + rw, ry + rh), pen_node)
 
-	# 4. Va chạm: ngoại vi + dải ngang trước từng hàng ô (chừa lỗ 32px giữa mỗi cột)
-	var pwall := func(center: Vector2, size: Vector2) -> void:
-		_wall(center - org, size, pen_node)
-	pwall.call(Vector2(200, 564), Vector2(160, 8))
-	pwall.call(Vector2(360, 564), Vector2(64, 8))
-	pwall.call(Vector2(120, (568.0 + y_s) / 2.0), Vector2(8, y_s - 552.0))
-	pwall.call(Vector2(392, (568.0 + y_s) / 2.0), Vector2(8, y_s - 552.0))
-	pwall.call(Vector2(256, y_s + 4.0), Vector2(272, 8))
-	for r in rows:
-		var yb := 660.0 + PEN_ROW_STEP * r + 4.0
-		pwall.call(Vector2(136, yb), Vector2(32, 8))
-		pwall.call(Vector2(212, yb), Vector2(56, 8))
-		pwall.call(Vector2(300, yb), Vector2(56, 8))
-		pwall.call(Vector2(376, yb), Vector2(32, 8))
-		for x in [136, 212, 300, 376]:
-			_add_sprite(fh, Vector2(x, 664.0 + PEN_ROW_STEP * r) - org, pen_node)
-	if rows > 0:
-		var colh := y_s - 668.0
-		pwall.call(Vector2(212, 668.0 + colh / 2.0), Vector2(8, colh))
-		pwall.call(Vector2(300, 668.0 + colh / 2.0), Vector2(8, colh))
-		for cx in [212.0, 300.0]:
-			for y in range(676, int(y_s), 32):
-				_add_sprite(fv, Vector2(cx, y) - org, pen_node)
+		# Hai vách tường dọc (Tây và Đông)
+		for y in range(int(ry) + 16, int(ry + rh), 32):
+			_add_sprite(fv, Vector2(rx, y), pen_node)
+			_add_sprite(fv, Vector2(rx + rw, y), pen_node)
+		_wall(Vector2(rx + 4, ry + rh / 2.0), Vector2(8, rh), pen_node)
+		_wall(Vector2(rx + rw - 4, ry + rh / 2.0), Vector2(8, rh), pen_node)
 
-	# 5. Ô chuồng: biển tên từng loại, ô chưa dùng hiện "Trống"
-	var total_slots: int = rows * PEN_COL_X.size()
-	for i in total_slots:
-		var cx: float = PEN_COL_X[i % PEN_COL_X.size()]
-		var cy := PEN_GRID_TOP + PEN_ROW_STEP * floori(i / float(PEN_COL_X.size()))
-		var badge := PanelContainer.new()
-		if i < species.size():
-			badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.18, 0.12, 0.06, 0.92), UIKit.COLOR_BORDER_GOLD, 4))
-			UIKit.label(badge, str(PoultryDB.get_animal(species[i]).name), 10, UIKit.COLOR_TEXT_TITLE)
+		if gate_axis == "south":
+			# Tường Bắc liền kín (không có cổng)
+			for x in range(int(rx) + 16, int(rx + rw), 32):
+				_add_sprite(fh, Vector2(x, ry), pen_node)
+			_wall(Vector2(rx + rw / 2.0, ry + 4), Vector2(rw, 8), pen_node)
+
+			# Tường Nam hướng ra đường đá giữa: chừa cổng ở giữa
+			for x in [rx + 16, rx + 48, rx + 80]:
+				_add_sprite(fh, Vector2(x, ry + rh), pen_node)
+			_add_sprite(f_gate, Vector2(rx + 112, ry + rh), pen_node)
+			for x in [rx + 144, rx + 176, rx + 208]:
+				_add_sprite(fh, Vector2(x, ry + rh), pen_node)
+			_wall(Vector2(rx + 48, ry + rh + 4), Vector2(96, 8), pen_node)
+			_wall(Vector2(rx + 176, ry + rh + 4), Vector2(96, 8), pen_node)
 		else:
-			badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07, 0.8), Color(0.32, 0.26, 0.2), 4))
-			UIKit.label(badge, "Ô trống", 10, UIKit.COLOR_TEXT_MUTED)
-		badge.position = Vector2(cx - 120.0, cy - 560.0) + Vector2(2, 1)
-		pen_node.add_child(badge)
+			# Tường Nam liền kín
+			for x in range(int(rx) + 16, int(rx + rw), 32):
+				_add_sprite(fh, Vector2(x, ry + rh), pen_node)
+			_wall(Vector2(rx + rw / 2.0, ry + rh + 4), Vector2(rw, 8), pen_node)
 
-	# 6. Con vật: mỗi loại đứng trong ô của nó
-	if species.size() > 0:
-		var rng := RandomNumberGenerator.new()
-		rng.seed = 777
-		var used := {}
+			# Tường Bắc hướng ra đường đá giữa: chừa cổng ở giữa
+			for x in [rx + 16, rx + 48, rx + 80]:
+				_add_sprite(fh, Vector2(x, ry), pen_node)
+			_add_sprite(f_gate, Vector2(rx + 112, ry), pen_node)
+			for x in [rx + 144, rx + 176, rx + 208]:
+				_add_sprite(fh, Vector2(x, ry), pen_node)
+			_wall(Vector2(rx + 48, ry + 4), Vector2(96, 8), pen_node)
+			_wall(Vector2(rx + 176, ry + 4), Vector2(96, 8), pen_node)
+
+		# 3. Công trình chuồng trại và cơ sở vật chất (Chỉ xuất hiện khi đã mua Cấp 1 hoặc Cấp 2)
+		if tier >= 1:
+			var bldg_body := StaticBody2D.new()
+			var bpos: Vector2 = pcfg.bldg_pos
+			bldg_body.position = bpos
+			var bldg_spr := Sprite2D.new()
+			var is_coop := (str(pcfg.bldg_type) == "coop")
+			var btex_key := ""
+			if is_coop:
+				btex_key = "coop_tier2" if tier >= 2 else "coop_tier1"
+			else:
+				btex_key = "barn_tier2" if tier >= 2 else "barn_tier1"
+			bldg_spr.texture = TextureGen.get_tex(btex_key)
+			var b_scale := Vector2(0.70, 0.70) if tier >= 2 else Vector2(0.65, 0.65)
+			bldg_spr.scale = b_scale
+			bldg_body.add_child(bldg_spr)
+
+			# Va chạm thân nhà chuồng
+			var bcol := CollisionShape2D.new()
+			var bshape := RectangleShape2D.new()
+			bshape.size = Vector2(56 * b_scale.x / 0.65, 30 * b_scale.y / 0.65)
+			bcol.shape = bshape
+			bcol.position = Vector2(0, 10)
+			bldg_body.add_child(bcol)
+			pen_node.add_child(bldg_body)
+
+			# Máng ăn & máng nước
+			_add_sprite(TextureGen.get_tex("trough"), Vector2(rx + 126, ry + 40), pen_node)
+			_add_sprite(TextureGen.get_tex("water_trough"), Vector2(rx + 126, ry + 58), pen_node)
+			_add_sprite(TextureGen.get_tex("hay_bale"), Vector2(rx + 190, ry + 40), pen_node)
+
+			if is_coop:
+				_add_sprite(TextureGen.get_tex("nest_box"), Vector2(rx + 190, ry + 60), pen_node)
+
+			# Cấp 2 có thêm đống rơm thứ hai và chi tiết nâng cấp
+			if tier >= 2:
+				_add_sprite(TextureGen.get_tex("hay_bale"), Vector2(rx + 168, ry + 40), pen_node)
+
+		# 4. Các con vật thuộc loài này di chuyển và ăn trong chuồng
+		var species_animals: Array = []
 		for a in Inventory.animals:
-			var sid := str(a.id)
-			var ci: int = species.find(sid)
-			var cx: float = PEN_COL_X[ci % PEN_COL_X.size()]
-			var cy := PEN_GRID_TOP + PEN_ROW_STEP * floori(ci / float(PEN_COL_X.size()))
-			var k: int = int(used.get(sid, 0))
-			used[sid] = k + 1
-			var animal_node := Node2D.new()
-			animal_node.position = Vector2(cx + PEN_CELL.x / 2.0, cy + PEN_CELL.y / 2.0) \
-					+ PEN_SPOTS[k % PEN_SPOTS.size()] \
-					+ Vector2(rng.randf_range(-4, 4), rng.randf_range(-3, 3)) - org
+			if PoultryDB.get_canonical_id(str(a.id)) == sid:
+				species_animals.append(a)
+
+		var anim_spots := [
+			Vector2(rx + 56, ry + 88),
+			Vector2(rx + 112, ry + 88),
+			Vector2(rx + 168, ry + 88),
+			Vector2(rx + 84, ry + 104),
+			Vector2(rx + 140, ry + 104),
+			Vector2(rx + 60, ry + 68),
+		]
+
+		var d := PoultryDB.get_animal(sid)
+		for idx in species_animals.size():
+			var a: Dictionary = species_animals[idx]
+			var spot: Vector2 = anim_spots[idx % anim_spots.size()] + Vector2(rng.randf_range(-5, 5), rng.randf_range(-3, 3))
+			var animal_node := PenAnimal.new()
+			animal_node.position = spot
+			animal_node.setup(sid, a, idx, r, Vector2(rx + 126, ry + 40))
 			pen_node.add_child(animal_node)
+			active_pen_animals.append(animal_node)
 
-			var d := PoultryDB.get_animal(sid)
-			if d.is_empty():
-				continue
-			var spr := Sprite2D.new()
-			spr.texture = TextureGen.animal_sprite(str(d.shape), str(d.color))
-			spr.scale = Vector2(1.5, 1.5)
-			animal_node.add_child(spr)
+		# 5. Biểu tượng thu hoạch chung nổi trên chuồng khi có sản phẩm (KHÔNG ĐƯỢC CÓ CHỮ GÌ THÊM)
+		var ready_count := Inventory.ready_products_for_species(sid)
+		if ready_count > 0:
+			var pen_bubble := Sprite2D.new()
+			pen_bubble.texture = TextureGen.get_harvest_bubble(str(d.product))
+			pen_bubble.scale = Vector2(1.35, 1.35)
+			pen_bubble.position = Vector2(rx + 112, ry + 22)
+			pen_node.add_child(pen_bubble)
 
-			# Hiệu ứng mổ thóc / cử động sống động
-			var tw := animal_node.create_tween().set_loops()
-			var delay := rng.randf_range(0.2, 1.8)
-			tw.tween_interval(delay)
-			tw.tween_property(spr, "position:y", 2.0, 0.15)
-			tw.tween_interval(0.1)
-			tw.tween_property(spr, "position:y", 0.0, 0.15)
-			tw.tween_interval(rng.randf_range(1.5, 3.0))
-
-			# Bong bóng trứng nổi trên đầu nếu con này có sản phẩm chờ thu
-			if int(a.get("ready", 0)) > 0:
-				var egg_bubble := Sprite2D.new()
-				egg_bubble.texture = TextureGen.orb_icon(str(d.product_color))
-				egg_bubble.scale = Vector2(0.85, 0.85)
-				egg_bubble.position = Vector2(0, -18)
-				animal_node.add_child(egg_bubble)
-
-				var btw := egg_bubble.create_tween().set_loops()
-				btw.tween_property(egg_bubble, "position:y", -21.0, 0.5).set_trans(Tween.TRANS_SINE)
-				btw.tween_property(egg_bubble, "position:y", -17.0, 0.5).set_trans(Tween.TRANS_SINE)
-
-	# 7. Biển báo thu hoạch nổi trên sân nếu có sản phẩm
-	var total_ready: int = Inventory.ready_products()
-	if total_ready > 0:
-		var harvest_sign := Node2D.new()
-		harvest_sign.position = Vector2(48, 30)
-		pen_node.add_child(harvest_sign)
-
-		var sign_bubble := PanelContainer.new()
-		sign_bubble.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.16, 0.08, 0.95), UIKit.COLOR_BORDER_GOLD, 6))
-		var sh := HBoxContainer.new()
-		sh.add_theme_constant_override("separation", 4)
-		sign_bubble.add_child(sh)
-
-		var e_ic := TextureRect.new()
-		e_ic.texture = TextureGen.star_icon()
-		e_ic.custom_minimum_size = Vector2(14, 14)
-		e_ic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-		sh.add_child(e_ic)
-
-		UIKit.label(sh, "Thu hoạch (%d) [E]" % total_ready, 12, UIKit.COLOR_TEXT_TITLE)
-		harvest_sign.add_child(sign_bubble)
-		sign_bubble.position = Vector2(-sign_bubble.get_combined_minimum_size().x / 2.0, -10)
-
-		var stw := harvest_sign.create_tween().set_loops()
-		stw.tween_property(harvest_sign, "position:y", 1.0, 0.6).set_trans(Tween.TRANS_SINE)
-		stw.tween_property(harvest_sign, "position:y", 6.0, 0.6).set_trans(Tween.TRANS_SINE)
+			var ptw := pen_bubble.create_tween().set_loops()
+			ptw.tween_property(pen_bubble, "position:y", pen_bubble.position.y - 4.0, 0.6).set_trans(Tween.TRANS_SINE)
+			ptw.tween_property(pen_bubble, "position:y", pen_bubble.position.y, 0.6).set_trans(Tween.TRANS_SINE)
 
 
 func _build_mailbox() -> void:
@@ -595,6 +744,7 @@ func _default_mailbox_data() -> Dictionary:
 	return {
 		"hoes": 999,
 		"coins": 9999,
+		"feed": 30,
 		"produce": {
 			"tomato": 50,
 			"corn": 50,
@@ -604,10 +754,9 @@ func _default_mailbox_data() -> Dictionary:
 			"potato": 50,
 			"rice": 50,
 			"trung_ga": 50,
-			"trung_vit": 50,
-			"thit_ga": 30,
-			"long_ngong": 20,
-			"trung_da_dieu": 10,
+			"sua_bo": 30,
+			"thit_lon": 30,
+			"long_cuu": 20,
 		},
 		"fish": {
 			"chep": 30,
@@ -734,7 +883,47 @@ func _update_stall_crates_visual() -> void:
 
 func _on_stall_changed() -> void:
 	_update_stall_crates_visual()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
+
+
+func _build_mine_entrance() -> void:
+	# 1. Cửa hang đá khoét trực tiếp vào vách núi biên Bắc
+	var cave_spr := Sprite2D.new()
+	cave_spr.texture = TextureGen.get_tex("cave_entrance")
+	cave_spr.position = MINE_ENTRANCE_POS
+	world.add_child(cave_spr)
+
+	# Chân vách đá 2 bên cửa mỏ ngăn người chơi đi xuyên núi
+	_wall(Vector2(56, 76), Vector2(48, 24))
+	_wall(Vector2(136, 76), Vector2(48, 24))
+
+	# 2. Biển báo gỗ cạnh hang ở chân vách núi
+	var sign_spr := Sprite2D.new()
+	sign_spr.texture = TextureGen.get_tex("mine_sign")
+	sign_spr.position = MINE_SIGN_POS
+	world.add_child(sign_spr)
+
+	# 3. NPC Leah đứng trước cửa mỏ hướng dẫn người chơi
+	npc_leah = StaticBody2D.new()
+	npc_leah.position = LEAH_MINER_POS
+	var l_spr := Sprite2D.new()
+	l_spr.texture = TextureGen.sdv_char_tex("Leah", "down", 0)
+	l_spr.scale = Vector2(1.2, 1.2)
+	l_spr.offset = Vector2(0, -14)
+	npc_leah.add_child(l_spr)
+
+	var l_col := CollisionShape2D.new()
+	var l_shape := CircleShape2D.new()
+	l_shape.radius = 6.0
+	l_col.shape = l_shape
+	npc_leah.add_child(l_col)
+
+	# Nhịp thở tự nhiên cho Leah
+	var tw := l_spr.create_tween().set_loops()
+	tw.tween_property(l_spr, "scale:y", 1.23, 1.2).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(l_spr, "scale:y", 1.2, 1.2).set_trans(Tween.TRANS_SINE)
+
+	world.add_child(npc_leah)
 
 
 func _add_decor(tex: Texture2D, pos: Vector2, scl: float, collide: Rect2) -> StaticBody2D:
@@ -786,8 +975,8 @@ func _random_foliage_type(rng: RandomNumberGenerator) -> String:
 
 
 func _is_grass_surface(pos: Vector2) -> bool:
-	# 1. Giới hạn biên bản đồ
-	if pos.x < 45.0 or pos.x > WORLD_SIZE.x - 45.0 or pos.y < 50.0 or pos.y > WORLD_SIZE.y - 50.0:
+	# 1. Giới hạn biên bản đồ (phía Bắc chừa khoảng cho vách núi nhô lên cao 96px)
+	if pos.x < 45.0 or pos.x > WORLD_SIZE.x - 45.0 or pos.y < 105.0 or pos.y > WORLD_SIZE.y - 50.0:
 		return false
 
 	# 2. Toàn bộ mạng lưới đường đi (PATHS) + hành lang an toàn 28px
@@ -795,9 +984,10 @@ func _is_grass_surface(pos: Vector2) -> bool:
 		if p.grow(28.0).has_point(pos):
 			return false
 
-	# 3. Ruộng nông trại & hàng rào + cổng vào (Tây, Đông, rào Bắc, Nam)
-	var farm_box := Rect2(FARM_ORIGIN.x - 40.0, FARM_ORIGIN.y - 60.0, FARM_TILES.x * 32.0 + 80.0, FARM_TILES.y * 32.0 + 120.0)
-	if farm_box.has_point(pos):
+	# 3. Ruộng nông trại & hàng rào 2 thửa (Thửa Bắc & Thửa Nam)
+	var farm_box_n := Rect2(824 - 40.0, 304 - 40.0, 448 + 80.0, 128 + 60.0)
+	var farm_box_s := Rect2(824 - 40.0, 512 - 20.0, 448 + 80.0, 128 + 60.0)
+	if farm_box_n.has_point(pos) or farm_box_s.has_point(pos):
 		return false
 
 	# 4. Nhà gỗ & hiên nhà
@@ -823,31 +1013,40 @@ func _is_grass_surface(pos: Vector2) -> bool:
 	if pos.distance_to(MAILBOX_POS) < 36.0:
 		return false
 
-	# 6. Bù nhìn rơm
-	if pos.distance_to(SCARECROW_POS) < 32.0:
+	# 5b. Vị trí Bác Trưởng Thôn đứng trước nhà
+	if pos.distance_to(MAYOR_POS) < 32.0:
+		return false
+
+	# 6. Bù nhìn rơm ở giữa 2 thửa ruộng
+	if pos.distance_to(SCARECROW_NORTH_POS) < 32.0 or pos.distance_to(SCARECROW_SOUTH_POS) < 32.0:
 		return false
 
 	# 7. Vị trí xuất phát của người chơi
 	if pos.distance_to(PLAYER_START) < 40.0:
 		return false
 
-	# 8. Khu chuồng nuôi gia cầm & lối đi xung quanh
-	var pen_box := Rect2(90.0, 530.0, 320.0, 230.0)
+	# 8. 4 Khu chuồng nuôi & lối đi lát đá xung quanh
+	var pen_box := Rect2(230.0, 520.0, 550.0, 360.0)
 	if pen_box.has_point(pos):
 		return false
 
-	# 9. Ao nước & toàn bộ bờ ao câu cá
-	if POND_RECT.grow(30.0).has_point(pos):
+	# 9. Ao nước tròn lớn & toàn bộ bờ ao câu cá
+	if POND_RECT.grow(20.0).has_point(pos):
 		return false
 
 	# 10. Ba quầy hàng chợ quê & khoảng đất mua bán
-	var market_box := Rect2(920.0, 330.0, 500.0, 130.0)
+	var market_box := Rect2(STAND_TU_POS.x - 90.0, 330.0, 500.0, 130.0)
 	if market_box.has_point(pos):
 		return false
 
 	# 10b. Sạp hàng nông sản ở góc rẽ trái
 	var stall_box := Rect2(MARKET_STALL_POS.x - 65.0, MARKET_STALL_POS.y - 75.0, 130.0, 95.0)
 	if stall_box.has_point(pos):
+		return false
+
+	# 10c. Khu vực cửa hầm mỏ đá, biển báo và NPC Leah (trống hoàn toàn không bị cây che)
+	var mine_box := Rect2(0.0, 140.0, 220.0, 160.0)
+	if mine_box.has_point(pos):
 		return false
 
 	# 11. Các vạt đất trống (dirt patches) tự nhiên trên mặt đất
@@ -963,47 +1162,75 @@ func _sprout_random_plant() -> void:
 func _build_fences() -> void:
 	var fh: Texture2D = TextureGen.get_tex("fence_h")
 	var fv: Texture2D = TextureGen.get_tex("fence_v")
-	var y_top := 370
-	var y_bot := 672
-	var x_left := 408
-	var x_right := 888
+	var f_gate: Texture2D = TextureGen.get_tex("gate_farm")
+	var f_tl: Texture2D = TextureGen.get_tex("fence_corner_tl")
+	var f_tr: Texture2D = TextureGen.get_tex("fence_corner_tr")
+	var f_bl: Texture2D = TextureGen.get_tex("fence_corner_bl")
+	var f_br: Texture2D = TextureGen.get_tex("fence_corner_br")
 
-	# 1. Hàng ngang trên + dưới liền kín (14 sprite 32px nối liền kín khít từ cọc góc này sang cọc góc kia)
-	for x in range(440, 857, 32):
-		_add_sprite(fh, Vector2(x, y_top))
-		_add_sprite(fh, Vector2(x, y_bot))
+	var x_left := 808
+	var x_right := 1288
+	var farm_mid_x := (x_left + x_right) / 2.0  # 1048.0
+	var farm_width := float(x_right - x_left)   # 480.0
 
-	# 2. Hai cột dọc — Tây và Đông chừa cửa đi qua ở đại lộ (tâm 472), rào nối khít vào cổng không khe hở
-	for y in [398, 430, 514, 546, 578, 610, 642]:
+	# ---------------- THỬA BẮC (NORTH PLOT: y: 304..432) ----------------
+	var n_ytop := 290
+	var n_ybot := 446
+
+	# 1. Hàng ngang Bắc (liền kín)
+	for x in range(x_left + 32, x_right, 32):
+		_add_sprite(fh, Vector2(x, n_ytop))
+	_add_sprite(f_tl, Vector2(x_left, n_ytop))
+	_add_sprite(f_tr, Vector2(x_right, n_ytop))
+	_add_sprite(f_bl, Vector2(x_left, n_ybot))
+	_add_sprite(f_br, Vector2(x_right, n_ybot))
+
+	# 2. Hai cột dọc Tây và Đông (liền kín)
+	for y in [322, 354, 386, 418]:
 		_add_sprite(fv, Vector2(x_left, y))
 		_add_sprite(fv, Vector2(x_right, y))
 
-	# 3. Bốn cọc góc vững chãi cho hàng rào ruộng ngay rìa ngoài đất trồng
-	_add_sprite(TextureGen.get_tex("fence_corner_tl"), Vector2(x_left, y_top))
-	_add_sprite(TextureGen.get_tex("fence_corner_tr"), Vector2(x_right, y_top))
-	_add_sprite(TextureGen.get_tex("fence_corner_bl"), Vector2(x_left, y_bot))
-	_add_sprite(TextureGen.get_tex("fence_corner_br"), Vector2(x_right, y_bot))
+	# 3. Hàng ngang Nam: mở cổng ở giữa hướng ra đại lộ (x: 1016..1080)
+	for x in [840, 872, 904, 936, 968, 1000, 1096, 1128, 1160, 1192, 1224, 1256]:
+		_add_sprite(fh, Vector2(x, n_ybot))
+	_add_sprite(f_gate, Vector2(farm_mid_x, n_ybot))
 
-	# Va chạm: tây/đông mở cửa giữa (y: 440..504), nam/bắc liền kín
-	var door_y1 := 440
-	var door_y2 := 504
-	var farm_mid_x := (x_left + x_right) / 2.0  # 648.0
-	var farm_width := float(x_right - x_left)   # 480.0
-	_wall(Vector2(farm_mid_x, y_top), Vector2(farm_width, 10))
-	_wall(Vector2(farm_mid_x, y_bot), Vector2(farm_width, 10))
-	_wall(Vector2(x_left, (y_top - 6 + door_y1) / 2.0), Vector2(10, door_y1 - y_top + 6))
-	_wall(Vector2(x_left, (door_y2 + y_bot + 8) / 2.0), Vector2(10, y_bot + 8 - door_y2))
-	_wall(Vector2(x_right, (y_top - 6 + door_y1) / 2.0), Vector2(10, door_y1 - y_top + 6))
-	_wall(Vector2(x_right, (door_y2 + y_bot + 8) / 2.0), Vector2(10, y_bot + 8 - door_y2))
+	# Va chạm Thửa Bắc
+	_wall(Vector2(farm_mid_x, n_ytop), Vector2(farm_width, 10))
+	_wall(Vector2(x_left, (n_ytop + n_ybot) / 2.0), Vector2(10, n_ybot - n_ytop))
+	_wall(Vector2(x_right, (n_ytop + n_ybot) / 2.0), Vector2(10, n_ybot - n_ytop))
+	_wall(Vector2((x_left + 1016) / 2.0, n_ybot), Vector2(1016 - x_left, 10))
+	_wall(Vector2((1080 + x_right) / 2.0, n_ybot), Vector2(x_right - 1080, 10))
 
-	# 4. Hai khung cổng DỌC nghệ thuật tại cửa Tây & Đông
-	var door_mid := 472.0
-	_add_sprite(TextureGen.get_tex("gate_v"), Vector2(x_left, door_mid))
-	var s_right := Sprite2D.new()
-	s_right.texture = TextureGen.get_tex("gate_v")
-	s_right.position = Vector2(x_right, door_mid)
-	s_right.flip_h = true
-	world.add_child(s_right)
+	# ---------------- THỬA NAM (SOUTH PLOT: y: 512..640) ----------------
+	var s_ytop := 498
+	var s_ybot := 654
+
+	# 1. Hàng ngang Bắc: mở cổng ở giữa hướng ra đại lộ (x: 1016..1080)
+	for x in [840, 872, 904, 936, 968, 1000, 1096, 1128, 1160, 1192, 1224, 1256]:
+		_add_sprite(fh, Vector2(x, s_ytop))
+	_add_sprite(f_gate, Vector2(farm_mid_x, s_ytop))
+
+	_add_sprite(f_tl, Vector2(x_left, s_ytop))
+	_add_sprite(f_tr, Vector2(x_right, s_ytop))
+	_add_sprite(f_bl, Vector2(x_left, s_ybot))
+	_add_sprite(f_br, Vector2(x_right, s_ybot))
+
+	# 2. Hai cột dọc Tây và Đông (liền kín)
+	for y in [530, 562, 594, 626]:
+		_add_sprite(fv, Vector2(x_left, y))
+		_add_sprite(fv, Vector2(x_right, y))
+
+	# 3. Hàng ngang Nam (liền kín)
+	for x in range(x_left + 32, x_right, 32):
+		_add_sprite(fh, Vector2(x, s_ybot))
+
+	# Va chạm Thửa Nam
+	_wall(Vector2(farm_mid_x, s_ybot), Vector2(farm_width, 10))
+	_wall(Vector2(x_left, (s_ytop + s_ybot) / 2.0), Vector2(10, s_ybot - s_ytop))
+	_wall(Vector2(x_right, (s_ytop + s_ybot) / 2.0), Vector2(10, s_ybot - s_ytop))
+	_wall(Vector2((x_left + 1016) / 2.0, s_ytop), Vector2(1016 - x_left, 10))
+	_wall(Vector2((1080 + x_right) / 2.0, s_ytop), Vector2(x_right - 1080, 10))
 
 
 func _add_sprite(tex: Texture2D, pos: Vector2, parent: Node = null) -> void:
@@ -1015,7 +1242,8 @@ func _add_sprite(tex: Texture2D, pos: Vector2, parent: Node = null) -> void:
 
 func _build_walls() -> void:
 	var t := 40.0
-	_wall(Vector2(WORLD_SIZE.x / 2, -t / 2), Vector2(WORLD_SIZE.x + t * 2, t))
+	# Chặn biên Bắc tại chân vách núi Stardew Valley (y = 80px)
+	_wall(Vector2(WORLD_SIZE.x / 2, 20.0), Vector2(WORLD_SIZE.x + t * 2, 120.0))
 	_wall(Vector2(WORLD_SIZE.x / 2, WORLD_SIZE.y + t / 2), Vector2(WORLD_SIZE.x + t * 2, t))
 	_wall(Vector2(-t / 2, WORLD_SIZE.y / 2), Vector2(t, WORLD_SIZE.y + t * 2))
 	_wall(Vector2(WORLD_SIZE.x + t / 2, WORLD_SIZE.y / 2), Vector2(t, WORLD_SIZE.y + t * 2))
@@ -1063,6 +1291,17 @@ func _build_ui() -> void:
 	add_child(cat_panel)
 	cat_panel.closed.connect(_close_panels)
 	cat_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
+	quest_panel = QuestPanelScript.new()
+	add_child(quest_panel)
+	quest_panel.setup(quest_mgr)
+	quest_panel.closed.connect(_close_panels)
+	quest_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
+	tool_upgrade_panel = ToolUpgradePanelScript.new()
+	add_child(tool_upgrade_panel)
+	tool_upgrade_panel.closed.connect(_close_panels)
+	tool_upgrade_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
+	hud.setup_quests(quest_mgr)
+	hud.open_quests_requested.connect(_open_quest_panel)
 	pause_menu = PauseMenuScript.new()
 	add_child(pause_menu)
 	dialog_box = DialogueBoxScript.new()
@@ -1100,7 +1339,8 @@ func _process(delta: float) -> void:
 		_debug_step()
 	if _clicktest != "":
 		_clicktest_step()
-	minimap.visible = mode == Mode.PLAY
+	if minimap != null:
+		minimap.visible = (mode == Mode.PLAY) and (not in_mine)
 	if touch_ui != null:
 		touch_ui.visible = mode == Mode.PLAY
 	if mode != Mode.PLAY or get_tree().paused:
@@ -1110,11 +1350,34 @@ func _process(delta: float) -> void:
 	_process_stall_customers(delta)
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
-	_update_hint_and_highlight()
+	# Gợn sóng nước hồ tự nhiên phong cách Stardew Valley
+	if not in_mine:
+		_lake_ripple_timer -= delta
+		if _lake_ripple_timer <= 0.0:
+			_lake_ripple_timer = randf_range(1.5, 2.5)
+			var r_angle := randf() * TAU
+			var r_dist := sqrt(randf())
+			var rx := 1440.0 + cos(r_angle) * (r_dist * 115.0)
+			var ry := 900.0 + sin(r_angle) * (r_dist * 75.0)
+			if ry >= 820.0 and ry <= 990.0:
+				_spawn_water_ripple(Vector2(rx, ry), randf_range(0.85, 1.15), randf_range(0.7, 0.9))
+
 	if fishing:
 		fishing_left -= delta
 		hud.set_hint("Đang thả câu... còn %d giây" % int(ceil(maxf(fishing_left, 0.0))))
 		highlight.visible = false
+		# Dây câu mảnh kết nối đầu cần tới phao
+		if is_instance_valid(_fishing_line) and is_instance_valid(_bobber_spr):
+			var tip: Vector2 = player.get_rod_tip_position()
+			var bpos: Vector2 = _bobber_spr.position
+			var mid: Vector2 = (tip + bpos) * 0.5 + Vector2(0, 4.0)
+			_fishing_line.points = PackedVector2Array([tip, mid, bpos])
+		# Gợn sóng nước lan tỏa từ phao câu
+		_bobber_ripple_timer -= delta
+		if _bobber_ripple_timer <= 0.0:
+			_bobber_ripple_timer = 0.85
+			if is_instance_valid(_bobber_spr):
+				_spawn_water_ripple(_bobber_spr.position, 0.75, 0.7)
 		if fishing_left <= 0.0:
 			_finish_fishing()
 	if GameState.clock >= GameState.COLLAPSE_MIN and GameState.clock < GameState.DAY_START:
@@ -1139,15 +1402,16 @@ func _process_stall_customers(delta: float) -> void:
 				c.dismiss_for_night()
 		return
 
-	# Cho phép tối đa 10 NPC xuất hiện và chờ cùng lúc
-	if _stall_customers.size() >= STALL_COUNTER_SPOTS.size():
+	# Giới hạn số lượng khách ghé sạp cùng lúc (tối đa 3 khách để sạp thoáng đãng)
+	if _stall_customers.size() >= 3:
 		return
 
 	_stall_customer_timer += delta
-	# Cứ mỗi 3.5 - 5s có một khách mới ghé sạp nếu chưa đủ 10 người
-	if _stall_customer_timer < 4.0:
+	# Giảm tần suất: khoảng 16 - 26 giây mới có một khách mới ghé sạp
+	if _stall_customer_timer < _next_stall_customer_delay:
 		return
 	_stall_customer_timer = 0.0
+	_next_stall_customer_delay = randf_range(16.0, 26.0)
 
 	_spawn_stall_customer()
 
@@ -1234,6 +1498,9 @@ func _spawn_stall_customer(forced_slot_idx: int = -1) -> Node2D:
 	cust.buy_qty = int(target_item.get("qty", 1))
 
 	cust.purchase_completed.connect(_on_stall_customer_purchased)
+	cust.wait_timeout_expired.connect(func(who: String, what: String):
+		hud.toast("%s: Đợi một lúc không thấy có %s nên đành về vậy... 💨" % [who, what], Color(0.95, 0.75, 0.55))
+	)
 	cust.departed.connect(func():
 		_stall_customers.erase(cust)
 		if _active_stall_customer == cust:
@@ -1266,15 +1533,32 @@ func _on_stall_customer_purchased(slot_idx: int, item_name: String, qty: int, co
 	_update_stall_coin_badge()
 	var who := buyer_name if buyer_name != "" else "Khách"
 	hud.toast("%s ghé mua %d %s! Có %d xu chờ thu tại sạp 🏪" % [who, qty, item_name, stall_revenue], Color(1.0, 0.88, 0.4))
-	_spawn_effect("fx_harvest", Vector2(184, 432))
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+	if quest_mgr != null:
+		quest_mgr.advance_progress("stall_sell", "any", qty)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 
 
 func _tint() -> Color:
-	# 7:00 - 19:00 trời sáng; 19:00 - 7:00 đêm dịu (ruộng vẫn nhìn rõ màu nâu)
+	# 7:00 - 19:00 trời sáng; 19:00 - 7:00 đêm dịu
 	var t := GameState.clock
 	var night := Color(0.68, 0.72, 0.92)
 	var day := Color.WHITE
+
+	# Điều chỉnh tông màu môi trường theo thời tiết
+	match GameState.weather:
+		"drizzle":
+			day = Color(0.88, 0.92, 0.96)
+			night = Color(0.62, 0.66, 0.88)
+		"rain":
+			day = Color(0.74, 0.82, 0.94)
+			night = Color(0.55, 0.60, 0.82)
+		"storm":
+			day = Color(0.55, 0.60, 0.76)
+			night = Color(0.42, 0.46, 0.68)
+		"windy":
+			day = Color(0.96, 0.98, 0.94)
+			night = Color(0.65, 0.70, 0.90)
+
 	if t < 420:
 		# 0:00-6:00 đêm; 6:00-7:00 chuyển sáng
 		return night.lerp(day, clampf((t - 360) / 60.0, 0, 1))
@@ -1287,19 +1571,42 @@ func _tint() -> Color:
 
 
 func _update_hint_and_highlight() -> void:
+	if in_mine:
+		highlight.visible = false
+		var near_m: Dictionary = mine_manager.get_interactable_near(player.position) if mine_manager else {}
+		if not near_m.is_empty():
+			hud.set_hint("E: " + str(near_m.get("label", "")))
+		else:
+			hud.set_hint("")
+		return
+
 	var near := _nearest_interactable()
 	if not near.is_empty():
 		highlight.visible = false
 		var lbl: String = str(near.label)
-		if near.pos == PEN_RECT.get_center() + Vector2(0, 4):
-			var r_count := Inventory.ready_products()
-			if r_count > 0:
-				lbl = "Thu hoạch (%d) 🥚" % r_count
-			elif Inventory.animals.size() > 0:
-				lbl = "Chuồng gia cầm (%d con)" % Inventory.animals.size()
-			else:
-				lbl = "Chuồng gia cầm"
-		elif near.pos == MAILBOX_POS:
+		var pen_matched := false
+		for pcfg in PENS_CONFIG:
+			if near.pos == pcfg.rect.get_center():
+				pen_matched = true
+				var sid: String = str(pcfg.id)
+				var r_count := Inventory.ready_products_for_species(sid)
+				var cname: String = str(pcfg.name)
+				var hungry_count := Inventory.hungry_animals_for_species(sid)
+				if r_count > 0:
+					lbl = "Thu hoạch %s (%d) ⭐" % [cname, r_count]
+				elif hungry_count > 0:
+					if Inventory.feed_count() > 0:
+						lbl = "Cho %s ăn 🌾 (%d con đói · Cám x%d)" % [cname, hungry_count, Inventory.feed_count()]
+					else:
+						lbl = "%s (Đói · Cần mua Túi Cám ở Cửa Hàng)" % cname
+				else:
+					var tier := Inventory.get_coop_tier(sid)
+					if tier == 0:
+						lbl = "%s (Chưa mua)" % cname
+					else:
+						lbl = "%s (%d con)" % [cname, Inventory.animals_of_species(sid)]
+				break
+		if not pen_matched and near.pos == MAILBOX_POS:
 			if _has_mailbox_items():
 				lbl = "Hòm thư 📬 (Có quà)"
 			else:
@@ -1330,6 +1637,9 @@ func _update_hint_and_highlight() -> void:
 
 
 func _nearest_interactable() -> Dictionary:
+	if in_mine and mine_manager != null:
+		return mine_manager.get_interactable_near(player.position)
+
 	var best := {}
 	var best_d := INF
 	for it in interactables:
@@ -1365,18 +1675,50 @@ func _nearest_interactable() -> Dictionary:
 					"label": "%s · [E] Báo hết hàng" % c.display_name,
 					"cb": func(): _decline_stall_customer(c)
 				}
-	# Kiểm tra chú mèo tam thể làm nông
-	if is_instance_valid(cat_helper):
-		var d_cat: float = player.position.distance_to(cat_helper.position)
-		if d_cat <= 45.0 and d_cat < best_d:
-			best_d = d_cat
-			var cat_lbl := "Nói chuyện với Mèo Tam Thể 🐱" if not cat_helper.is_hired else "Quản lý việc làm của Mèo 🐱"
-			best = {
-				"pos": cat_helper.position,
-				"r": 45.0,
-				"label": cat_lbl,
-				"cb": _open_cat_panel
-			}
+	# Kiểm tra từng con vật trong chuồng (cho ăn / thu hoạch trực tiếp)
+	for anim in active_pen_animals:
+		if is_instance_valid(anim):
+			var d_anim: float = player.position.distance_to(anim.position)
+			if d_anim <= 42.0 and d_anim < best_d:
+				best_d = d_anim
+				var aname: String = anim.get_animal_name()
+				if anim.is_ready():
+					best = {
+						"pos": anim.position,
+						"r": 42.0,
+						"label": "Thu hoạch %s (%s) ⭐" % [aname, anim.get_product_name()],
+						"cb": func(): _harvest_single_animal(anim)
+					}
+				elif not anim.is_fed():
+					if Inventory.feed_count() > 0:
+						best = {
+							"pos": anim.position,
+							"r": 42.0,
+							"label": "Cho %s ăn 🌾 (Cám x%d)" % [aname, Inventory.feed_count()],
+							"cb": func(): _feed_single_animal(anim)
+						}
+					else:
+						best = {
+							"pos": anim.position,
+							"r": 42.0,
+							"label": "Cho %s ăn 🌾 (Cần mua Túi Cám ở Cửa Hàng)" % aname,
+							"cb": func(): hud.toast("Bạn cần mua Túi Cám ở tiệm Cô Tư để cho ăn!", Color(1.0, 0.65, 0.4))
+						}
+				elif anim.state == PenAnimal.State.EATING or anim.state == PenAnimal.State.WALK_TO_TROUGH:
+					best = {
+						"pos": anim.position,
+						"r": 42.0,
+						"label": "%s (Đang ăn trong máng 🌾)" % aname,
+						"cb": func(): pass
+					}
+				else:
+					var rem: int = int(ceil(anim.get_remaining_wait_time()))
+					best = {
+						"pos": anim.position,
+						"r": 42.0,
+						"label": "%s (Đang lớn... còn %ds) ⏳" % [aname, rem],
+						"cb": func(): pass
+					}
 	return best
 
 
@@ -1394,14 +1736,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().paused = true
 		elif pause_menu.visible:
 			_resume_from_pause()
-		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible):
+		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible) or (quest_panel != null and quest_panel.visible) or (tool_upgrade_panel != null and tool_upgrade_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("interact"):
 		if mode == Mode.PLAY and not get_tree().paused:
 			_do_interact()
 		elif mode == Mode.DIALOG:
 			dialog_box.advance()
-		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible):
+		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible) or (quest_panel != null and quest_panel.visible) or (tool_upgrade_panel != null and tool_upgrade_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("inventory"):
 		if mode == Mode.PLAY and not get_tree().paused:
@@ -1423,10 +1765,22 @@ func _unhandled_input(event: InputEvent) -> void:
 				_open_cat_panel()
 				get_viewport().set_input_as_handled()
 				return
+			elif event.keycode == KEY_F:
+				_quick_eat()
+				get_viewport().set_input_as_handled()
+				return
+			elif event.keycode == KEY_Q:
+				if hud != null and hud.quest_drawer != null:
+					hud.quest_drawer.toggle_drawer()
+				else:
+					_open_quest_panel()
+				get_viewport().set_input_as_handled()
+				return
 			elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
 				hud.select_slot_by_index(event.keycode - KEY_1)
 		elif (storage_panel != null and storage_panel.visible and event.keycode == KEY_K) \
-			or (cat_panel != null and cat_panel.visible and event.keycode == KEY_M):
+			or (cat_panel != null and cat_panel.visible and event.keycode == KEY_M) \
+			or (quest_panel != null and quest_panel.visible and event.keycode == KEY_Q):
 			_close_panels()
 			get_viewport().set_input_as_handled()
 			return
@@ -1439,8 +1793,80 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # ---------------- hành động ----------------
 
+func _get_action_stamina_cost(act: String) -> float:
+	match act:
+		"till": return OreDB.get_hoe_stamina(Inventory.get_hoe_tier())
+		"water": return 5.0
+		"plant": return 5.0
+		"harvest": return 1.5
+		"catch_pest": return 1.0
+		"fish": return 15.0
+		"mine": return OreDB.get_pickaxe_stamina(Inventory.get_pickaxe_tier())
+	return 0.0
+
+
+func _quick_eat() -> void:
+	if GameState.stamina >= GameState.max_stamina:
+		hud.toast("Thể lực đã tràn đầy (%d/%d)!" % [int(GameState.stamina), int(GameState.max_stamina)], Color(1.0, 0.88, 0.4))
+		return
+
+	var best_cat := ""
+	var best_id := ""
+	var best_rec := 0
+
+	# 1. Ưu tiên kiểm tra sản phẩm chăn nuôi (thịt gà, thịt vịt, thịt ngan, bồ câu thịt...)
+	for a in PoultryDB.ANIMALS:
+		var pid := str(a.product)
+		if Inventory.produce_count(pid) > 0:
+			var rec := GameState.get_food_stamina("poultry", pid)
+			if rec > best_rec:
+				best_rec = rec
+				best_cat = "produce"
+				best_id = pid
+
+	# 2. Kiểm tra nông sản trồng trọt
+	if best_rec == 0:
+		for c in CropDB.CROPS:
+			var cid := str(c.id)
+			if Inventory.produce_count(cid) > 0:
+				var rec := GameState.get_food_stamina("crop", cid)
+				if rec > best_rec:
+					best_rec = rec
+					best_cat = "produce"
+					best_id = cid
+
+	# 3. Kiểm tra cá
+	if best_rec == 0:
+		for f in FishDB.FISH:
+			var fid := str(f.id)
+			if Inventory.fish_count(fid) > 0:
+				var rec := GameState.get_food_stamina("fish", fid)
+				if rec > best_rec:
+					best_rec = rec
+					best_cat = "fish"
+					best_id = fid
+
+	if best_id == "":
+		hud.toast("Túi đồ không có nông sản hoặc thịt để ăn! (Bấm I xem túi)", Color(1.0, 0.65, 0.4))
+		return
+
+	var res := GameState.eat_food(best_cat, best_id)
+	if res.get("ok", false):
+		hud.toast(str(res.get("msg", "")), Color(0.4, 1.0, 0.5))
+		_spawn_effect("fx_harvest", player.position)
+		if inv_panel != null and inv_panel.visible:
+			inv_panel.refresh()
+	else:
+		hud.toast(str(res.get("msg", "")), Color(1.0, 0.65, 0.4))
+
+
 func _do_interact() -> void:
 	if fishing:
+		return
+	if in_mine and mine_manager != null:
+		var near_m: Dictionary = mine_manager.get_interactable_near(player.position)
+		if not near_m.is_empty() and near_m.has("cb") and near_m.cb is Callable:
+			near_m.cb.call()
 		return
 	var near := _nearest_interactable()
 	if not near.is_empty():
@@ -1450,13 +1876,41 @@ func _do_interact() -> void:
 	if tile == null:
 		return
 	var info: Dictionary = farm.action_at(tile)
+	var act := str(info.act)
+	if act == "none":
+		return
+
+	var cost := _get_action_stamina_cost(act)
+	if cost > 0.0 and GameState.stamina < cost:
+		hud.toast("Bạn đã kiệt sức! Hãy ăn nông sản hoặc thịt (phím F hoặc I) để hồi thể lực ⚡", Color(1.0, 0.45, 0.35))
+		return
+
+	var crop_id_before: String = tile.crop_id if tile != null else ""
+	var selected_seed_before := Inventory.selected_seed
 	var msg: String = farm.perform_at(tile)
 	if msg == "":
 		return
+
+	if cost > 0.0:
+		GameState.use_stamina(cost)
+
 	hud.toast(msg)
-	var act := str(info.act)
 	if act != "none":
 		_spawn_effect("fx_" + act, farm.tile_center(tile.coord))
+
+	if quest_mgr != null:
+		match act:
+			"harvest":
+				quest_mgr.advance_progress("harvest", crop_id_before)
+			"plant":
+				quest_mgr.advance_progress("plant", selected_seed_before)
+			"water":
+				quest_mgr.advance_progress("water", "any")
+			"till":
+				quest_mgr.advance_progress("till", "any")
+			"catch_pest":
+				quest_mgr.advance_progress("catch_pest", "sau_bo")
+
 	player.play_action_anim(act)
 	player.can_move = false
 	var act_time: float = player.get_action_duration(act)
@@ -1511,13 +1965,140 @@ func _talk_hai() -> void:
 		_npc_hai_met = true
 
 
+func _talk_mayor() -> void:
+	mode = Mode.DIALOG
+	get_tree().paused = true
+	_dialog_next = "quests"
+	if _mayor_met:
+		dialog_box.start("Trưởng Thôn", ["Chào cháu! Hãy xem bảng nhiệm vụ hôm nay có việc gì giúp làng nhé!"])
+	else:
+		dialog_box.start("Trưởng Thôn", [
+			"Chào mừng cháu đến với làng! Bác là Trưởng Thôn nơi đây.",
+			"Mỗi ngày và mỗi tuần bác đều có các nhiệm vụ giúp làng phát triển nông nghiệp và khai khoáng.",
+			"Nhiệm vụ Ngày thưởng 100 vàng + 10 nguyên liệu cùng loại!",
+			"Nhiệm vụ Tuần thưởng 500 vàng + 50 nguyên liệu cùng loại, còn Nhiệm vụ Tổng thưởng 50 vàng mỗi mốc thành tựu!",
+			"Cháu có thể mở Bảng Nhiệm Vụ bằng phím [Q] hoặc bấm biểu tượng nhiệm vụ góc trên bất cứ lúc nào."
+		])
+		_mayor_met = true
+
+
 func _on_dialog_finished() -> void:
-	if _dialog_next == "fish":
+	if _dialog_next == "none":
+		mode = Mode.PLAY
+		get_tree().paused = false
+		return
+	elif _dialog_next == "leah_gift":
+		mode = Mode.PLAY
+		get_tree().paused = false
+		Inventory.add_pickaxe("basic")
+		hud.toast("Nhận được Cúp khai mỏ sơ cấp từ Leah! ⛏️", Color(0.7, 1.0, 0.7))
+		return
+	elif _dialog_next == "tool_upgrade":
+		_open_tool_upgrade_panel()
+	elif _dialog_next == "fish":
 		_open_fish_shop()
 	elif _dialog_next == "poultry":
 		_open_poultry_shop()
+	elif _dialog_next == "quests":
+		_open_quest_panel()
 	else:
 		_open_shop()
+
+
+func _talk_leah() -> void:
+	mode = Mode.DIALOG
+	get_tree().paused = true
+	if not Inventory.has_pickaxe():
+		_dialog_next = "leah_gift"
+		dialog_box.start("Leah", [
+			"Chào bạn! Mình là Leah.",
+			"Đây là hầm mỏ bỏ hoang của làng, dưới lòng đất ẩn chứa rất nhiều khoáng sản quý giá như Đồng, Sắt, Vàng và Đá quý hiếm.",
+			"Mình tặng bạn chiếc Cúp sơ cấp này nhé! Hãy cầm Cúp và xuống mỏ thử vận may nào!"
+		])
+		_leah_met = true
+	else:
+		_dialog_next = "tool_upgrade"
+		dialog_box.start("Leah", [
+			"Chào bạn! Càng xuống sâu hầm mỏ sẽ càng có nhiều quặng quý hiếm.",
+			"Nếu có đủ Quặng và Vàng, mình sẽ rèn nâng cấp Cuốc đất và Cúp mỏ cho bạn để làm việc đỡ tốn thể lực hơn nhé!"
+		])
+
+
+func _read_mine_sign() -> void:
+	mode = Mode.DIALOG
+	get_tree().paused = true
+	_dialog_next = "none"
+	dialog_box.start("📜 Biển Báo Hầm Mỏ", [
+		"• Tầng 1 - 2: Nhiều Đá cuội, Than đá & Quặng Đồng.",
+		"• Tầng 3 - 5: Xuất hiện Quặng Sắt & Hồng Ngọc (Ruby).",
+		"• Tầng 6+: Quặng Vàng & Kim Cương quý hiếm.",
+		"⚠️ Hướng dẫn: Đứng gần khối quặng và bấm E để đập bằng Cúp. Bấm E tại cầu thang để chuyển tầng!"
+	])
+
+
+func _fade_transition(on_mid: Callable) -> void:
+	if fade_rect == null:
+		if on_mid.is_valid():
+			on_mid.call()
+		return
+	player.can_move = false
+	var tw := create_tween()
+	tw.tween_property(fade_rect, "modulate:a", 1.0, 0.35)
+	tw.tween_callback(func():
+		if on_mid.is_valid():
+			on_mid.call()
+	)
+	tw.tween_interval(0.1)
+	tw.tween_property(fade_rect, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(func():
+		player.can_move = true
+	)
+
+
+func _enter_mine() -> void:
+	if not Inventory.has_pickaxe():
+		hud.toast("Hãy nói chuyện với Leah để nhận Cúp trước khi vào mỏ! ⛏️", Color(1.0, 0.85, 0.5))
+		return
+	_fade_transition(func():
+		in_mine = true
+		player.reparent(mine_manager)
+		world.process_mode = Node.PROCESS_MODE_DISABLED
+		world.visible = false
+		if is_instance_valid(weather_mgr):
+			weather_mgr.visible = false
+		if is_instance_valid(hud):
+			hud.set_underground(true)
+		mine_manager.process_mode = Node.PROCESS_MODE_PAUSABLE
+		mine_manager.enter_mine(1)
+		cam.limit_left = 0
+		cam.limit_top = 0
+		cam.limit_right = mine_manager.MINE_TILES.x * mine_manager.TILE
+		cam.limit_bottom = mine_manager.MINE_TILES.y * mine_manager.TILE
+		hud.toast("Đã tiến vào Hầm Mỏ — Tầng 1! ⛏️", Color(0.8, 0.9, 1.0))
+	)
+
+
+func _on_exit_mine() -> void:
+	if not in_mine:
+		return
+	_fade_transition(func():
+		in_mine = false
+		player.reparent(world)
+		mine_manager.process_mode = Node.PROCESS_MODE_DISABLED
+		mine_manager.visible = false
+		world.process_mode = Node.PROCESS_MODE_PAUSABLE
+		world.visible = true
+		if is_instance_valid(weather_mgr):
+			weather_mgr.visible = true
+		if is_instance_valid(hud):
+			hud.set_underground(false)
+		player.position = MINE_ENTRANCE_POS + Vector2(0, 32)
+		cam.limit_left = 0
+		cam.limit_top = 0
+		cam.limit_right = int(WORLD_SIZE.x)
+		cam.limit_bottom = int(WORLD_SIZE.y)
+		hud.toast("Đã trở lại mặt đất! 🌄")
+	)
 
 
 func _open_shop() -> void:
@@ -1535,7 +2116,7 @@ func _open_market_stall() -> void:
 func _on_stall_revenue_collected(_amt: int) -> void:
 	stall_revenue = 0
 	_update_stall_coin_badge()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue)
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 
 
 func _open_fish_shop() -> void:
@@ -1550,28 +2131,115 @@ func _open_poultry_shop() -> void:
 	poultry_shop.open()
 
 
+func _open_tool_upgrade_panel() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	tool_upgrade_panel.open()
+
+
 func _talk_tu() -> void:
 	mode = Mode.DIALOG
 	get_tree().paused = true
 	_dialog_next = "poultry"
-	if _npc_hai_met:
-		dialog_box.start("Cô Tư", ["Gia cầm khỏe mạnh hết nấy con! Mua chuồng, mua giống hay bán sản phẩm?"])
+	if _npc_tu_met:
+		dialog_box.start("Cô Tư", [
+			"Vật nuôi khỏe mạnh hết nấy con! Mua chuồng, mua giống hay bán sản phẩm?",
+			"Nhớ nghen: Cứ nuôi đủ 2 con lớn cùng loài là chúng có thể sinh ra con non baby đó!"
+		])
 	else:
 		dialog_box.start("Cô Tư", [
-			"Chào con! Cô Tư đây — giống gia cầm chuẩn nhất vùng!",
-			"Muốn nuôi thì phải MUA CHUỒNG trước: chuồng nhỏ nuôi Gà/Vịt/Ngan/Cút/Bồ câu, chuồng lớn nuôi Ngỗng/Trĩ/Đà điểu.",
-			"Mua giống về thả vào chuồng, chúng tự cho sản phẩm — nhớ quay lại thu hoạch nhé!",
-			"Thịt, trứng, lông cô thu mua giá ngon lắm đó con!",
+			"Chào con! Cô Tư đây — trại giống gia cầm gia súc uy tín nhất vùng!",
+			"Cô chuyên bán 4 loại con giống tốt: Gà trắng, Bò trắng, Lợn và Cừu.",
+			"Muốn nuôi thì nhớ MUA CHUỒNG trước: Chuồng gia cầm nuôi Gà, Chuồng gia súc nuôi Bò, Lợn, Cừu.",
+			"Gà cho trứng, Bò cho sữa, Lợn cho thịt, Cừu cho lông xén.",
+			"Đặc biệt: Nuôi đủ đôi (từ 2 con cùng loài trở lên) là chúng có thể đẻ ra con baby!",
+			"Nhớ ghé chuồng bấm [E] thu hoạch rồi mang qua cô thu mua giá ngon nghen con!"
 		])
 	_npc_tu_met = true
+
+
+func _collect_pen_products(species_id: String) -> void:
+	var n: int = Inventory.collect_products_for_species(species_id)
+	if n > 0:
+		var d := PoultryDB.get_animal(species_id)
+		var pname := str(d.get("product_name", "sản phẩm"))
+		hud.toast("Đã thu hoạch %d %s! 🧺" % [n, pname], Color(1.0, 0.88, 0.55))
+		if quest_mgr != null:
+			quest_mgr.advance_progress("poultry", "any", n)
+			quest_mgr.advance_progress("poultry", str(d.get("product", "")), n)
+	else:
+		var all_n: int = Inventory.collect_products()
+		if all_n > 0:
+			hud.toast("Đã thu %d sản phẩm chăn nuôi! 🧺" % all_n, Color(1.0, 0.75, 0.5))
+			if quest_mgr != null:
+				quest_mgr.advance_progress("poultry", "any", all_n)
+		else:
+			var c := PoultryDB.get_coop_data(species_id)
+			var cname := str(c.get("name", "Chuồng"))
+			var tier := Inventory.get_coop_tier(species_id)
+			if tier == 0:
+				hud.toast("%s chưa được xây! Hãy ghé tiệm Cô Tư để mua." % cname, Color(0.9, 0.75, 0.6))
+			elif Inventory.animals_of_species(species_id) == 0:
+				hud.toast("%s đang trống! Hãy mua con giống tại tiệm Cô Tư." % cname, Color(0.9, 0.8, 0.6))
+			else:
+				hud.toast("%s chưa có sản phẩm nào để thu hoạch!" % cname, Color(0.9, 0.7, 0.6))
 
 
 func _collect_products() -> void:
 	var n: int = Inventory.collect_products()
 	if n > 0:
 		hud.toast("Đã thu %d sản phẩm chăn nuôi! Bán cho Cô Tư." % n, Color(1.0, 0.75, 0.5))
+		if quest_mgr != null:
+			quest_mgr.advance_progress("poultry", "any", n)
+			quest_mgr.advance_progress("poultry", "trung_ga", n)
 	else:
 		hud.toast("Chưa có sản phẩm nào chờ thu...", Color(0.8, 0.8, 0.8))
+
+
+func _interact_pen(species_id: String) -> void:
+	var r_count := Inventory.ready_products_for_species(species_id)
+	if r_count > 0:
+		_collect_pen_products(species_id)
+		return
+	var hungry_count := Inventory.hungry_animals_for_species(species_id)
+	if hungry_count > 0:
+		if Inventory.feed_count() > 0:
+			var fed := Inventory.feed_all_hungry_for_species(species_id)
+			if fed > 0:
+				var c := PoultryDB.get_coop_data(species_id)
+				hud.toast("Đã cho %d con ở %s ăn 🌾! Chúng đang tiến tới máng ăn." % [fed, c.get("name", "Chuồng")], Color(1.0, 0.9, 0.4))
+				for anim in active_pen_animals:
+					if is_instance_valid(anim) and anim.species_id == species_id and anim.is_fed() and anim.state != PenAnimal.State.EATING:
+						anim.target_pos = anim.get_trough_eating_spot()
+						anim.state = PenAnimal.State.WALK_TO_TROUGH
+						anim._play_heart_effect()
+		else:
+			hud.toast("Bạn cần mua Túi Cám ở Cửa Hàng Cô Tư để cho ăn!", Color(1.0, 0.65, 0.4))
+		return
+	_collect_pen_products(species_id)
+
+
+func _harvest_single_animal(anim: PenAnimal) -> void:
+	if not is_instance_valid(anim):
+		return
+	var prod_id := anim.harvest()
+	if prod_id != "":
+		var d := PoultryDB.get_animal(anim.species_id)
+		var pname := str(d.get("product_name", "sản phẩm"))
+		hud.toast("Đã thu hoạch 1 %s từ %s! 🧺 (Có thể cho ăn tiếp ngay)" % [pname, anim.get_animal_name()], Color(1.0, 0.92, 0.55))
+		if quest_mgr != null:
+			quest_mgr.advance_progress("poultry", "any", 1)
+			quest_mgr.advance_progress("poultry", prod_id, 1)
+
+
+func _feed_single_animal(anim: PenAnimal) -> void:
+	if not is_instance_valid(anim):
+		return
+	if Inventory.feed_count() <= 0:
+		hud.toast("Bạn cần mua Túi Cám ở Cửa Hàng để cho ăn!", Color(1.0, 0.65, 0.4))
+		return
+	if anim.feed():
+		hud.toast("Đã cho %s ăn 1 Túi Cám! Đang đi tới máng ăn 🌾 (Cám còn: ×%d)" % [anim.get_animal_name(), Inventory.feed_count()], Color(1.0, 0.92, 0.45))
 
 
 func _open_inventory() -> void:
@@ -1598,10 +2266,27 @@ func _open_cat_panel() -> void:
 	cat_panel.open(cat_helper)
 
 
+func _open_quest_panel() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	quest_panel.open("daily")
+
+
+func _update_npc_mayor_indicator() -> void:
+	if npc_mayor == null or quest_mgr == null:
+		return
+	if quest_mgr.has_unclaimed_rewards():
+		npc_mayor.set_quest_indicator("question")
+	elif quest_mgr.has_active_quests():
+		npc_mayor.set_quest_indicator("exclamation")
+	else:
+		npc_mayor.set_quest_indicator("")
+
+
 func _on_mailbox_changed() -> void:
 	_update_mailbox_badge()
 	hud.rebuild_hotbar()
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 
 
 func _close_panels() -> void:
@@ -1617,6 +2302,10 @@ func _close_panels() -> void:
 		mailbox_panel.visible = false
 	if stall_panel != null:
 		stall_panel.visible = false
+	if quest_panel != null:
+		quest_panel.visible = false
+	if tool_upgrade_panel != null:
+		tool_upgrade_panel.visible = false
 	pause_menu.visible = false
 	get_tree().paused = false
 	if mode != Mode.TITLE:
@@ -1636,13 +2325,19 @@ func _cat_save_data() -> Dictionary:
 	return {}
 
 
+func _quest_save_data() -> Dictionary:
+	if is_instance_valid(quest_mgr):
+		return quest_mgr.get_save_data()
+	return {}
+
+
 func _save_now() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 	hud.toast("Đã lưu game!", Color(0.6, 1.0, 0.6))
 
 
 func _back_to_title() -> void:
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 	_close_panels()
 	mode = Mode.TITLE
 	dialog_box.force_close()
@@ -1654,7 +2349,7 @@ func _back_to_title() -> void:
 func _ask_sleep() -> void:
 	mode = Mode.DIALOG
 	get_tree().paused = true
-	dialog_box.ask("Ngủ đến ngày mai? (Game sẽ tự lưu — cây vẫn lớn khi đất còn ẩm)")
+	dialog_box.ask("Đi ngủ và lưu game? (Lưu ý: Ngủ không hồi thể lực, hãy ăn nông sản hoặc thịt ⚡)")
 
 
 func _on_sleep_answer(yes: bool) -> void:
@@ -1672,7 +2367,30 @@ func _do_sleep(forced: bool) -> void:
 	var tw := create_tween()
 	tw.tween_property(fade_rect, "modulate:a", 1.0, 0.45)
 	await tw.finished
-	GameState.sleep_to_morning()
+	if in_mine:
+		in_mine = false
+		player.reparent(world)
+		if mine_manager != null:
+			mine_manager.process_mode = Node.PROCESS_MODE_DISABLED
+			mine_manager.visible = false
+		world.process_mode = Node.PROCESS_MODE_PAUSABLE
+		world.visible = true
+		if is_instance_valid(weather_mgr):
+			weather_mgr.visible = true
+		if is_instance_valid(hud):
+			hud.set_underground(false)
+		player.position = HOUSE_POS + Vector2(15, 10)
+		cam.limit_left = 0
+		cam.limit_top = 0
+		cam.limit_right = int(WORLD_SIZE.x)
+		cam.limit_bottom = int(WORLD_SIZE.y)
+	GameState.sleep_to_morning(forced)
+	var next_w: String = WeatherManagerScript.roll_weather(GameState.day)
+	GameState.weather = next_w
+	if is_instance_valid(weather_mgr):
+		weather_mgr.set_weather(next_w)
+	if is_instance_valid(hud):
+		hud.set_weather(next_w)
 	var ready_n: int = farm.ready_count()
 	# Dọn các khách NPC ngày hôm trước để ngày mới đón khách mới
 	for c in _stall_customers:
@@ -1687,25 +2405,33 @@ func _do_sleep(forced: bool) -> void:
 		cat_helper.position = CatHelperScript.TENT_SLEEP_POS
 		cat_helper.state = CatHelperScript.State.IDLE
 		cat_helper._hide_bubble()
+	# Cập nhật nhiệm vụ theo thời gian thực
+	if is_instance_valid(quest_mgr):
+		quest_mgr.check_real_time_refresh()
+		_update_npc_mayor_indicator()
 	# Cây cối tự nhiên có tỉ lệ mọc thêm trên bề mặt cỏ qua đêm
 	if foliage_nodes.size() < 95 and randf() < 0.60:
 		_sprout_random_plant()
-	# Sâu bọ có thể xuất hiện trên các luống cây đang lớn qua đêm
+	# Sâu bọ có thể xuất hiện trên các luống cây đang lớn qua đêm (trời mưa dông không sinh sâu)
 	var new_pests := 0
-	for t in farm.tiles.values():
-		if t.tstate == FarmTileScript.TState.PLANTED and not t.is_ready() and not t.has_pest and t.growth > 3.0:
-			if randf() < 0.15:
-				t.spawn_pest()
-				new_pests += 1
+	if not (next_w in [WeatherManagerScript.RAIN, WeatherManagerScript.STORM]):
+		for t in farm.tiles.values():
+			if t.tstate == FarmTileScript.TState.PLANTED and not t.is_ready() and not t.has_pest and t.growth > 3.0:
+				if randf() < 0.15:
+					t.spawn_pest()
+					new_pests += 1
 	# Hàng hoá trên sạp được giữ nguyên qua đêm (không bán qua đêm)
-	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+	SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data(), _quest_save_data())
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
 	if forced:
-		hud.toast("Bạn gục ngã vì kiệt sức...", Color(1.0, 0.55, 0.45))
+		hud.toast("Bạn gục ngã vì quá khuya... Đã lưu game 💾 (Ăn thức ăn để hồi thể lực)", Color(1.0, 0.55, 0.45))
+	else:
+		hud.toast("Ngày mới! Đã lưu game thành công 💾 (Ăn thức ăn để hồi thể lực)", Color(0.65, 1.0, 0.6))
 	if new_pests > 0:
 		hud.toast("⚠️ Có %d cây bị sâu cắn phá! Hãy bắt sâu bọ để cây lớn tiếp 🐛" % new_pests, Color(1.0, 0.65, 0.4))
-	hud.toast("Ngày mới! %d cây đã chín chờ thu hoạch." % ready_n, Color(0.65, 1.0, 0.6))
+	if ready_n > 0:
+		hud.toast("%d cây đã chín chờ thu hoạch!" % ready_n, Color(0.75, 1.0, 0.7))
 	var tw2 := create_tween()
 	tw2.tween_property(fade_rect, "modulate:a", 0.0, 0.6)
 	await tw2.finished
@@ -1720,6 +2446,10 @@ func _refill_water_can() -> void:
 	if Inventory.water_level >= Inventory.water_max:
 		hud.toast("Bình tưới đã đầy nước (%d/%d)!" % [Inventory.water_level, Inventory.water_max])
 		return
+	if GameState.stamina < 2.0:
+		hud.toast("Bạn đã kiệt sức! Không đủ sức múc nước (cần 2⚡). Hãy ăn nông sản hoặc thịt!", Color(1.0, 0.45, 0.35))
+		return
+	GameState.use_stamina(2.0)
 	var _added: int = Inventory.refill_water()
 	player.facing = (POND_RECT.get_center() - player.position).normalized()
 	_spawn_effect("fx_water", player.position + player.facing * 18.0)
@@ -1729,49 +2459,117 @@ func _refill_water_can() -> void:
 	await get_tree().create_timer(act_time).timeout
 	player.can_move = true
 	hud.rebuild_hotbar()
-	hud.toast("Đã múc nước từ ao! Bình tưới: %d/%d 💧" % [Inventory.water_level, Inventory.water_max], Color(0.4, 0.85, 1.0))
+	hud.toast("Đã múc nước từ ao (-2⚡)! Bình tưới: %d/%d 💧" % [Inventory.water_level, Inventory.water_max], Color(0.4, 0.85, 1.0))
+
+
+# Tạo hiệu ứng gợn sóng nước lan tỏa chuẩn Stardew Valley (8 khung hình từ TileSheets/animations.png)
+func _spawn_water_ripple(pos: Vector2, r_scale: float = 1.0, r_dur: float = 0.7) -> Sprite2D:
+	var spr := Sprite2D.new()
+	spr.texture = TextureGen.water_ripple_frame(0)
+	spr.position = pos
+	spr.scale = Vector2(r_scale, r_scale)
+	spr.z_index = 2
+	world.add_child(spr)
+	var tw := spr.create_tween()
+	var frame_dur: float = r_dur / 8.0
+	for f in range(1, 8):
+		var frame_idx := f
+		tw.tween_interval(frame_dur)
+		tw.tween_callback(func():
+			if is_instance_valid(spr):
+				spr.texture = TextureGen.water_ripple_frame(frame_idx)
+		)
+	tw.tween_property(spr, "modulate:a", 0.0, frame_dur)
+	tw.tween_callback(func():
+		if is_instance_valid(spr):
+			spr.queue_free()
+	)
+	return spr
 
 
 func _start_fishing() -> void:
 	if fishing:
 		return
+	var fish_stamina := _get_action_stamina_cost("fish")
+	if GameState.stamina < fish_stamina:
+		hud.toast("Bạn đã kiệt sức! Không đủ sức câu cá (cần %d⚡). Hãy ăn nông sản hoặc thịt!" % int(fish_stamina), Color(1.0, 0.45, 0.35))
+		return
 	var tier := str(Inventory.take_cast())
 	if tier == "":
 		hud.toast("Hết lượt câu! Mua cần câu ở Chú Hai (bờ ao).", Color(1.0, 0.6, 0.5))
 		return
+	GameState.use_stamina(fish_stamina)
 	var rod := FishDB.get_rod(tier)
 	fishing = true
-	fishing_left = FishDB.FISH_TIME
+	var fish_time: float = FishDB.FISH_TIME
+	if GameState.weather in [WeatherManagerScript.RAIN, WeatherManagerScript.STORM]:
+		fish_time = 9.0
+	elif GameState.weather == WeatherManagerScript.DRIZZLE:
+		fish_time = 12.0
+	fishing_left = fish_time
 	player.can_move = false
 	hud.toast("Đã thả câu (%s — còn %d lượt)" % [rod.name, Inventory.total_casts()], Color(0.6, 0.9, 1.0))
-	# animation: cần câu trên tay + phao nhấp nhô trên mặt nước
+
+	# Hướng nhân vật về phía mặt hồ và bắt đầu diễn hoạt câu cá Stardew Valley
 	var dir := (POND_RECT.get_center() - player.position).normalized()
-	_rod_spr = Sprite2D.new()
-	_rod_spr.texture = TextureGen.get_tex("fx_rod")
-	_rod_spr.z_index = 50
-	_rod_spr.position = player.position + Vector2(dir.x * 12.0, dir.y * 12.0 - 10.0)
-	world.add_child(_rod_spr)
+	player.facing = dir
+	player.start_fishing_anim()
+
+	# Tính vị trí phao tiếp nước trong hồ
+	var pond_center := POND_RECT.get_center()
+	var dist_to_center := player.position.distance_to(pond_center)
+	var cast_dist: float = clampf(dist_to_center * 0.65, 42.0, 85.0)
+	var bobber_target := player.position + dir * cast_dist
+
+	# Tạo phao câu Stardew Valley
 	_bobber_spr = Sprite2D.new()
 	_bobber_spr.texture = TextureGen.get_tex("fx_bobber")
 	_bobber_spr.z_index = 50
-	_bobber_spr.position = player.position + dir * 46.0
+	var tip_pos: Vector2 = player.get_rod_tip_position()
+	_bobber_spr.position = tip_pos
 	world.add_child(_bobber_spr)
-	var bob := _bobber_spr.create_tween().set_loops()
-	bob.tween_property(_bobber_spr, "position:y", _bobber_spr.position.y - 2.0, 0.5).set_ease(Tween.EASE_OUT)
-	bob.tween_property(_bobber_spr, "position:y", _bobber_spr.position.y, 0.5).set_ease(Tween.EASE_IN)
+
+	# Dây câu mảnh kết nối đầu cần tới phao
+	if _fishing_line != null and is_instance_valid(_fishing_line):
+		_fishing_line.queue_free()
+	_fishing_line = Line2D.new()
+	_fishing_line.width = 1.0
+	_fishing_line.default_color = Color(0.92, 0.94, 0.98, 0.82)
+	_fishing_line.z_index = 49
+	_fishing_line.points = PackedVector2Array([tip_pos, (tip_pos + bobber_target) * 0.5, bobber_target])
+	world.add_child(_fishing_line)
+
+	# Hiệu ứng ném phao bay vào mặt nước
+	var cast_tw := _bobber_spr.create_tween()
+	cast_tw.tween_property(_bobber_spr, "position", bobber_target, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	cast_tw.tween_callback(func():
+		if is_instance_valid(_bobber_spr):
+			# Phao chạm mặt nước: tạo sóng tròn Stardew Valley và bọt nước
+			_spawn_water_ripple(bobber_target, 1.25, 0.8)
+			_spawn_effect("fx_water", bobber_target)
+			# Nhấp nhô bồng bềnh
+			var bob := _bobber_spr.create_tween().set_loops()
+			bob.tween_property(_bobber_spr, "position:y", bobber_target.y - 2.5, 0.55).set_ease(Tween.EASE_OUT)
+			bob.tween_property(_bobber_spr, "position:y", bobber_target.y + 0.5, 0.55).set_ease(Tween.EASE_IN)
+	)
 
 
 func _finish_fishing() -> void:
 	fishing = false
 	player.can_move = true
-	var bobber_pos := _bobber_spr.position if _bobber_spr != null else POND_RECT.get_center()
-	if _rod_spr != null:
+	var bobber_pos := _bobber_spr.position if is_instance_valid(_bobber_spr) else POND_RECT.get_center()
+	if _rod_spr != null and is_instance_valid(_rod_spr):
 		_rod_spr.queue_free()
 		_rod_spr = null
-	if _bobber_spr != null:
+	if _fishing_line != null and is_instance_valid(_fishing_line):
+		_fishing_line.queue_free()
+		_fishing_line = null
+	if _bobber_spr != null and is_instance_valid(_bobber_spr):
+		_spawn_water_ripple(bobber_pos, 1.35, 0.65)
 		_bobber_spr.queue_free()
 		_bobber_spr = null
 	_spawn_effect("fx_water", bobber_pos)
+	player.stop_fishing_anim()
 	var night := GameState.clock < GameState.DAY_START or GameState.clock >= 1140
 	var f := FishDB.roll_cast(night)
 	if f.is_empty():
@@ -1782,6 +2580,8 @@ func _finish_fishing() -> void:
 		hud.toast("Túi đồ đã đầy! Không thể giữ %s... Hãy cất bớt đồ vào nhà kho 🏚️" % f.name, Color(1.0, 0.5, 0.4))
 		return
 	Inventory.add_fish(fid, 1)
+	if quest_mgr != null:
+		quest_mgr.advance_progress("fish", fid, 1)
 	if str(f.tier) == "legend":
 		hud.toast("HUYỀN THOẠI! Bắt được %s!!!" % f.name, Color(1.0, 0.85, 0.3))
 	elif str(f.tier) == "rare":
@@ -1794,10 +2594,16 @@ func _finish_fishing() -> void:
 
 func start_new_game() -> void:
 	GameState.reset_new_game()
+	if is_instance_valid(weather_mgr):
+		weather_mgr.set_weather(WeatherManagerScript.SUNNY)
+	if is_instance_valid(hud):
+		hud.set_weather(WeatherManagerScript.SUNNY)
 	Inventory.reset()
 	Inventory.selected_seed = "rice"
 	Inventory.add_hoes(2)
 	Inventory.add_seed("rice", 2)
+	Inventory.add_produce("sweet_potato", 2) # Khoai lang để ăn hồi thể lực
+	Inventory.add_produce("thit_lon", 1)      # Thịt lợn để ăn hồi thể lực
 	mailbox_data = _default_mailbox_data()
 	_update_mailbox_badge()
 	stall_slots = [{}, {}, {}, {}, {}, {}]
@@ -1816,12 +2622,19 @@ func start_new_game() -> void:
 		cat_helper.state = CatHelperScript.State.ARRIVING
 		cat_helper.waypoints = [CatHelperScript.ROAD_JUNCTION_POS, Vector2(CatHelperScript.ROAD_JUNCTION_POS.x, CatHelperScript.WAITING_POS.y), CatHelperScript.WAITING_POS]
 		cat_helper._show_bubble_text("...")
+	if is_instance_valid(quest_mgr):
+		var cur_day: int = QuestManagerScript.get_real_day_id()
+		var cur_week: int = QuestManagerScript.get_real_week_id()
+		quest_mgr.refresh_daily_quests(cur_day)
+		quest_mgr.refresh_weekly_quests(cur_week)
+		quest_mgr.lifetime_quests = QuestDB.init_lifetime_quests()
+		quest_mgr.quests_refreshed.emit()
+	_update_npc_mayor_indicator()
 	dialog_box.force_close()
 	title_screen.hide_me()
 	get_tree().paused = false
 	mode = Mode.PLAY
-	hud.toast("Chào mừng đến Nông Trại Việt!", Color(1.0, 0.87, 0.35))
-	hud.toast("WASD: di chuyển · E: tương tác · I: kho đồ")
+	hud.toast("WASD: di chuyển · E: tương tác · I: kho đồ · Q: nhiệm vụ · F: ăn nhanh hồi thể lực ⚡")
 
 
 func continue_game() -> void:
@@ -1832,12 +2645,21 @@ func continue_game() -> void:
 	GameState.money = int(d.get("money", 100))
 	GameState.day = int(d.get("day", 1))
 	GameState.clock = float(d.get("clock", GameState.DAY_START))
+	GameState.stamina = float(d.get("stamina", 100.0))
+	GameState.max_stamina = float(d.get("max_stamina", 100.0))
+	GameState.weather = str(d.get("weather", "sunny"))
+	if is_instance_valid(weather_mgr):
+		weather_mgr.set_weather(GameState.weather)
+	if is_instance_valid(hud):
+		hud.set_weather(GameState.weather)
 	var unl: Array = []
 	for id in d.get("unlocked", ["rice"]):
 		unl.append(str(id))
 	GameState.unlocked = unl
 	GameState.money_changed.emit(GameState.money)
 	GameState.crops_changed.emit()
+	GameState.stamina_changed.emit(GameState.stamina, GameState.max_stamina)
+	GameState.weather_changed.emit(GameState.weather)
 	Inventory.set_state({
 		"seeds": d.get("seeds", {}),
 		"produce": d.get("produce", {}),
@@ -1879,6 +2701,9 @@ func continue_game() -> void:
 		_populate_random_foliage(75)
 	if d.has("cat") and is_instance_valid(cat_helper):
 		cat_helper.load_save_dict(d["cat"])
+	if d.has("quests") and is_instance_valid(quest_mgr):
+		quest_mgr.load_save_data(d["quests"])
+	_update_npc_mayor_indicator()
 	title_screen.hide_me()
 	get_tree().paused = false
 	mode = Mode.PLAY
@@ -2109,16 +2934,17 @@ func _debug_grow() -> void:
 		var k := "none" if r.is_empty() else str(r.tier)
 		counts[k] = int(counts.get(k, 0)) + 1
 	print("FISHTEST 2000 lượt (kỳ vọng ~none 600 / common 800 / mid 400 / rare 200 / legend ~0): ", counts)
-	# ---- test chăn nuôi ----
-	Inventory.coops = {"small": 2, "large": 0}
-	print("POULTRY mua gà đẻ: '", Inventory.buy_animal("ga_de"), "' (kỳ vọng trống)")
-	print("POULTRY mua gà đẻ 2: '", Inventory.buy_animal("ga_de"), "' (trống)")
-	print("POULTRY mua gà đẻ 3 (hết chỗ): '", Inventory.buy_animal("ga_de"), "'")
-	print("POULTRY mua đà điểu (không có chuồng lớn): '", Inventory.buy_animal("da_dieu"), "'")
+	# ---- test chăn nuôi & sinh sản ----
+	Inventory.coops = {"small": 1, "large": 0}
+	print("POULTRY mua gà 1: '", Inventory.buy_animal("chicken"), "' (kỳ vọng trống)")
+	print("POULTRY mua gà 2: '", Inventory.buy_animal("chicken"), "' (trống)")
+	print("POULTRY mua bò (không có chuồng lớn): '", Inventory.buy_animal("cow"), "'")
+	Inventory.add_feed(10)
+	Inventory.feed_all_hungry_for_species("chicken")
 	Inventory.tick_animals(95)
 	var got: int = Inventory.collect_products()
 	print("POULTRY thu sau 95s = ", got, " trứng gà (kỳ vọng 2)")
-	print("POULTRY ready_left=", Inventory.ready_products())
+	print("POULTRY baby gà sinh ra: ", Inventory.animals.any(func(a): return bool(a.get("is_baby", false))))
 	print("POULTRY produce trung_ga=", Inventory.produce_count("trung_ga"))
 	SaveSystem.save_game(farm.get_state(), player.position, true, mailbox_data, foliage_data, stall_slots, stall_revenue)
 	var d := SaveSystem.load_data()
@@ -2182,40 +3008,51 @@ func _clicktest_step() -> void:
 			_shot("auto_clicktest")
 		140:
 			# cửa NAM đã bị xoá: đi lên phải bị chặn
-			player.position = Vector2(648, 725)
+			player.position = Vector2(1048, 680)
 			player.facing = Vector2.UP
 			cam.reset_smoothing()
 			Input.action_press("move_up")
 		240:
 			Input.action_release("move_up")
 			print("FARMSOUTH player=", player.position,
-					" (kỳ vọng y > 685: cửa nam đã xoá, bị chặn)")
+					" (kỳ vọng y > 650: bị rào nam thửa Nam chặn)")
 		245:
-			# cửa TÂY: đi phải xuyên qua cửa vào ruộng
-			player.position = Vector2(350, 472)
+			# Đi trên đại lộ giữa 2 thửa ruộng
+			player.position = Vector2(700, 472)
 			player.facing = Vector2.RIGHT
 			cam.reset_smoothing()
 			Input.action_press("move_right")
 		395:
 			Input.action_release("move_right")
 			print("WESTDOOR player=", player.position,
-					" (kỳ vọng x > 450: qua cửa tây vào ruộng)")
+					" (kỳ vọng x > 850: đại lộ giữa 2 ruộng thông thoáng)")
 		400:
-			# test phím E: cày ô đất ngay phía trước
-			_press_interact()
-		440:
-			var t = farm.tile_at_world(player.get_facing_point())
-			print("ETEST tile_tstate=", (t.tstate if t != null else -1), " (kỳ vọng 1=TILLED)")
-		445:
-			# cửa ĐÔNG: đi trái xuyên qua cửa vào ruộng
-			player.position = Vector2(960, 472)
-			player.facing = Vector2.LEFT
+			# Thửa Bắc: đi vào qua cổng Nam (x=1048, y=446)
+			player.position = Vector2(1048, 465)
+			player.facing = Vector2.UP
 			cam.reset_smoothing()
-			Input.action_press("move_left")
+			Input.action_press("move_up")
+		435:
+			Input.action_release("move_up")
+		440:
+			# test cày ô đất ngay phía trước trong Thửa Bắc
+			Inventory.hoes = 5
+			player.facing = Vector2.UP
+			var fp: Vector2 = player.get_facing_point()
+			var t = farm.tile_at_world(fp)
+			if t != null:
+				farm.perform_at(t)
+			print("ETEST pos=", player.position, " fp=", fp, " tile_tstate=", (t.tstate if t != null else -1), " (kỳ vọng 1=TILLED)")
+		445:
+			# Thửa Nam: đi vào qua cổng Bắc (x=1048, y=498)
+			player.position = Vector2(1048, 480)
+			player.facing = Vector2.DOWN
+			cam.reset_smoothing()
+			Input.action_press("move_down")
 		595:
-			Input.action_release("move_left")
+			Input.action_release("move_down")
 			print("EASTDOOR player=", player.position,
-					" (kỳ vọng x < 850: qua cửa đông vào ruộng)")
+					" (kỳ vọng y > 505: vào thửa Nam qua cổng Bắc)")
 		600:
 			# cửa chuồng phía BẮC: đi xuống qua cửa vào trong
 			player.position = Vector2(304, 505)
@@ -2243,13 +3080,13 @@ func _clicktest_step() -> void:
 			print("PENWEST player=", player.position,
 					" (kỳ vọng x < 200: bị rào tây chặn)")
 		910:
-			# rào bắc ruộng: đi xuống bị chặn
-			player.position = Vector2(648, 330)
+			# rào bắc thửa Bắc: đi xuống bị chặn
+			player.position = Vector2(1048, 250)
 			Input.action_press("move_down")
 		985:
 			Input.action_release("move_down")
 			print("FARMTOP player=", player.position,
-					" (kỳ vọng y < 400: bị rào bắc ruộng chặn)")
+					" (kỳ vọng y < 295: bị rào bắc thửa Bắc chặn)")
 		988:
 			# test hòm thư bên cạnh nhà: kiểm tra sẵn 999 cuốc và 999 xu
 			player.position = MAILBOX_POS + Vector2(0, 15)
@@ -2433,6 +3270,21 @@ func _clicktest_step() -> void:
 					" save_has_stall=", save_has_stall, " save_rev=", save_rev_correct,
 					" west_road_to_edge=", west_road_exists, " ground_is_grass=", (not stall_ground_has_road),
 					" minimap_poi=", poi_stall_exists)
+
+			var trail_to_mine_ok: bool = false
+			for p in PATHS:
+				if p.has_point(Vector2(96, 300)):
+					trail_to_mine_ok = true
+			var mine_in_nw: bool = (MINE_ENTRANCE_POS.y < 250.0 and MINE_ENTRANCE_POS.x <= 120.0)
+			var poi_mine_nw: bool = false
+			for p in MinimapScript.POIS:
+				if str(p.get("id", "")) == "mine" and p.get("pos", Vector2.ZERO).y < 250.0:
+					poi_mine_nw = true
+			var cust_freq_reduced: bool = (_next_stall_customer_delay >= 15.0)
+
+			print("MINE_RELOCATION_TEST trail=", trail_to_mine_ok, " pos_nw=", mine_in_nw,
+					" poi_nw=", poi_mine_nw, " cust_from_left=", cust_from_left,
+					" cust_exit_left=", decline_ok, " cust_freq_reduced=", cust_freq_reduced)
 		995:
 			# Test kiểm thử tính năng mới: Bình nước có hạn + múc nước bờ ao + thanh hotbar Stardew Valley + hoe sprites
 			# 1. Hotbar slots
@@ -2663,6 +3515,194 @@ func _clicktest_step() -> void:
 					" job_till=", job_till_ok, " tilled_by_cat=", tile_tilled_by_cat,
 					" hoe_dec=", cat_hoes_decremented, " take_hoe=", (take_hoe_ok and hoes_retrieved),
 					" save_hoes=", save_hoes_ok)
+
+			# 9. Kiểm thử Hệ thống Thời tiết (Weather System)
+			# A. Khởi tạo & hiển thị HUD
+			weather_mgr.set_weather(WeatherManagerScript.SUNNY)
+			var w_sunny_ok: bool = (GameState.weather == "sunny" and hud.weather_label.text.begins_with("☀️"))
+			# B. Chuyển sang Mưa rào & Tự động tưới đất
+			plant_tile.tstate = FarmTileScript.TState.PLANTED
+			plant_tile.watered = false
+			weather_mgr.set_weather(WeatherManagerScript.RAIN)
+			weather_mgr._auto_water_farm_crops()
+			var w_rain_watered: bool = (plant_tile.watered and hud.weather_label.text.begins_with("🌧️"))
+			# C. Chuyển sang Mưa dông & Rơi quặng sấm sét
+			weather_mgr.set_weather(WeatherManagerScript.STORM)
+			weather_mgr._trigger_lightning_strike()
+			var w_storm_ok: bool = (hud.weather_label.text.begins_with("⛈️") and weather_mgr._lightning_alpha > 0.0)
+			# D. Chuyển sang Gió lộng & Mưa nhỏ
+			weather_mgr.set_weather(WeatherManagerScript.WINDY)
+			var w_windy_ok: bool = (hud.weather_label.text.begins_with("🍃") and weather_mgr._leaves.size() > 0)
+			weather_mgr.set_weather(WeatherManagerScript.DRIZZLE)
+			var w_drizzle_ok: bool = (hud.weather_label.text.begins_with("🌦️") and weather_mgr._rain_drops.size() > 0)
+
+			# E. Lưu & tải thời tiết
+			SaveSystem.save_game(farm.get_state(), player.position, _npc_met, mailbox_data, foliage_data, stall_slots, stall_revenue, _cat_save_data())
+			var sd_weather: Dictionary = SaveSystem.load_data()
+			var w_saved_ok: bool = (str(sd_weather.get("weather", "")) == "drizzle")
+
+			print("WEATHER_SYSTEM_TEST sunny=", w_sunny_ok, " rain_water=", w_rain_watered,
+					" storm=", w_storm_ok, " windy=", w_windy_ok, " drizzle=", w_drizzle_ok,
+					" saved=", w_saved_ok)
+
+			# 10. Kiểm thử Hệ thống Cho Động Vật Ăn Cám & Thu Hoạch
+			var f_icon_ok: bool = (TextureGen.get_feed_icon() != null and TextureGen.get_feed_icon().get_width() > 0)
+			var f_bubble_ok: bool = (TextureGen.get_feed_bubble() != null and TextureGen.get_feed_bubble().get_width() > 0)
+			var prev_feed_count: int = Inventory.feed_count()
+			Inventory.add_feed(5)
+			var feed_added_ok: bool = (Inventory.feed_count() == prev_feed_count + 5)
+			Inventory.coop_tiers["chicken"] = 1
+			Inventory.buy_animal("chicken")
+			_rebuild_pen()
+			var test_anim: PenAnimal = null
+			for pa in active_pen_animals:
+				if pa.species_id == "chicken":
+					test_anim = pa
+					break
+			var anim_found: bool = (test_anim != null)
+			test_anim._process(0.016)
+			var hungry_bubble_ok: bool = (test_anim.bubble_spr.visible and not test_anim.is_fed())
+			var feed_before: int = Inventory.feed_count()
+			var feed_act_ok: bool = test_anim.feed()
+			var feed_decremented: bool = (Inventory.feed_count() == feed_before - 1)
+			var walking_to_trough: bool = (test_anim.state == PenAnimal.State.WALK_TO_TROUGH)
+			test_anim.position = test_anim.target_pos
+			test_anim._process(0.016)
+			var eating_at_trough: bool = (test_anim.state == PenAnimal.State.EATING)
+			test_anim.eating_timer = 0.0
+			test_anim._process(0.016)
+			var idle_after_eating: bool = (test_anim.state == PenAnimal.State.IDLE)
+			Inventory.tick_animals(25.0)
+			test_anim._process(0.016)
+			var ready_harvest: bool = (test_anim.state == PenAnimal.State.READY)
+			var stands_still: bool = (test_anim.velocity == Vector2.ZERO)
+			var harvest_bubble_visible: bool = test_anim.bubble_spr.visible
+			var prod_harvested: String = test_anim.harvest()
+			var prod_ok: bool = (prod_harvested == "trung_ga")
+			test_anim._process(0.016)
+			var can_feed_immediately: bool = (not test_anim.is_fed() and test_anim.bubble_spr.visible)
+			var feed_again_ok: bool = test_anim.feed()
+
+			print("ANIMAL_FEEDING_HARVEST_TEST icon=", f_icon_ok, " bubble=", f_bubble_ok,
+					" feed_inv=", (feed_added_ok and feed_decremented), " anim_found=", anim_found,
+					" hungry_bubble=", hungry_bubble_ok, " to_trough=", walking_to_trough,
+					" eating=", eating_at_trough, " idle=", idle_after_eating,
+					" ready=", ready_harvest, " stands_still=", stands_still,
+					" harvest_bubble=", harvest_bubble_visible, " prod=", prod_ok,
+					" feed_again=", (can_feed_immediately and feed_again_ok))
+
+			# Test: Đi lại trừ thể lực rất ít & Đập đá trong mỏ trừ thể lực
+			GameState.stamina = 100.0
+			# 1. Đi lại
+			player._is_acting = false
+			player.can_move = true
+			player._walk_stamina_timer = 0.0
+			player.position = Vector2(600, 470)
+			Input.action_press("move_right")
+			player._physics_process(0.6)
+			player._physics_process(0.5)
+			Input.action_release("move_right")
+			var walk_stamina_ok: bool = (GameState.stamina < 100.0 and GameState.stamina >= 99.8)
+
+			# 2. Đập đá
+			Inventory.add_pickaxe("basic")
+			var mock_rock_body := StaticBody2D.new()
+			var mock_rock_spr := Sprite2D.new()
+			mock_rock_body.add_child(mock_rock_spr)
+			world.add_child(mock_rock_body)
+			var mock_rock: Dictionary = {
+				"body": mock_rock_body,
+				"spr": mock_rock_spr,
+				"type": "stone",
+				"hits_left": 2,
+				"pos_tile": Vector2i(10, 10)
+			}
+			var stam_before_hit := GameState.stamina
+			mine_manager._hit_rock(mock_rock)
+			var hit_stamina_ok: bool = (is_equal_approx(GameState.stamina, stam_before_hit - 5.0))
+			var rock_damaged: bool = (int(mock_rock.hits_left) == 1)
+
+			# 3. Kiệt sức không đập được
+			GameState.stamina = 1.0
+			mine_manager._hit_rock(mock_rock)
+			var exhausted_prevented: bool = (int(mock_rock.hits_left) == 1 and is_equal_approx(GameState.stamina, 1.0))
+			mock_rock_body.queue_free()
+
+			# 4. Kiểm tra các chi phí thể lực theo yêu cầu
+			Inventory.set_hoe_tier("basic")
+			Inventory.add_pickaxe("basic")
+			var till_cost_ok: bool = is_equal_approx(_get_action_stamina_cost("till"), 7.0)
+			var plant_cost_ok: bool = is_equal_approx(_get_action_stamina_cost("plant"), 5.0)
+			var water_cost_ok: bool = is_equal_approx(_get_action_stamina_cost("water"), 5.0)
+			var fish_cost_ok: bool = is_equal_approx(_get_action_stamina_cost("fish"), 15.0)
+			var mine_cost_ok: bool = is_equal_approx(_get_action_stamina_cost("mine"), 5.0)
+
+			# 5. Kiểm tra nâng cấp dụng cụ giảm thể lực
+			GameState.money = 10000
+			Inventory.add_ore("copper_ore", 10)
+			Inventory.add_ore("iron_ore", 10)
+			Inventory.add_ore("gold_ore", 10)
+
+			var hoe_up_res := Inventory.upgrade_hoe()
+			var hoe_reduced_ok: bool = (hoe_up_res.ok and is_equal_approx(_get_action_stamina_cost("till"), 5.0))
+
+			var pick_up_res := Inventory.upgrade_pickaxe()
+			var pick_reduced_ok: bool = (pick_up_res.ok and is_equal_approx(_get_action_stamina_cost("mine"), 4.0))
+
+			# 6. Mở và đóng tool_upgrade_panel
+			_open_tool_upgrade_panel()
+			var panel_opened: bool = (tool_upgrade_panel != null and tool_upgrade_panel.visible)
+			_close_panels()
+			var panel_closed: bool = (tool_upgrade_panel != null and not tool_upgrade_panel.visible)
+
+			# 7. Kiểm tra đi ngủ không hồi thể lực mà chỉ để lưu game
+			GameState.stamina = 35.0
+			GameState.sleep_to_morning(false)
+			var sleep_no_heal_ok: bool = is_equal_approx(GameState.stamina, 35.0)
+			GameState.sleep_to_morning(true)
+			var forced_no_heal_ok: bool = is_equal_approx(GameState.stamina, 35.0)
+
+			print("MINING_AND_WALKING_STAMINA_TEST walk_ok=", walk_stamina_ok,
+					" hit_ok=", hit_stamina_ok, " rock_damaged=", rock_damaged,
+					" exhausted_prevented=", exhausted_prevented)
+			print("ACTION_STAMINA_TEST till_7=", till_cost_ok, " plant_5=", plant_cost_ok,
+					" water_5=", water_cost_ok, " fish_15=", fish_cost_ok, " mine_5=", mine_cost_ok)
+			print("TOOL_UPGRADE_TEST hoe_up=", hoe_reduced_ok, " pick_up=", pick_reduced_ok,
+					" panel_open=", panel_opened, " panel_close=", panel_closed)
+			# 8. Kiểm tra hoạt ảnh câu cá, cần câu và gợn sóng nước Stardew Valley
+			var ripple_frames_ok := true
+			for ri in range(8):
+				if TextureGen.water_ripple_frame(ri) == null:
+					ripple_frames_ok = false
+					break
+
+			var rod_icons_ok: bool = (TextureGen.get_tex("fx_rod") != null
+					and TextureGen.get_tex("fx_bobber") != null
+					and TextureGen.rod_icon("9aa0a6") != null
+					and TextureGen.rod_icon("66bb6a") != null
+					and TextureGen.rod_icon("ffd54f") != null)
+
+			var farmer_fish_anim_ok := true
+			for d_name in ["down", "side", "up"]:
+				for st in range(5):
+					if TextureGen.char_action_tex(d_name, "fish", st) == null:
+						farmer_fish_anim_ok = false
+						break
+
+			# Kiểm tra quy trình thả câu và thu cần
+			Inventory.add_rod("basic", 5)
+			player.position = FISH_SPOT_POS + Vector2(-50, 0)
+			_start_fishing()
+			var fishing_started_ok: bool = (fishing and player.is_fishing()
+					and is_instance_valid(_bobber_spr) and is_instance_valid(_fishing_line))
+			var ripple_spawn_ok: bool = is_instance_valid(_spawn_water_ripple(Vector2(1440, 900), 1.0, 0.5))
+
+			_finish_fishing()
+			var fishing_finished_ok: bool = (not fishing and _bobber_spr == null and _fishing_line == null)
+
+			print("SDV_FISHING_RIPPLE_TEST ripples=", ripple_frames_ok, " rods=", rod_icons_ok,
+					" farmer_anims=", farmer_fish_anim_ok, " start_cast=", fishing_started_ok,
+					" ripple_spawn=", ripple_spawn_ok, " finish_cast=", fishing_finished_ok)
 
 			print("CLICKTEST_DONE")
 			get_tree().quit()

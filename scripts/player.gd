@@ -25,14 +25,20 @@ var _is_acting := false
 var _action_tween: Tween
 
 var _sprite: Sprite2D
+var _sweat_spr: Sprite2D
+var _sweat_timer: float = 0.0
 var _dir := "down"
 var _anim_t := 0.0
+var _walk_stamina_timer: float = 0.0
+
+var _is_fishing := false
 
 const ACTION_STEPS := {
 	"till": 5,
 	"water": 3,
 	"plant": 3,
 	"harvest": 4,
+	"fish": 5,
 }
 
 const ACTION_DURATIONS := {
@@ -40,6 +46,7 @@ const ACTION_DURATIONS := {
 	"water": [0.08, 0.20, 0.08],            # Total 0.36s
 	"plant": [0.08, 0.16, 0.08],            # Total 0.32s
 	"harvest": [0.08, 0.08, 0.08, 0.16],    # Total 0.40s
+	"fish": [0.12, 0.10, 0.10, 999.0, 0.28],
 }
 
 
@@ -49,6 +56,12 @@ func _ready() -> void:
 	_sprite.scale = Vector2(1.2, 1.2)
 	_sprite.offset = Vector2(0, -18)
 	add_child(_sprite)
+	_sweat_spr = Sprite2D.new()
+	_sweat_spr.texture = TextureGen.sweat_drop_icon()
+	_sweat_spr.position = Vector2(8, -32)
+	_sweat_spr.visible = false
+	_sweat_spr.z_index = 5
+	add_child(_sweat_spr)
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
 	shape.radius = 6.0
@@ -59,6 +72,15 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	var exhausted: bool = GameState.is_exhausted()
+	if exhausted:
+		_sweat_timer += delta * 4.0
+		_sweat_spr.visible = (int(_sweat_timer) % 2 == 0)
+		_sweat_spr.position = Vector2(8 if not _sprite.flip_h else -8, -32 + sin(_sweat_timer) * 2.0)
+	else:
+		_sweat_spr.visible = false
+		_sweat_timer = 0.0
+
 	if not can_move or _is_acting:
 		velocity = Vector2.ZERO
 		_anim_t = 0.0
@@ -66,7 +88,10 @@ func _physics_process(delta: float) -> void:
 			_update_tex(0)
 		return
 	var v := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	velocity = v * SPEED
+	var spd := SPEED * (0.6 if exhausted else 1.0)
+	if GameState.weather == "windy" and v.x > 0:
+		spd *= 1.18
+	velocity = v * spd
 	move_and_slide()
 	if v.length() > 0.01:
 		if absf(v.x) >= absf(v.y):
@@ -77,11 +102,19 @@ func _physics_process(delta: float) -> void:
 			facing = Vector2(0, signf(v.y))
 			_dir = "up" if v.y < 0 else "down"
 			_sprite.flip_h = false
-		_anim_t += delta
+		_anim_t += delta * (0.7 if exhausted else 1.0)
 		_update_tex(int(_anim_t * 8.0) % 4)
+
+		# Đi lại cũng tiêu hao năng lượng, nhưng rất ít (không đáng kể: 0.1 điểm mỗi giây di chuyển)
+		if not exhausted:
+			_walk_stamina_timer += delta
+			if _walk_stamina_timer >= 1.0:
+				_walk_stamina_timer -= 1.0
+				GameState.use_stamina(0.1)
 	else:
 		_anim_t = 0.0
 		_update_tex(0)
+		_walk_stamina_timer = 0.0
 
 
 func get_facing_point() -> Vector2:
@@ -98,8 +131,77 @@ func get_action_duration(act: String = "till") -> float:
 	return sum
 
 
-# Diễn hoạt hành động chuẩn Stardew Valley (cuốc đất / tưới cây / gieo hạt / gặt cây).
+# Diễn hoạt hành động chuẩn Stardew Valley (cuốc đất / tưới cây / gieo hạt / gặt cây / câu cá).
+func is_fishing() -> bool:
+	return _is_fishing
+
+
+func start_fishing_anim() -> void:
+	if _action_tween and _action_tween.is_valid():
+		_action_tween.kill()
+	_is_acting = true
+	_is_fishing = true
+	_sprite.scale = Vector2(1.2, 1.2)
+	# Bước 0: Nhấc cần chuẩn bị vung
+	_sprite.texture = TextureGen.char_action_tex(_dir, "fish", 0)
+	var tw := create_tween()
+	_action_tween = tw
+	# Bước 1: Vung cần qua đầu
+	tw.tween_interval(0.12)
+	tw.tween_callback(func():
+		if _is_fishing:
+			_sprite.texture = TextureGen.char_action_tex(_dir, "fish", 1)
+	)
+	# Bước 2: Quăng cần về phía trước thả phao
+	tw.tween_interval(0.10)
+	tw.tween_callback(func():
+		if _is_fishing:
+			_sprite.texture = TextureGen.char_action_tex(_dir, "fish", 2)
+	)
+	# Bước 3: Giữ tư thế cầm cần câu kiên nhẫn chờ cá cắn
+	tw.tween_interval(0.10)
+	tw.tween_callback(func():
+		if _is_fishing:
+			_sprite.texture = TextureGen.char_action_tex(_dir, "fish", 3)
+	)
+
+
+func stop_fishing_anim() -> void:
+	if not _is_fishing:
+		return
+	_is_fishing = false
+	if _action_tween and _action_tween.is_valid():
+		_action_tween.kill()
+	# Bước 4: Giật cần kéo cá lên (reel)
+	_sprite.texture = TextureGen.char_action_tex(_dir, "fish", 4)
+	var tw := create_tween()
+	_action_tween = tw
+	tw.tween_interval(0.28)
+	tw.tween_callback(func():
+		_is_acting = false
+		_sprite.scale = Vector2(1.2, 1.2)
+		_update_tex(0)
+	)
+
+
+func get_rod_tip_position() -> Vector2:
+	var offset := Vector2.ZERO
+	match _dir:
+		"side":
+			offset = Vector2(16.0 if not _sprite.flip_h else -16.0, -20.0)
+		"down":
+			offset = Vector2(5.0, -10.0)
+		"up":
+			offset = Vector2(5.0, -32.0)
+		_:
+			offset = Vector2(14.0, -18.0)
+	return global_position + offset
+
+
 func play_action_anim(act: String = "till") -> void:
+	if act == "fish":
+		start_fishing_anim()
+		return
 	if _action_tween and _action_tween.is_valid():
 		_action_tween.kill()
 	_is_acting = true
@@ -145,4 +247,3 @@ func play_action_anim(act: String = "till") -> void:
 
 func _update_tex(frame: int) -> void:
 	_sprite.texture = TextureGen.char_tex(_dir, frame, false)
-

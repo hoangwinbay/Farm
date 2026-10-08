@@ -9,19 +9,43 @@ const TILE := 32
 var origin := Vector2.ZERO
 var size_tiles := Vector2i(14, 9)
 var tiles: Dictionary = {}
+var tile_centers: Dictionary = {}
+var plots: Array = []
+
+
+func setup_plots(plot_configs: Array) -> void:
+	plots = plot_configs.duplicate(true)
+	position = Vector2.ZERO
+	tiles.clear()
+	tile_centers.clear()
+	for child in get_children():
+		child.queue_free()
+
+	for plot in plots:
+		var o: Vector2 = plot.origin
+		var s: Vector2i = plot.size
+		var y_off: int = int(plot.get("y_offset", 0))
+		for py in s.y:
+			for px in s.x:
+				var coord := Vector2i(px, py + y_off)
+				var center_pos := o + Vector2(px * TILE + 16, py * TILE + 16)
+				var t := FarmTileScript.new()
+				t.farm = self
+				t.setup(coord, center_pos)
+				add_child(t)
+				tiles[coord] = t
+				tile_centers[coord] = center_pos
 
 
 func setup(o: Vector2, s: Vector2i) -> void:
 	origin = o
-	position = o
 	size_tiles = s
-	for y in s.y:
-		for x in s.x:
-			var t := FarmTileScript.new()
-			t.farm = self
-			t.setup(Vector2i(x, y))
-			add_child(t)
-			tiles[Vector2i(x, y)] = t
+	setup_plots([{
+		"origin": o,
+		"size": s,
+		"rect": Rect2(o, Vector2(s.x * TILE, s.y * TILE)),
+		"y_offset": 0
+	}])
 
 
 func has_soil(c: Vector2i) -> bool:
@@ -30,12 +54,27 @@ func has_soil(c: Vector2i) -> bool:
 
 
 func tile_at_world(p: Vector2) -> Node:
-	var local := p - global_position
-	var v := Vector2i(int(floor(local.x / TILE)), int(floor(local.y / TILE)))
-	return tiles.get(v)
+	var check_p := to_local(p)
+	for plot in plots:
+		var rect: Rect2 = plot.rect
+		if rect.has_point(check_p):
+			var local := check_p - rect.position
+			var gx := int(floor(local.x / TILE))
+			var gy := int(floor(local.y / TILE))
+			var coord := Vector2i(gx, gy + int(plot.get("y_offset", 0)))
+			return tiles.get(coord)
+		elif rect.has_point(p):
+			var local := p - rect.position
+			var gx := int(floor(local.x / TILE))
+			var gy := int(floor(local.y / TILE))
+			var coord := Vector2i(gx, gy + int(plot.get("y_offset", 0)))
+			return tiles.get(coord)
+	return null
 
 
 func tile_center(v: Vector2i) -> Vector2:
+	if tile_centers.has(v):
+		return to_global(tile_centers[v])
 	return global_position + Vector2(v.x * TILE + 16, v.y * TILE + 16)
 
 

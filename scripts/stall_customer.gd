@@ -11,6 +11,7 @@ const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 signal arrived_at_stall
 signal purchase_completed(slot_idx: int, item_name: String, qty: int, coins: int, buyer_name: String)
+signal wait_timeout_expired(buyer_name: String, item_name: String)
 signal departed
 
 enum State { WALK_IN, SHOPPING, WAITING, WALK_OUT }
@@ -22,8 +23,8 @@ var display_name: String = "Bé Lan"
 var state: int = State.WALK_IN
 var speed: float = 35.0         # Tốc độ đi bộ bình thường (35 px/s)
 var wander_speed: float = 22.0  # Tốc độ đi dạo thư thả khi đứng chờ
-var target_stall_pos := Vector2(184, 468)
-var exit_pos := Vector2(-40.0, 468.0)  # Quay trở về đoạn đường ban đầu
+var target_stall_pos := Vector2(584, 468)
+var exit_pos := Vector2(-40.0, 468.0)   # Quay trở về con đường bên trái (Tây)
 var stall_slots: Array = []     # Tham chiếu đến các ô sạp hàng của main
 
 # Nhu cầu mua sắm của khách
@@ -32,6 +33,7 @@ var item_type: String = "crop"
 var item_name: String = "Lúa mì"
 var buy_qty: int = 3
 var unit_price: int = 0
+var max_wait_time: float = 20.0 # Thời gian tối đa kiên nhẫn chờ món hàng (giây)
 
 var _spr: Sprite2D
 var _shadow: Sprite2D
@@ -41,6 +43,7 @@ var _bubble_icon: TextureRect
 var _anim_t: float = 0.0
 var _shop_timer: float = 0.0
 var _check_restock_timer: float = 0.0
+var _wait_elapsed: float = 0.0
 var _purchased: bool = false
 var _disappointed: bool = false
 
@@ -64,7 +67,7 @@ func _ready() -> void:
 	_spr = Sprite2D.new()
 	_spr.scale = Vector2(1.25, 1.25)
 	_spr.offset = Vector2(0, -16)
-	_spr.texture = TextureGen.sdv_char_tex(character_name, "right", 0)
+	_spr.texture = TextureGen.sdv_char_tex(character_name, "left", 0)
 	add_child(_spr)
 
 	# 3. Bong bóng nhỏ tròn, màu trắng lơ lửng phía trên đầu (không che mất đầu)
@@ -98,9 +101,11 @@ func _ready() -> void:
 
 	add_child(_bubble)
 
-	# Xuất phát từ đoạn đường bên trái màn hình
-	position = Vector2(-25 - randf_range(0, 20), target_stall_pos.y)
+	# Xuất phát từ đoạn đường phía bên trái (Tây)
+	position = Vector2(-30.0 - randf_range(0, 30.0), target_stall_pos.y)
 	_spr.flip_h = false
+	max_wait_time = randf_range(16.0, 24.0)
+	_wait_elapsed = 0.0
 
 
 func _process(delta: float) -> void:
@@ -129,15 +134,11 @@ func _process(delta: float) -> void:
 					state = State.SHOPPING
 					_shop_timer = 0.0
 				else:
-					# Không có món đồ mong muốn:
-					# 20% khả năng từ chối ngay và bỏ về, 80% khả năng đứng chờ & đi lại xung quanh đến hết ngày
-					if randf() < 0.20:
-						_show_disappointed_bubble()
-						state = State.WALK_OUT
-					else:
-						state = State.WAITING
-						_is_wandering = false
-						_wander_wait_timer = randf_range(2.0, 4.0)
+					# Chưa có món đồ mong muốn: đứng chờ một lúc xem người chơi có bày hàng lên không
+					state = State.WAITING
+					_wait_elapsed = 0.0
+					_is_wandering = false
+					_wander_wait_timer = randf_range(2.0, 4.0)
 
 		State.WAITING:
 			# Trong lúc chờ, kiểm tra xem người chơi có vừa bày món hàng lên sạp không
@@ -151,6 +152,13 @@ func _process(delta: float) -> void:
 					_shop_timer = 0.0
 					_is_wandering = false
 					return
+
+			# Đếm thời gian chờ đợi: nếu quá thời gian kiên nhẫn mà vẫn chưa có đồ -> rời đi
+			_wait_elapsed += delta
+			if _wait_elapsed >= max_wait_time:
+				wait_timeout_expired.emit(display_name, item_name)
+				decline()
+				return
 
 			# Đi lại xung quanh khu vực trước sạp hàng
 			if _is_wandering:
@@ -222,7 +230,7 @@ func _process(delta: float) -> void:
 			var dy := exit_pos.y - position.y
 
 			# Đưa vị trí y về trục đường chính 468
-			if absf(dy) > 2.5 and position.x > 0.0:
+			if absf(dy) > 2.5:
 				position.y += signf(dy) * speed * delta
 
 			if absf(dx) > 3.0:
@@ -246,8 +254,8 @@ func _find_matching_slot() -> int:
 
 func _pick_wander_spot() -> Vector2:
 	# Khu vực quảng trường / đường cỏ mở rộng quanh sạp hàng
-	var rx := randf_range(110.0, 260.0)
-	var ry := randf_range(462.0, 505.0)
+	var rx := randf_range(target_stall_pos.x - 55.0, target_stall_pos.x + 55.0)
+	var ry := randf_range(462.0, 498.0)
 	return Vector2(rx, ry)
 
 

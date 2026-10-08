@@ -13,6 +13,8 @@ const HOE_PRICE := 20
 var money_label: Label
 var rows: VBoxContainer
 var scroll: ScrollContainer
+var _buy_mode := "x1" # "x1", "x5", "x10", "x100", "max"
+var _qty_buttons: Dictionary = {}
 
 
 func _ready() -> void:
@@ -75,6 +77,39 @@ func _ready() -> void:
 	var sub := UIKit.label(banner, "🌾 \"Chào con! Mua hạt giống tốt về gieo, có nông sản chín cứ mang qua đây bác thu mua giá tốt.\"", 13, UIKit.COLOR_TEXT_BODY)
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+	# --- Thanh chọn số lượng mua: x1, x5, x10, x100, Tối đa ---
+	var qty_pill := PanelContainer.new()
+	qty_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.16, 0.11, 0.07, 0.95), UIKit.COLOR_BORDER_WOOD, 8))
+	v.add_child(qty_pill)
+
+	var qh := HBoxContainer.new()
+	qh.add_theme_constant_override("separation", 8)
+	qty_pill.add_child(qh)
+
+	var qlbl := UIKit.label(qh, "🛒 Số lượng mua cùng lúc:", 13, UIKit.COLOR_TEXT_TITLE)
+	qlbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+	var modes := [
+		{"key": "x1", "label": "x1"},
+		{"key": "x5", "label": "x5"},
+		{"key": "x10", "label": "x10"},
+		{"key": "x100", "label": "x100"},
+		{"key": "max", "label": "⚡ Tối đa (Max)"},
+	]
+
+	for m in modes:
+		var k: String = str(m.key)
+		var btn := Button.new()
+		btn.text = str(m.label)
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.custom_minimum_size = Vector2(48 if k != "max" else 105, 26)
+		btn.pressed.connect(_set_buy_mode.bind(k))
+		qh.add_child(btn)
+		_qty_buttons[k] = btn
+
+	_update_qty_buttons_style()
+
 	UIKit.divider(v)
 
 	# Danh sách thẻ hàng hóa
@@ -88,6 +123,39 @@ func _ready() -> void:
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rows.add_theme_constant_override("separation", 8)
 	scroll.add_child(rows)
+
+
+func _set_buy_mode(mode: String) -> void:
+	_buy_mode = mode
+	_update_qty_buttons_style()
+	refresh()
+
+
+func _update_qty_buttons_style() -> void:
+	for k in _qty_buttons:
+		var btn: Button = _qty_buttons[k]
+		var is_active: bool = (str(k) == _buy_mode)
+		if is_active:
+			btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.48, 0.32, 0.15), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
+			btn.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.55, 0.38, 0.18), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
+			btn.add_theme_color_override("font_color", UIKit.COLOR_TEXT_TITLE)
+		else:
+			btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.20, 0.14, 0.09), UIKit.COLOR_BORDER_WOOD, 6, 1))
+			btn.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.28, 0.20, 0.13), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
+			btn.add_theme_color_override("font_color", UIKit.COLOR_TEXT_MUTED)
+
+
+func _get_buy_qty(unit_price: int) -> int:
+	match _buy_mode:
+		"x1": return 1
+		"x5": return 5
+		"x10": return 10
+		"x100": return 100
+		"max":
+			if unit_price <= 0:
+				return 1
+			return int(GameState.money / unit_price)
+	return 1
 
 
 func _on_dim_input(e: InputEvent) -> void:
@@ -110,9 +178,10 @@ func refresh() -> void:
 	for c in rows.get_children():
 		c.queue_free()
 
-	# 1. Nông cụ cuốc đất
-	rows.add_child(_section_title("🛠️ NÔNG CỤ THIẾT YẾU", Color(0.9, 0.8, 0.6)))
+	# 1. Nông cụ cuốc đất & Túi cám
+	rows.add_child(_section_title("🛠️ NÔNG CỤ & VẬT TƯ THIẾT YẾU", Color(0.9, 0.8, 0.6)))
 	rows.add_child(_build_hoe_row())
+	rows.add_child(_build_feed_row())
 
 	# 2. Hạt giống & nông sản đã mở khóa
 	rows.add_child(_section_title("🌱 HẠT GIỐNG & NÔNG SẢN ĐANG CÓ", UIKit.COLOR_TEXT_GREEN))
@@ -174,22 +243,99 @@ func _build_hoe_row() -> Control:
 
 	UIKit.label(info_v, "Dùng để xới đất cỏ thành đất trồng (mỗi cuốc cày được 1 ô đất)", 12, UIKit.COLOR_TEXT_MUTED)
 
-	var buy := UIKit.styled_button(h, "+ Mua cuốc (%d xu)" % HOE_PRICE, 13, "buy")
-	buy.custom_minimum_size = Vector2(160, 34)
-	buy.disabled = GameState.money < HOE_PRICE
+	var qty := _get_buy_qty(HOE_PRICE)
+	var total_price := qty * HOE_PRICE
+	var btn_txt := "+ Mua x%d (%d xu)" % [qty, total_price] if qty > 1 else "+ Mua cuốc (%d xu)" % HOE_PRICE
+	if _buy_mode == "max" and qty == 0:
+		btn_txt = "+ Mua cuốc (0 cái)"
+
+	var buy := UIKit.styled_button(h, btn_txt, 13, "buy")
+	buy.custom_minimum_size = Vector2(170, 34)
+	buy.disabled = (qty <= 0) or (GameState.money < total_price)
 	buy.pressed.connect(_buy_hoe)
 	return p
 
 
 func _buy_hoe() -> void:
+	var qty := _get_buy_qty(HOE_PRICE)
+	if qty <= 0:
+		feedback.emit("Không đủ xu để mua cuốc!")
+		return
 	if not Inventory.can_hold("hoe", "hoe"):
 		feedback.emit("Túi đồ đã đầy (%d/%d)! Hãy cất bớt đồ vào nhà kho 🏚️" % [Inventory.backpack_slots_used(), Inventory.backpack_max])
 		return
-	if GameState.try_spend(HOE_PRICE):
-		Inventory.add_hoes(1)
+	var total_cost := qty * HOE_PRICE
+	if GameState.try_spend(total_cost):
+		Inventory.add_hoes(qty)
+		feedback.emit("Đã mua %d cuốc cày đất (-%d xu) 🛠️" % [qty, total_cost])
 		refresh()
 	else:
-		feedback.emit("Không đủ xu mua cuốc!")
+		feedback.emit("Không đủ xu mua %d cuốc (cần %d xu)!" % [qty, total_cost])
+
+
+func _build_feed_row() -> Control:
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UIKit.row_box())
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 12)
+	p.add_child(h)
+
+	var slot := PanelContainer.new()
+	slot.add_theme_stylebox_override("panel", UIKit.slot_box(false))
+	var icon := TextureRect.new()
+	icon.texture = TextureGen.get_feed_icon()
+	icon.custom_minimum_size = Vector2(30, 30)
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	slot.add_child(icon)
+	h.add_child(slot)
+
+	var info_v := VBoxContainer.new()
+	info_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_v.add_theme_constant_override("separation", 2)
+	h.add_child(info_v)
+
+	var title_h := HBoxContainer.new()
+	title_h.add_theme_constant_override("separation", 8)
+	info_v.add_child(title_h)
+	UIKit.label(title_h, "Túi Cám Chăn Nuôi", 16, UIKit.COLOR_TEXT_BODY)
+
+	var owned_pill := PanelContainer.new()
+	owned_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.18, 0.14, 0.10), UIKit.COLOR_BORDER_WOOD, 4))
+	UIKit.label(owned_pill, "Đang có: ×%d túi" % Inventory.feed_count(), 12, Color(0.9, 0.85, 0.75))
+	title_h.add_child(owned_pill)
+
+	UIKit.label(info_v, "Cám Stardew Valley cho gia súc, gia cầm. Cho ăn để vật nuôi no và cho sản phẩm!", 12, UIKit.COLOR_TEXT_MUTED)
+
+	var feed_price := 15
+	var qty := _get_buy_qty(feed_price)
+	var total_price := qty * feed_price
+	var btn_txt := "+ Mua x%d (%d xu)" % [qty, total_price] if qty > 1 else "+ Mua cám (%d xu)" % feed_price
+	if _buy_mode == "max" and qty == 0:
+		btn_txt = "+ Mua cám (0 túi)"
+
+	var buy := UIKit.styled_button(h, btn_txt, 13, "buy")
+	buy.custom_minimum_size = Vector2(170, 34)
+	buy.disabled = (qty <= 0) or (GameState.money < total_price)
+	buy.pressed.connect(_buy_feed)
+	return p
+
+
+func _buy_feed() -> void:
+	var feed_price := 15
+	var qty := _get_buy_qty(feed_price)
+	if qty <= 0:
+		feedback.emit("Không đủ xu để mua Túi Cám!")
+		return
+	if not Inventory.can_hold("feed", "feed"):
+		feedback.emit("Túi đồ đã đầy (%d/%d)! Hãy cất bớt đồ vào nhà kho 🏚️" % [Inventory.backpack_slots_used(), Inventory.backpack_max])
+		return
+	var total_cost := qty * feed_price
+	if GameState.try_spend(total_cost):
+		Inventory.add_feed(qty)
+		feedback.emit("Đã mua %d Túi Cám (-%d xu)! Mang ra chuồng cho động vật ăn [E]." % [qty, total_cost])
+		refresh()
+	else:
+		feedback.emit("Không đủ xu để mua Túi Cám!")
 
 
 func _build_owned_row(crop: Dictionary) -> Control:
@@ -242,9 +388,15 @@ func _build_owned_row(crop: Dictionary) -> Control:
 	UIKit.label(seed_badge, "Hạt: ×%d" % seed_count, 13, Color(0.85, 0.95, 1.0))
 	buy_v.add_child(seed_badge)
 
-	var buy := UIKit.styled_button(buy_v, "+ Mua (%d xu)" % seed_price, 13, "buy")
-	buy.custom_minimum_size = Vector2(110, 32)
-	buy.disabled = GameState.money < seed_price
+	var qty := _get_buy_qty(seed_price)
+	var total_price := qty * seed_price
+	var btn_txt := "+ Mua x%d (%d xu)" % [qty, total_price] if qty > 1 else "+ Mua (%d xu)" % seed_price
+	if _buy_mode == "max" and qty == 0:
+		btn_txt = "+ Mua (0 hạt)"
+
+	var buy := UIKit.styled_button(buy_v, btn_txt, 13, "buy")
+	buy.custom_minimum_size = Vector2(160, 32)
+	buy.disabled = (qty <= 0) or (GameState.money < total_price)
 	buy.pressed.connect(_buy.bind(cid))
 
 	# Nhóm Bán Nông Sản
@@ -337,14 +489,21 @@ func _build_mystery_row() -> Control:
 
 func _buy(id: String) -> void:
 	var c := CropDB.get_crop(id)
+	var price := int(c.seed_price)
+	var qty := _get_buy_qty(price)
+	if qty <= 0:
+		feedback.emit("Không đủ xu để mua hạt %s!" % c.name)
+		return
 	if not Inventory.can_hold("seed", id):
 		feedback.emit("Túi đồ đã đầy (%d/%d)! Hãy cất bớt đồ vào nhà kho 🏚️" % [Inventory.backpack_slots_used(), Inventory.backpack_max])
 		return
-	if GameState.try_spend(int(c.seed_price)):
-		Inventory.add_seed(id, 1)
+	var total_cost := qty * price
+	if GameState.try_spend(total_cost):
+		Inventory.add_seed(id, qty)
+		feedback.emit("Đã mua %d hạt giống %s (-%d xu) 🌱" % [qty, c.name, total_cost])
 		refresh()
 	else:
-		feedback.emit("Không đủ xu để mua hạt %s!" % c.name)
+		feedback.emit("Không đủ xu để mua %d hạt %s (cần %d xu)!" % [qty, c.name, total_cost])
 
 
 func _sell(id: String, all: bool) -> void:

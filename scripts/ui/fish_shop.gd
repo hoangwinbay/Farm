@@ -10,6 +10,8 @@ signal feedback(text: String)
 
 var money_label: Label
 var rows: VBoxContainer
+var _buy_mode := "x1" # "x1", "x5", "x10", "x100", "max"
+var _qty_buttons: Dictionary = {}
 
 
 func _ready() -> void:
@@ -71,6 +73,39 @@ func _ready() -> void:
 	var sub := UIKit.label(banner, "🌊 \"Cá ở ao này béo lắm con! Cần câu xịn sẽ tăng số lượt câu. Nhớ là Cá Trê Vàng chỉ cắn câu ban ĐÊM thôi nghe!\"", 13, Color(0.85, 0.95, 1.0))
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+	# --- Thanh chọn số lượng mua: x1, x5, x10, x100, Tối đa ---
+	var qty_pill := PanelContainer.new()
+	qty_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.10, 0.18, 0.22, 0.95), Color(0.35, 0.60, 0.75), 8))
+	v.add_child(qty_pill)
+
+	var qh := HBoxContainer.new()
+	qh.add_theme_constant_override("separation", 8)
+	qty_pill.add_child(qh)
+
+	var qlbl := UIKit.label(qh, "🛒 Số lượng mua cùng lúc:", 13, Color(0.55, 0.88, 1.0))
+	qlbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+	var modes := [
+		{"key": "x1", "label": "x1"},
+		{"key": "x5", "label": "x5"},
+		{"key": "x10", "label": "x10"},
+		{"key": "x100", "label": "x100"},
+		{"key": "max", "label": "⚡ Tối đa (Max)"},
+	]
+
+	for m in modes:
+		var k: String = str(m.key)
+		var btn := Button.new()
+		btn.text = str(m.label)
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.custom_minimum_size = Vector2(48 if k != "max" else 105, 26)
+		btn.pressed.connect(_set_buy_mode.bind(k))
+		qh.add_child(btn)
+		_qty_buttons[k] = btn
+
+	_update_qty_buttons_style()
+
 	UIKit.divider(v)
 
 	var sc := ScrollContainer.new()
@@ -83,6 +118,39 @@ func _ready() -> void:
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rows.add_theme_constant_override("separation", 8)
 	sc.add_child(rows)
+
+
+func _set_buy_mode(mode: String) -> void:
+	_buy_mode = mode
+	_update_qty_buttons_style()
+	refresh()
+
+
+func _update_qty_buttons_style() -> void:
+	for k in _qty_buttons:
+		var btn: Button = _qty_buttons[k]
+		var is_active: bool = (str(k) == _buy_mode)
+		if is_active:
+			btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.18, 0.35, 0.45), Color(0.55, 0.88, 1.0), 6, 1))
+			btn.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.24, 0.45, 0.58), Color(0.55, 0.88, 1.0), 6, 1))
+			btn.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0))
+		else:
+			btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.10, 0.16, 0.20), Color(0.25, 0.40, 0.50), 6, 1))
+			btn.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.15, 0.24, 0.30), Color(0.40, 0.65, 0.80), 6, 1))
+			btn.add_theme_color_override("font_color", Color(0.70, 0.80, 0.85))
+
+
+func _get_buy_qty(unit_price: int) -> int:
+	match _buy_mode:
+		"x1": return 1
+		"x5": return 5
+		"x10": return 10
+		"x100": return 100
+		"max":
+			if unit_price <= 0:
+				return 1
+			return int(GameState.money / unit_price)
+	return 1
 
 
 func _on_dim_input(e: InputEvent) -> void:
@@ -207,12 +275,20 @@ func _build_rod_row(rod: Dictionary) -> Control:
 	UIKit.label(casts_pill, "%d lượt/cần" % int(rod.casts), 12, Color(0.75, 0.90, 1.0))
 	name_h.add_child(casts_pill)
 
+	var single_casts := int(rod.casts)
 	var remain_color := Color(0.65, 0.95, 0.65) if remaining > 0 else UIKit.COLOR_TEXT_MUTED
 	UIKit.label(info_v, "Hiện đang còn: %d lượt câu trong túi" % remaining, 13, remain_color)
 
-	var buy := UIKit.styled_button(h, "+ Mua (%d xu)" % price, 14, "buy")
-	buy.custom_minimum_size = Vector2(140, 34)
-	buy.disabled = GameState.money < price
+	var qty := _get_buy_qty(price)
+	var total_price := qty * price
+	var total_casts := qty * single_casts
+	var btn_txt := "+ Mua x%d (+%d lượt · %d xu)" % [qty, total_casts, total_price] if qty > 1 else "+ Mua (%d xu)" % price
+	if _buy_mode == "max" and qty == 0:
+		btn_txt = "+ Mua (0 cần)"
+
+	var buy := UIKit.styled_button(h, btn_txt, 13, "buy")
+	buy.custom_minimum_size = Vector2(190, 34)
+	buy.disabled = (qty <= 0) or (GameState.money < total_price)
 	buy.pressed.connect(_buy_rod.bind(tier))
 	return p
 
@@ -272,15 +348,22 @@ func _build_fish_row(f: Dictionary) -> Control:
 
 func _buy_rod(tier: String) -> void:
 	var rod := FishDB.get_rod(tier)
+	var price := int(rod.price)
+	var qty := _get_buy_qty(price)
+	if qty <= 0:
+		feedback.emit("Không đủ xu để mua %s!" % rod.name)
+		return
 	if not Inventory.can_hold("rod", tier):
 		feedback.emit("Túi đồ đã đầy (%d/%d)! Cất bớt đồ vào nhà kho 🏚️" % [Inventory.backpack_slots_used(), Inventory.backpack_max])
 		return
-	if GameState.try_spend(int(rod.price)):
-		Inventory.add_rod(tier, int(rod.casts))
-		feedback.emit("Đã mua %s (+%d lượt câu)!" % [rod.name, int(rod.casts)])
+	var total_price := qty * price
+	var total_casts := qty * int(rod.casts)
+	if GameState.try_spend(total_price):
+		Inventory.add_rod(tier, total_casts)
+		feedback.emit("Đã mua %d %s (+%d lượt câu, -%d xu)!" % [qty, rod.name, total_casts, total_price])
 		refresh()
 	else:
-		feedback.emit("Không đủ xu mua %s!" % rod.name)
+		feedback.emit("Không đủ xu mua %d %s (cần %d xu)!" % [qty, rod.name, total_price])
 
 
 func _sell_fish(id: String, all: bool) -> void:

@@ -5,6 +5,7 @@ extends CanvasLayer
 const CropDB := preload("res://scripts/crop_db.gd")
 const FishDB := preload("res://scripts/fish_db.gd")
 const PoultryDB := preload("res://scripts/poultry_db.gd")
+const OreDB := preload("res://scripts/ore_db.gd")
 const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
@@ -26,6 +27,7 @@ var _tab_all: Button
 var _tab_crop: Button
 var _tab_fish: Button
 var _tab_poultry: Button
+var _tab_ore: Button
 
 
 func _ready() -> void:
@@ -123,6 +125,7 @@ func _ready() -> void:
 	_tab_crop = _make_tab(tabs_h, "Nông sản", "crop")
 	_tab_fish = _make_tab(tabs_h, "Cá tươi", "fish")
 	_tab_poultry = _make_tab(tabs_h, "Gia cầm", "poultry")
+	_tab_ore = _make_tab(tabs_h, "Quặng mỏ", "ore")
 
 	scroll = ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -152,10 +155,12 @@ func _make_tab(parent: Control, text: String, f_id: String) -> Button:
 
 
 func _update_tab_styles() -> void:
-	var tabs := [_tab_all, _tab_crop, _tab_fish, _tab_poultry]
-	var ids := ["all", "crop", "fish", "poultry"]
+	var tabs := [_tab_all, _tab_crop, _tab_fish, _tab_poultry, _tab_ore]
+	var ids := ["all", "crop", "fish", "poultry", "ore"]
 	for i in tabs.size():
 		var btn: Button = tabs[i]
+		if btn == null:
+			continue
 		if ids[i] == _active_filter:
 			btn.add_theme_stylebox_override("normal", UIKit.badge_box(Color(0.36, 0.24, 0.12), UIKit.COLOR_BORDER_GOLD, 6))
 			btn.add_theme_color_override("font_color", UIKit.COLOR_TEXT_TITLE)
@@ -310,10 +315,20 @@ func _build_inventory_list() -> void:
 				var card := _build_inventory_item_card(pid, "poultry", a.product_name, count, int(a.product_price))
 				inventory_rows.add_child(card)
 
+	# 4. Khoáng sản & Quặng (ores)
+	if _active_filter == "all" or _active_filter == "ore":
+		for ore in OreDB.ORES:
+			var oid: String = str(ore.id)
+			var count := Inventory.ore_count(oid)
+			if count > 0:
+				has_items = true
+				var card := _build_inventory_item_card(oid, "ore", ore.name, count, int(ore.price))
+				inventory_rows.add_child(card)
+
 	if not has_items:
 		var empty_box := PanelContainer.new()
 		empty_box.add_theme_stylebox_override("panel", UIKit.row_locked_box())
-		var l := UIKit.label(empty_box, "(Túi đồ chưa có nông sản/cá/sản phẩm để bày bán. Hãy thu hoạch hoặc câu cá thêm!)", 13, UIKit.COLOR_TEXT_MUTED)
+		var l := UIKit.label(empty_box, "(Túi đồ chưa có nông sản/cá/quặng để bày bán. Hãy thu hoạch hoặc đào mỏ thêm!)", 13, UIKit.COLOR_TEXT_MUTED)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		inventory_rows.add_child(empty_box)
 
@@ -410,6 +425,12 @@ func _add_item_to_stall(id: String, type: String, name: String, price: int, qty:
 			qty = n
 			taken = true
 			Inventory.changed.emit()
+	elif type == "ore":
+		var cur_o := Inventory.ore_count(id)
+		var n: int = mini(qty, cur_o)
+		if n > 0:
+			taken = Inventory.take_ore(id, n)
+			qty = n
 	else:
 		var cur_p := Inventory.produce_count(id)
 		var n: int = mini(qty, cur_p)
@@ -452,6 +473,8 @@ func _retrieve_from_stall(idx: int) -> void:
 	var item_cat := "produce"
 	if type == "fish":
 		item_cat = "fish"
+	elif type == "ore":
+		item_cat = "ore"
 	if not Inventory.can_hold(item_cat, id):
 		feedback.emit("Túi đồ đã đầy (%d/%d)! Hãy cất bớt đồ vào nhà kho 🏚️ trước khi thu hồi." % [Inventory.backpack_slots_used(), Inventory.backpack_max], Color(1.0, 0.5, 0.4))
 		return
@@ -460,6 +483,8 @@ func _retrieve_from_stall(idx: int) -> void:
 		if type == "fish":
 			Inventory.fish[id] = int(Inventory.fish.get(id, 0)) + count
 			Inventory.changed.emit()
+		elif type == "ore":
+			Inventory.add_ore(id, count)
 		else:
 			Inventory.add_produce(id, count)
 
@@ -476,10 +501,9 @@ func _get_item_icon(id: String, type: String) -> Texture2D:
 	elif type == "crop":
 		var c := CropDB.get_crop(id)
 		return TextureGen.prod_icon(c) if not c.is_empty() else null
+	elif type == "ore":
+		return TextureGen.ore_item_icon(id)
 	else:
-		# Gia cầm
-		for a in PoultryDB.ANIMALS:
-			if str(a.product) == id:
-				var c := CropDB.get_crop("corn") # fallback icon
-				return TextureGen.egg_icon(str(a.product_color))
+		# Sản phẩm chăn nuôi (trứng, sữa, thịt, lông)
+		return TextureGen.get_product_icon(id)
 	return null

@@ -118,6 +118,46 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _tree_variant("tree_stump")
 		"house":
 			tex = _house()
+		"sdv_north_cliff_top":
+			var c_img := _load_picture("res://picture/sdv_north_cliff_top.png")
+			tex = _tex(c_img) if c_img != null else null
+		"cave_entrance":
+			tex = cave_entrance_tex()
+		"mine_sign":
+			tex = mine_sign_tex()
+		"mine_floor":
+			tex = mine_floor_tex()
+		"mine_wall":
+			tex = mine_wall_tex()
+		"mine_ladder_down":
+			tex = mine_ladder_tex(true)
+		"mine_ladder_up":
+			tex = mine_ladder_tex(false)
+		"rock_stone":
+			tex = mine_rock_tex("stone")
+		"rock_copper", "rock_copper_ore":
+			tex = mine_rock_tex("copper_ore")
+		"rock_iron", "rock_iron_ore":
+			tex = mine_rock_tex("iron_ore")
+		"rock_gold", "rock_gold_ore":
+			tex = mine_rock_tex("gold_ore")
+		"rock_coal":
+			tex = mine_rock_tex("coal")
+		"rock_ruby":
+			tex = mine_rock_tex("ruby")
+		"rock_diamond":
+			tex = mine_rock_tex("diamond")
+		"decor_cart":
+			var d_cart := _load_picture("res://picture/mine/decor_cart.png")
+			tex = _tex(d_cart) if d_cart != null else null
+		"decor_torch":
+			var d_torch := _load_picture("res://picture/mine/decor_torch.png")
+			tex = _tex(d_torch) if d_torch != null else null
+		"decor_barrel":
+			var d_bar := _load_picture("res://picture/mine/decor_barrel.png")
+			tex = _tex(d_bar) if d_bar != null else null
+		"pickaxe_icon":
+			tex = pickaxe_icon("basic")
 		"shed":
 			tex = _shed()
 		"tent":
@@ -134,16 +174,30 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _market_stall()
 		"stall_shadow":
 			tex = _stall_shadow()
+		"shadow":
+			tex = shadow_tex()
 		"scarecrow":
 			tex = _scarecrow()
 		"coop":
 			tex = _coop()
+		"coop_tier1":
+			tex = _coop_tier1()
+		"coop_tier2":
+			tex = _coop_tier2()
+		"barn_tier1":
+			tex = _barn_tier1()
+		"barn_tier2":
+			tex = _barn_tier2()
 		"pen_bedding":
 			tex = _pen_bedding()
+		"pen_dirt_bedding":
+			tex = _pen_dirt_bedding()
 		"trough":
 			tex = _trough()
 		"water_trough":
 			tex = _water_trough()
+		"feed", "feed_bag":
+			tex = get_feed_icon()
 		"hay_bale":
 			tex = _hay_bale()
 		"nest_box":
@@ -168,6 +222,8 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _gate_v()
 		"gate_coop":
 			tex = _coop_gate()
+		"gate_farm":
+			tex = _farm_gate()
 		"stand_seed_roof":
 			tex = _stand_seed_roof()
 		"stand_seed_back":
@@ -194,10 +250,13 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _fx_water()
 		"fx_harvest":
 			tex = _fx_harvest()
-		"fx_rod":
+		"fx_rod", "sdv_rod":
 			tex = _fx_rod()
-		"fx_bobber":
+		"fx_bobber", "sdv_bobber":
 			tex = _fx_bobber()
+		"sdv_bobber_float":
+			var loaded_bf := _load_picture("res://picture/sdv_bobber_float.png")
+			tex = _tex(loaded_bf) if loaded_bf != null else _fx_bobber()
 	if tex != null:
 		_cache[key] = tex
 	return tex
@@ -205,7 +264,8 @@ static func get_tex(key: String) -> ImageTexture:
 
 # ---------- nền đất (bake 1 ảnh lớn) ----------
 
-static func _autotile_terrain(img: Image, atlas: Image, grid: Array, gw: int, gh: int, is_dirt: bool, rng: RandomNumberGenerator) -> void:
+static func _autotile_terrain(img: Image, atlas: Image, grid: Array, gw: int, gh: int, is_dirt: bool, rng: RandomNumberGenerator, fgx0: int = 50, fgx1: int = 81) -> void:
+
 	for gy in range(gh):
 		for gx in range(gw):
 			if not grid[gy][gx]:
@@ -217,12 +277,14 @@ static func _autotile_terrain(img: Image, atlas: Image, grid: Array, gw: int, gh
 
 			# Mở thông tại các vị trí cổng kết nối với đường đi (không bị chặn cỏ)
 			if is_dirt:
-				if gx == 25 and (gy >= 28 and gy <= 30):
-					w_val = true # Cổng Tây ruộng nối đại lộ
-				elif gx == 54 and (gy >= 28 and gy <= 30):
-					e = true # Cổng Đông ruộng nối đại lộ
-				elif (gx == 18 or gx == 19) and gy == 35:
-					n = true # Cổng chuồng nối lối đi từ bắc
+				if (gx in [64, 65, 66]) and gy == 27:
+					s = true # Cổng Nam thửa Bắc mở ra đại lộ ở giữa
+				elif (gx in [64, 65, 66]) and gy == 31:
+					n = true # Cổng Bắc thửa Nam mở ra đại lộ ở giữa
+				elif gy == 41 and (gx in [22, 23, 39, 40]):
+					s = true # Cổng chuồng Bò và Gà mở về phía nam ra đường đá
+				elif gy == 45 and (gx in [22, 23, 39, 40]):
+					n = true # Cổng chuồng Cừu và Lợn mở về phía bắc ra đường đá
 
 			var nw: bool = grid[gy - 1][gx - 1] if gy > 0 and gx > 0 else false
 			var ne: bool = grid[gy - 1][gx + 1] if gy > 0 and gx < gw - 1 else false
@@ -281,7 +343,7 @@ static func _autotile_terrain(img: Image, atlas: Image, grid: Array, gw: int, gh
 			img.blit_rect(atlas, Rect2i(col * 16, row * 16, 16, 16), Vector2i(gx * 16, gy * 16))
 
 
-static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Rect2) -> ImageTexture:
+static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Rect2, cobble_paths: Array = []) -> ImageTexture:
 	var key := "ground"
 	if _cache.has(key):
 		return _cache[key]
@@ -333,12 +395,14 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 			for px in range(tx0, tx1):
 				protected[py][px] = true
 
-	# Bảo vệ các công trình, ruộng đồng, chuồng trại, khu chợ, ao hồ và đường đi
-	protect_rect.call(farm_rect.position.x, farm_rect.position.y, farm_rect.size.x, farm_rect.size.y, 2)
-	protect_rect.call(241.0 - 72.0, 248.0 - 144.0, 160.0, 160.0, 2) # Nhà gỗ & hiên
-	protect_rect.call(120.0, 560.0, 272.0, 220.0, 2) # Chuồng gia cầm
-	protect_rect.call(944.0, 352.0, 464.0, 96.0, 2) # Khu chợ quê
-	protect_rect.call(184.0 - 56.0, 440.0 - 66.0, 112.0, 66.0, 1) # Sạp hàng nông sản (nền cỏ xanh thanh sạch)
+	# Bảo vệ các công trình, ruộng đồng, 4 khu chuồng trại & đường đá, khu chợ, ao hồ, hầm mỏ và đường đi
+	protect_rect.call(800.0, 288.0, 496.0, 160.0, 1) # Thửa Bắc
+	protect_rect.call(800.0, 496.0, 496.0, 160.0, 1) # Thửa Nam
+	protect_rect.call(641.0 - 72.0, 248.0 - 144.0, 160.0, 160.0, 2) # Nhà gỗ & hiên
+	protect_rect.call(240.0, 520.0, 540.0, 360.0, 2) # 4 khu chuồng gia cầm, gia súc & lối đi lát đá
+	protect_rect.call(1344.0, 352.0, 464.0, 96.0, 2) # Khu chợ quê
+	protect_rect.call(584.0 - 56.0, 440.0 - 66.0, 112.0, 66.0, 1) # Sạp hàng nông sản (nền cỏ xanh thanh sạch)
+	protect_rect.call(32.0, 140.0, 128.0, 60.0, 1) # Khu vách núi cửa hầm mỏ đá Tây Bắc
 	protect_rect.call(pond.position.x, pond.position.y, pond.size.x, pond.size.y, 3) # Hồ nước
 	for p in paths:
 		protect_rect.call(p.position.x, p.position.y, p.size.x, p.size.y, 2)
@@ -414,9 +478,11 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 				if cnt < 2:
 					dirt_grid[gy][gx] = false
 
-	# 4. Đất nông trại (Farm field) - tự nhiên viền răng cưa Stardew Valley
-	# Ruộng nông trại: x từ 416 đến 880 (gx: 26..54), y từ 384 đến 672 (gy: 24..41)
-	# Đất trồng nằm sát khít ngay rìa trong của hàng rào (x: 408..888, y: 370..672), chân rào cắm trên cỏ
+	# 4. Đất nông trại (Farm fields) - 2 thửa riêng biệt có diện tích bằng nhau:
+	# Thửa Bắc (x: 800..1296, y: 288..448) và Thửa Nam (x: 800..1296, y: 496..656)
+	var fgx0: int = 50
+	var fgx1: int = 81
+
 	var farm_grid: Array = []
 	for y in gh:
 		var row: Array = []
@@ -424,13 +490,22 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 		row.fill(false)
 		farm_grid.append(row)
 
-	for gy in range(24, 42):
-		for gx in range(26, 55):
-			farm_grid[gy][gx] = true
-			dark_grid[gy][gx] = false
+	# Thửa Bắc: gy từ 18 đến 28 (y: 288..448)
+	for gy in range(18, 28):
+		for gx in range(fgx0, fgx1):
+			if gy < gh and gx < gw:
+				farm_grid[gy][gx] = true
+				dark_grid[gy][gx] = false
 
-	# Chuồng nuôi gia cầm (Animal pen) - nền đất ấm viền cỏ tự nhiên
-	# Căn chuẩn tuyệt đối theo rào chuồng: x từ 112 đến 400 (gx: 7..24), y từ 560 đến 672 (gy: 35..41)
+	# Thửa Nam: gy từ 31 đến 41 (y: 496..656)
+	for gy in range(31, 41):
+		for gx in range(fgx0, fgx1):
+			if gy < gh and gx < gw:
+				farm_grid[gy][gx] = true
+				dark_grid[gy][gx] = false
+
+	# 4 Khu chuồng nuôi riêng biệt (Bò, Gà, Cừu, Lợn) - toàn bộ dùng đất không cỏ chuẩn Stardew Valley
+	# Không bị tràn ra ngoài hàng rào (mỗi chuồng 14x8 ô = 224x128px)
 	var pen_grid: Array = []
 	for y in gh:
 		var row: Array = []
@@ -438,18 +513,27 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 		row.fill(false)
 		pen_grid.append(row)
 
-	for gy in range(35, 42):
-		for gx in range(7, 25):
-			pen_grid[gy][gx] = true
-			dark_grid[gy][gx] = false
+	var pens_bounds := [
+		Rect2i(16, 34, 14, 8), # Chuồng Bò (Tây Bắc: x=256..480, y=544..672)
+		Rect2i(33, 34, 14, 8), # Chuồng Gà (Đông Bắc: x=528..752, y=544..672)
+		Rect2i(16, 45, 14, 8), # Chuồng Cừu (Tây Nam: x=256..480, y=720..848)
+		Rect2i(33, 45, 14, 8), # Chuồng Lợn (Đông Nam: x=528..752, y=720..848)
+	]
 
-	# 5. Lát autotile cho cỏ đậm, các vạt đất trống, đất nông trại và chuồng nuôi
+	for pb in pens_bounds:
+		for gy in range(pb.position.y, pb.end.y):
+			for gx in range(pb.position.x, pb.end.x):
+				if gy < gh and gx < gw:
+					pen_grid[gy][gx] = true
+					dark_grid[gy][gx] = false
+
+	# 5. Lát autotile cho cỏ đậm, các vạt đất trống, đất nông trại và 4 khu chuồng nuôi
 	if dark_atlas != null:
-		_autotile_terrain(img, dark_atlas, dark_grid, gw, gh, false, rng)
+		_autotile_terrain(img, dark_atlas, dark_grid, gw, gh, false, rng, fgx0, fgx1)
 	if dirt_atlas != null:
-		_autotile_terrain(img, dirt_atlas, dirt_grid, gw, gh, true, rng)
-		_autotile_terrain(img, dirt_atlas, farm_grid, gw, gh, true, rng)
-		_autotile_terrain(img, dirt_atlas, pen_grid, gw, gh, true, rng)
+		_autotile_terrain(img, dirt_atlas, dirt_grid, gw, gh, true, rng, fgx0, fgx1)
+		_autotile_terrain(img, dirt_atlas, farm_grid, gw, gh, true, rng, fgx0, fgx1)
+		_autotile_terrain(img, dirt_atlas, pen_grid, gw, gh, true, rng, fgx0, fgx1)
 
 	# 6. Rải hoa dại tự nhiên (wildflowers) trên thảm cỏ
 	if dark_atlas != null:
@@ -480,8 +564,8 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 			var ty1: int = mini(gh, int(ceil(p.end.y / 16.0)))
 			for ty in range(ty0, ty1):
 				for tx in range(tx0, tx1):
-					# Không đặt đường xuyên qua giữa lòng ruộng nông trại
-					if tx >= 25 and tx <= 55 and ty >= 23 and ty <= 42:
+					# Không đặt đường đất đè lên lòng ruộng đất trồng
+					if farm_grid[ty][tx]:
 						continue
 					road_grid[ty][tx] = true
 
@@ -507,12 +591,12 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 				# Nối thông ra mép trái bản đồ, cổng ruộng và cổng chuồng không bị cỏ chắn
 				if gx == 0 and (gy >= 28 and gy <= 30):
 					w_val = true
-				elif gx == 24 and (gy >= 28 and gy <= 31):
+				elif gx == (fgx0 - 1) and (gy >= 28 and gy <= 31):
 					e = true
-				elif gx == 56 and (gy >= 28 and gy <= 31):
+				elif gx == fgx1 and (gy >= 28 and gy <= 31):
 					w_val = true
-				elif (gx == 18 or gx == 19) and gy == 34:
-					s = true
+				elif (gx in [30, 31, 32]) and gy == 30:
+					s = true # Nối thông đại lộ với đường đá dọc dẫn xuống 4 chuồng
 
 				var nw: bool = road_grid[gy - 1][gx - 1] if gy > 0 and gx > 0 else false
 				var ne: bool = road_grid[gy - 1][gx + 1] if gy > 0 and gx < gw - 1 else false
@@ -554,22 +638,38 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 
 				img.blit_rect(sdv_roads, Rect2i(src_pos, Vector2i(16, 16)), Vector2i(gx * 16, gy * 16))
 
-	# ao nước Stardew Valley chính thống từ Content
-	var pc := pond.get_center()
-	var sdv_pond := _load_picture("res://picture/sdv_pond.png")
-	if sdv_pond != null:
-		var pond_pos := Vector2i(int(pc.x - sdv_pond.get_width() / 2.0), int(pc.y - sdv_pond.get_height() / 2.0))
-		img.blend_rect(sdv_pond, Rect2i(0, 0, sdv_pond.get_width(), sdv_pond.get_height()), pond_pos)
-	else:
-		var rx := pond.size.x / 2.0
-		var ry := pond.size.y / 2.0
-		ellipse(img, pc.x, pc.y, rx + 6, ry + 6, Color(0.78, 0.70, 0.48))
-		ellipse(img, pc.x, pc.y, rx, ry, Color(0.30, 0.55, 0.76))
-		ellipse(img, pc.x - rx * 0.15, pc.y - ry * 0.2, rx * 0.62, ry * 0.55, Color(0.42, 0.68, 0.86))
-		for i in 60:
-			var a := rng.randf() * TAU
-			var rr := sqrt(rng.randf())
-			px(img, int(pc.x + cos(a) * rx * 0.8 * rr), int(pc.y + sin(a) * ry * 0.8 * rr), Color(0.75, 0.9, 0.98))
+	# ---------------- Lối đi lát đá (Cobblestone paths) giữa các chuồng ----------------
+	var cobble_tex := _load_picture("res://picture/sdv_cobblestone_path.png")
+	var active_cobble_paths := cobble_paths
+	if active_cobble_paths.is_empty():
+		active_cobble_paths = [
+			Rect2(480, 480, 48, 384), # đường dọc giữa các chuồng nối từ đại lộ xuống
+			Rect2(240, 672, 528, 48), # đường ngang giữa hàng chuồng trên và dưới
+		]
+
+	for cp in active_cobble_paths:
+		var cx0: int = maxi(0, int(floor(cp.position.x / 16.0)))
+		var cx1: int = mini(gw, int(ceil(cp.end.x / 16.0)))
+		var cy0: int = maxi(0, int(floor(cp.position.y / 16.0)))
+		var cy1: int = mini(gh, int(ceil(cp.end.y / 16.0)))
+		for ty in range(cy0, cy1):
+			for tx in range(cx0, cx1):
+				if cobble_tex != null:
+					var tile_x := (rng.randi() % 4) * 16
+					var tile_y := (rng.randi() % 4) * 16
+					img.blend_rect(cobble_tex, Rect2i(tile_x, tile_y, 16, 16), Vector2i(tx * 16, ty * 16))
+
+	# Ao cá tròn Stardew Valley chuẩn asset nguyên bản
+	var pond_img := _load_picture("res://picture/sdv_pond_stardew.png")
+	if pond_img != null:
+		var px_pos := Vector2i(int(pond.position.x), int(pond.position.y))
+		img.blend_rect(pond_img, Rect2i(Vector2i.ZERO, pond_img.get_size()), px_pos)
+
+	# Rặng vách núi nhô lên biên phía Bắc (chuẩn địa hình Stardew Valley)
+	var cliff_img := _load_picture("res://picture/sdv_north_cliff.png")
+	if cliff_img != null:
+		img.blend_rect(cliff_img, Rect2i(Vector2i.ZERO, cliff_img.get_size()), Vector2i.ZERO)
+
 	var tex := _tex(img)
 	_cache[key] = tex
 	return tex
@@ -912,6 +1012,24 @@ static func _coop_gate() -> ImageTexture:
 	return _tex(img)
 
 
+# Cổng ruộng 64x32: Nối liền hàng rào hai bên không có khe hở, gồm 2 cột cổng, cánh cổng Stardew Valley ở giữa và thanh xà gỗ nối khít vào rào hai bên
+static func _farm_gate() -> ImageTexture:
+	var loaded := _load_picture("res://picture/gate_farm.png")
+	if loaded != null:
+		return _tex(loaded)
+	var img := Image.create(64, 32, false, Image.FORMAT_RGBA8)
+	var gate_src := _load_picture("res://picture/gate_coop.png")
+	var fence_src := _load_picture("res://picture/fence_h.png")
+	if fence_src != null:
+		for x in range(0, 16, 4):
+			img.blit_rect(fence_src, Rect2i(28, 0, 4, 32), Vector2i(x, 0))
+		for x in range(44, 64, 4):
+			img.blit_rect(fence_src, Rect2i(28, 0, 4, 32), Vector2i(x, 0))
+	if gate_src != null:
+		img.blend_rect(gate_src, Rect2i(0, 0, 48, 32), Vector2i(8, 0))
+	return _tex(img)
+
+
 static func _fx_till() -> ImageTexture:
 	var img := _img(16, 16)
 	var dirt := Color(0.5, 0.34, 0.19)
@@ -962,6 +1080,9 @@ static func _fx_harvest() -> ImageTexture:
 
 
 static func _fx_rod() -> ImageTexture:
+	var loaded := _load_picture("res://picture/sdv_rod.png")
+	if loaded != null:
+		return _tex(loaded)
 	var img := _img(16, 16)
 	var wood := Color(0.5, 0.35, 0.2)
 	for i in 9:
@@ -976,6 +1097,9 @@ static func _fx_rod() -> ImageTexture:
 
 
 static func _fx_bobber() -> ImageTexture:
+	var loaded := _load_picture("res://picture/sdv_bobber.png")
+	if loaded != null:
+		return _tex(loaded)
 	var img := _img(16, 16)
 	circle(img, 8, 6, 2.5, Color(0.85, 0.25, 0.2))
 	circle(img, 8, 9, 2.5, Color(0.95, 0.95, 0.95))
@@ -1203,6 +1327,13 @@ static func _stall_shadow() -> ImageTexture:
 	ellipse(img, 60, 16, 44, 9, shadow)
 	ellipse(img, 18, 18, 13, 7, shadow)
 	ellipse(img, 102, 18, 17, 8, shadow)
+	return _tex(img)
+
+
+static func shadow_tex() -> ImageTexture:
+	var img := _img(20, 10)
+	var shadow := Color(0.0, 0.0, 0.0, 0.45)
+	ellipse(img, 10, 5, 8, 4, shadow)
 	return _tex(img)
 
 
@@ -1820,6 +1951,56 @@ static func _pen_bedding() -> ImageTexture:
 	return _tex(img)
 
 
+# Nền đất trống cho chuồng Cấp 0 (224x128, rào gỗ trên nền đất trống, chưa xây chuồng)
+static func _pen_dirt_bedding() -> ImageTexture:
+	var img := _img(224, 128)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 555
+	for y in range(4, 124):
+		for x in range(4, 220):
+			var n := rng.randf()
+			if n < 0.08:
+				px(img, x, y, Color(0.55, 0.40, 0.24, 0.45))
+			elif n < 0.12:
+				px(img, x, y, Color(0.45, 0.32, 0.18, 0.40))
+			elif n < 0.14:
+				px(img, x, y, Color(0.68, 0.52, 0.34, 0.35))
+	for i in 40:
+		var sx := rng.randi_range(10, 210)
+		var sy := rng.randi_range(10, 115)
+		px(img, sx, sy, Color(0.48, 0.42, 0.35, 0.7))
+		px(img, sx + 1, sy, Color(0.38, 0.32, 0.25, 0.7))
+	return _tex(img)
+
+
+static func _coop_tier1() -> ImageTexture:
+	var loaded := _load_picture("res://picture/coop_tier1.png")
+	if loaded != null:
+		return _tex(loaded)
+	return _coop()
+
+
+static func _coop_tier2() -> ImageTexture:
+	var loaded := _load_picture("res://picture/coop_tier2.png")
+	if loaded != null:
+		return _tex(loaded)
+	return _coop()
+
+
+static func _barn_tier1() -> ImageTexture:
+	var loaded := _load_picture("res://picture/barn_tier1.png")
+	if loaded != null:
+		return _tex(loaded)
+	return _coop()
+
+
+static func _barn_tier2() -> ImageTexture:
+	var loaded := _load_picture("res://picture/barn_tier2.png")
+	if loaded != null:
+		return _tex(loaded)
+	return _coop()
+
+
 # Máng ăn gỗ đựng thức ăn (22x8)
 static func _trough() -> ImageTexture:
 	var loaded := _load_picture("res://picture/trough.png")
@@ -1930,8 +2111,63 @@ static func _nest_box() -> ImageTexture:
 
 
 
-# Con gia cầm pixel: chicken / duck / big, tô màu theo loại.
+# Lấy Texture gốc (spritesheet) của con vật (gà, bò, lợn, cừu)
+static func get_animal_tex(species_id: String, is_baby: bool = false, is_sheared: bool = false) -> Texture2D:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	var key := "anim_tex_%s_%s_%s" % [sid, str(is_baby), str(is_sheared)]
+	if _cache.has(key):
+		return _cache[key]
+
+	var path := PoultryDB.get_texture_path(sid, is_baby, is_sheared)
+	if path != "" and ResourceLoader.exists(path):
+		var res: Resource = ResourceLoader.load(path)
+		if res is Texture2D:
+			_cache[key] = res
+			return res as Texture2D
+
+	var loaded := _load_picture(path)
+	if loaded != null:
+		var tex := _tex(loaded)
+		_cache[key] = tex
+		return tex
+
+	return null
+
+
+# Lấy icon tĩnh cắt từ spritesheet cho giao diện quầy & túi đồ
+static func get_animal_icon(species_id: String, is_baby: bool = false, is_sheared: bool = false) -> ImageTexture:
+	var sid := PoultryDB.get_canonical_id(species_id)
+	var key := "anim_ic_%s_%s_%s" % [sid, str(is_baby), str(is_sheared)]
+	if _cache.has(key):
+		return _cache[key]
+
+	var path := PoultryDB.get_texture_path(sid, is_baby, is_sheared)
+	var loaded := _load_picture(path)
+	if loaded != null:
+		var fw: int = 16 if sid == "chicken" else 32
+		var fh: int = 16 if sid == "chicken" else 32
+		# Cắt frame nhìn nghiêng (hàng 1) để thấy rõ thân & đầu con vật
+		var sub := Image.create(fw, fh, false, Image.FORMAT_RGBA8)
+		sub.blit_rect(loaded, Rect2i(0, fh, fw, fh), Vector2i.ZERO)
+		var tex := _tex(sub)
+		_cache[key] = tex
+		return tex
+
+	# Fallback vẽ thủ công nếu không nạp được
+	var d := PoultryDB.get_animal(sid)
+	var shape := str(d.get("shape", sid))
+	var col := str(d.get("color", "ffffff"))
+	return _procedural_animal_sprite(shape, col)
+
+
 static func animal_sprite(shape: String, color_hex: String) -> ImageTexture:
+	var canon := PoultryDB.get_canonical_id(shape)
+	if canon in ["chicken", "cow", "pig", "sheep"]:
+		return get_animal_icon(canon)
+	return _procedural_animal_sprite(shape, color_hex)
+
+
+static func _procedural_animal_sprite(shape: String, color_hex: String) -> ImageTexture:
 	var key := "animal_%s_%s" % [shape, color_hex]
 	if _cache.has(key):
 		return _cache[key]
@@ -2130,13 +2366,21 @@ static func sdv_char_tex(char_name: String, dir: String, frame_idx: int) -> Text
 	if _cache.has(sheet_key):
 		sheet = _cache[sheet_key]
 	else:
-		var path := "res://Content (unpacked)/Characters/%s.png" % cname
-		if ResourceLoader.exists(path):
-			sheet = ResourceLoader.load(path) as Texture2D
+		var pic_path := "res://picture/characters/%s.png" % cname
+		if ResourceLoader.exists(pic_path):
+			sheet = ResourceLoader.load(pic_path) as Texture2D
 		if sheet == null:
-			var img := _load_picture(path)
+			var img := _load_picture(pic_path)
 			if img != null:
 				sheet = _tex(img)
+		if sheet == null:
+			var fallback_path := "res://Content (unpacked)/Characters/%s.png" % cname
+			if ResourceLoader.exists(fallback_path):
+				sheet = ResourceLoader.load(fallback_path) as Texture2D
+			if sheet == null:
+				var img_fb := _load_picture(fallback_path)
+				if img_fb != null:
+					sheet = _tex(img_fb)
 		if sheet != null:
 			_cache[sheet_key] = sheet
 
@@ -2452,6 +2696,100 @@ static func npc_tex(npc_type: String) -> ImageTexture:
 			rect(img, 2, 19, 3, 2, skin_d)
 			rect(img, 13, 19, 3, 2, skin_d)
 
+		"truong_thon":
+			# Bác Trưởng Thôn: Phong thái phúc hậu, mũ nan thanh lịch, râu ria mép hiền từ, áo ký giả vàng nâu sang trọng
+			var skin := Color(0.86, 0.68, 0.50)
+			var skin_d := Color(0.74, 0.56, 0.38)
+			var hair_grey := Color(0.55, 0.55, 0.58)
+			var hat_brim := Color(0.45, 0.32, 0.18)
+			var hat_top := Color(0.60, 0.45, 0.28)
+			var hat_band := Color(0.85, 0.25, 0.20)
+			var coat := Color(0.58, 0.42, 0.22)
+			var coat_l := Color(0.72, 0.54, 0.32)
+			var coat_d := Color(0.40, 0.28, 0.14)
+			var shirt_in := Color(0.92, 0.90, 0.85)
+			var eye := Color(0.15, 0.12, 0.10)
+
+			# Mũ nan rộng vành phong cách trưởng làng
+			rect(img, 2, 3, 14, 2, hat_brim)
+			rect(img, 5, 0, 8, 3, hat_top)
+			rect(img, 5, 2, 8, 1, hat_band)
+			px(img, 5, 1, Color(0.75, 0.60, 0.40))
+
+			# Tóc mai hoa râm hai bên
+			px(img, 4, 4, hair_grey)
+			px(img, 4, 5, hair_grey)
+			px(img, 13, 4, hair_grey)
+			px(img, 13, 5, hair_grey)
+
+			# Gương mặt phúc hậu
+			rect(img, 5, 4, 8, 7, skin)
+			px(img, 6, 6, eye)
+			px(img, 11, 6, eye)
+			px(img, 6, 5, hair_grey) # lông mày rậm
+			px(img, 11, 5, hair_grey)
+
+			# Bộ ria mép xồm xoàm đáng kính
+			rect(img, 6, 8, 6, 2, hair_grey)
+			px(img, 5, 9, hair_grey)
+			px(img, 12, 9, hair_grey)
+			px(img, 8, 10, Color(0.8, 0.4, 0.4)) # miệng cười mỉm
+
+			# Áo ký giả vàng nâu đĩnh đạc
+			rect(img, 4, 11, 10, 10, coat)
+			rect(img, 4, 11, 1, 10, coat_l)
+			rect(img, 13, 11, 1, 10, coat_d)
+			# Cổ áo sơ mi trắng bên trong & cravat / khăn quàng nhỏ
+			rect(img, 8, 11, 2, 3, shirt_in)
+			px(img, 8, 12, Color(0.85, 0.2, 0.2)) # caravat đỏ
+			px(img, 8, 13, Color(0.85, 0.2, 0.2))
+
+			# Cúc áo mạ đồng & túi áo trước ngực
+			px(img, 8, 15, Color(0.95, 0.85, 0.3))
+			px(img, 8, 18, Color(0.95, 0.85, 0.3))
+			rect(img, 10, 13, 3, 2, coat_d)
+
+			# Tay áo
+			rect(img, 2, 12, 2, 7, coat)
+			rect(img, 14, 12, 2, 7, coat)
+			rect(img, 2, 19, 2, 2, skin)
+			rect(img, 14, 19, 2, 2, skin)
+
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func quest_mark_tex(type: String) -> ImageTexture:
+	var key := "quest_mark_%s" % type
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var bg_circle := Color(0.12, 0.08, 0.04, 0.85)
+	circle(img, 8, 8, 7, bg_circle)
+
+	if type == "exclamation": # Dấu ! vàng rực rỡ khi có nhiệm vụ mới
+		var gold := Color(1.0, 0.85, 0.15)
+		var bright := Color(1.0, 1.0, 0.70)
+		var border := Color(0.65, 0.45, 0.05)
+		circle(img, 8, 8, 6, border)
+		rect(img, 7, 3, 2, 6, gold)
+		rect(img, 7, 3, 1, 6, bright)
+		rect(img, 7, 10, 2, 2, gold)
+		px(img, 7, 10, bright)
+	else: # Dấu ? vàng xanh lấp lánh khi có thưởng chờ nhận
+		var green := Color(0.35, 0.95, 0.45)
+		var bright := Color(0.85, 1.0, 0.85)
+		var border := Color(0.10, 0.55, 0.20)
+		circle(img, 8, 8, 6, border)
+		rect(img, 6, 3, 4, 2, green)
+		rect(img, 9, 4, 2, 3, green)
+		rect(img, 7, 6, 3, 2, green)
+		rect(img, 7, 7, 2, 2, green)
+		rect(img, 7, 10, 2, 2, green)
+		px(img, 7, 3, bright)
+		px(img, 7, 10, bright)
+
 	var tex := _tex(img)
 	_cache[key] = tex
 	return tex
@@ -2711,11 +3049,13 @@ static func _shape_tree(img: Image, stage: int, accent: Color, leaf: Color, dark
 
 # ---------- icon ----------
 
-static func hoe_icon() -> ImageTexture:
-	var key := "hoe_icon"
+static func hoe_icon(tier: String = "basic") -> ImageTexture:
+	var key := "hoe_icon_%s" % tier
 	if _cache.has(key):
 		return _cache[key]
-	var loaded := _load_picture("res://picture/hoe_icon.png")
+	var loaded := _load_picture("res://picture/hoe_%s.png" % tier)
+	if loaded == null and tier == "basic":
+		loaded = _load_picture("res://picture/hoe_icon.png")
 	if loaded != null:
 		var t := _tex(loaded)
 		_cache[key] = t
@@ -2723,6 +3063,13 @@ static func hoe_icon() -> ImageTexture:
 	var img := _img(16, 16)
 	var wood := Color(0.55, 0.38, 0.22)
 	var metal := Color(0.72, 0.75, 0.78)
+	match tier:
+		"copper":
+			metal = Color(0.88, 0.50, 0.24)
+		"iron":
+			metal = Color(0.82, 0.86, 0.92)
+		"gold":
+			metal = Color(1.0, 0.84, 0.22)
 	# cán chéo
 	for i in 8:
 		px(img, 3 + i, 13 - i, wood)
@@ -2761,6 +3108,21 @@ static func rod_icon(color_hex: String) -> ImageTexture:
 	var key := "rod_icon_%s" % color_hex
 	if _cache.has(key):
 		return _cache[key]
+	var pic_path := ""
+	match color_hex:
+		"9aa0a6":
+			pic_path = "res://picture/rod_basic.png"
+		"66bb6a":
+			pic_path = "res://picture/rod_mid.png"
+		"ffd54f":
+			pic_path = "res://picture/rod_high.png"
+		_:
+			pic_path = "res://picture/sdv_rod.png"
+	var loaded := _load_picture(pic_path)
+	if loaded != null:
+		var t := _tex(loaded)
+		_cache[key] = t
+		return t
 	var img := _img(16, 16)
 	var c := Color(color_hex)
 	var dark := c.darkened(0.3)
@@ -2778,6 +3140,19 @@ static func rod_icon(color_hex: String) -> ImageTexture:
 	var tex := _tex(img)
 	_cache[key] = tex
 	return tex
+
+
+static func water_ripple_frame(idx: int) -> Texture2D:
+	var i := clampi(idx, 0, 7)
+	var key := "sdv_ripple_%d" % i
+	if _cache.has(key):
+		return _cache[key]
+	var loaded := _load_picture("res://picture/sdv_ripple_%d.png" % i)
+	if loaded != null:
+		var t := _tex(loaded)
+		_cache[key] = t
+		return t
+	return null
 
 
 static func fish_icon(color_hex: String) -> ImageTexture:
@@ -2871,6 +3246,201 @@ static func egg_icon(color_hex: String) -> ImageTexture:
 	return tex
 
 
+static func springobject_icon(idx: int) -> ImageTexture:
+	var key := "sprobj_%d" % idx
+	if _cache.has(key):
+		return _cache[key]
+	var loaded := _load_picture("res://Content (unpacked)/Maps/springobjects.png")
+	if loaded != null:
+		var cols: int = loaded.get_width() / 16
+		var r: int = idx / cols
+		var c: int = idx % cols
+		var sub := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+		sub.blit_rect(loaded, Rect2i(c * 16, r * 16, 16, 16), Vector2i.ZERO)
+		var tex := _tex(sub)
+		_cache[key] = tex
+		return tex
+	return null
+
+
+static func milk_icon() -> ImageTexture:
+	var sp := springobject_icon(184)
+	if sp != null:
+		return sp
+	var key := "milk_icon"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var milk := Color(0.96, 0.96, 0.98)
+	var cap := Color(0.2, 0.5, 0.85)
+	var glass := Color(0.75, 0.82, 0.9, 0.7)
+	rect(img, 7, 2, 2, 2, cap)
+	rect(img, 6, 4, 4, 2, glass)
+	rect(img, 5, 6, 6, 8, milk)
+	rect(img, 4, 8, 8, 5, milk)
+	rect(img, 4, 6, 1, 7, glass)
+	rect(img, 11, 6, 1, 7, glass)
+	rect(img, 5, 13, 6, 1, glass)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func wool_icon() -> ImageTexture:
+	var sp := springobject_icon(440)
+	if sp != null:
+		return sp
+	var key := "wool_icon"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var w := Color(0.95, 0.95, 0.92)
+	var shadow := Color(0.78, 0.78, 0.75)
+	circle(img, 8, 8, 5.5, shadow)
+	circle(img, 6, 7, 3.5, w)
+	circle(img, 10, 7, 3.5, w)
+	circle(img, 8, 10, 3.5, w)
+	circle(img, 8, 7, 2.5, Color.WHITE)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func get_product_icon(prod_id: String) -> Texture2D:
+	var key := "prod_ic_%s" % prod_id
+	if _cache.has(key):
+		return _cache[key]
+	var path := "res://picture/crops/prod_%s.png" % prod_id
+	var loaded := _load_picture(path)
+	if loaded != null:
+		var tex := _tex(loaded)
+		_cache[key] = tex
+		return tex
+	match prod_id:
+		"trung_ga":
+			var sp := springobject_icon(176)
+			return sp if sp != null else egg_icon("f2e3b6")
+		"sua_bo":
+			return milk_icon()
+		"long_cuu":
+			return wool_icon()
+		"thit_lon":
+			var sp := springobject_icon(640)
+			return sp if sp != null else meat_icon("e06d6d")
+		"thit_ga":
+			return meat_icon("d98a4a")
+		_:
+			for a in PoultryDB.ANIMALS:
+				if str(a.product) == prod_id:
+					if PoultryDB.is_meat(prod_id):
+						return meat_icon(str(a.product_color))
+					return egg_icon(str(a.product_color))
+			return egg_icon("f2e3b6")
+
+
+# Bong bóng sản phẩm thu hoạch (không chữ, chỉ có icon sản phẩm nổi bật bên trong)
+static func get_harvest_bubble(prod_id: String) -> Texture2D:
+	var key := "harvest_bubble_%s" % prod_id
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(26, 26)
+	# Bóng đổ mờ phía dưới
+	circle(img, 13.0, 13.0, 11.5, Color(0.10, 0.08, 0.05, 0.45))
+	# Viền ngoài nâu ấm sắc nét
+	circle(img, 13.0, 11.0, 11.0, Color(0.24, 0.16, 0.08, 0.95))
+	# Nền bong bóng trắng sáng
+	circle(img, 13.0, 11.0, 9.5, Color(1.0, 1.0, 1.0, 0.95))
+	# Điểm sáng bóng viền trên trái
+	circle(img, 9.5, 7.5, 3.0, Color(1.0, 1.0, 1.0, 1.0))
+	# Đuôi bong bóng chỉ xuống con vật / chuồng
+	px(img, 11, 21, Color(0.24, 0.16, 0.08, 0.95))
+	px(img, 12, 21, Color(1.0, 1.0, 1.0, 0.95))
+	px(img, 13, 21, Color(1.0, 1.0, 1.0, 0.95))
+	px(img, 14, 21, Color(0.24, 0.16, 0.08, 0.95))
+	px(img, 12, 22, Color(0.24, 0.16, 0.08, 0.95))
+	px(img, 13, 22, Color(1.0, 1.0, 1.0, 0.95))
+	px(img, 13, 23, Color(0.24, 0.16, 0.08, 0.95))
+
+	# Ghép icon sản phẩm 16x16 vào chính giữa bong bóng (tâm tại 13, 11)
+	var prod_tex := get_product_icon(prod_id)
+	if prod_tex != null:
+		var prod_img: Image = prod_tex.get_image()
+		if prod_img != null:
+			var pw := mini(16, prod_img.get_width())
+			var ph := mini(16, prod_img.get_height())
+			var off_x := int(13 - pw / 2.0)
+			var off_y := int(11 - ph / 2.0)
+			img.blend_rect(prod_img, Rect2i(0, 0, pw, ph), Vector2i(off_x, off_y))
+
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+# Icon túi cám Stardew Valley (lấy từ springobjects sprite index 246 hoặc res://picture/feed_bag.png)
+static func get_feed_icon() -> ImageTexture:
+	var key := "feed_icon"
+	if _cache.has(key):
+		return _cache[key]
+	var loaded := _load_picture("res://picture/feed_bag.png")
+	if loaded != null:
+		var tex := _tex(loaded)
+		_cache[key] = tex
+		return tex
+	var sp := springobject_icon(246)
+	if sp != null:
+		_cache[key] = sp
+		return sp
+	var img := _img(16, 16)
+	var bag_c := Color(0.76, 0.58, 0.38)
+	var tie_c := Color(0.85, 0.25, 0.25)
+	rect(img, 4, 5, 8, 9, bag_c)
+	rect(img, 5, 3, 6, 2, tie_c)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+# Bong bóng suy nghĩ túi cám khi vật nuôi đói (chuẩn Stardew Valley)
+static func get_feed_bubble() -> Texture2D:
+	var key := "feed_bubble"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(26, 26)
+	# Bóng đổ mờ phía dưới
+	circle(img, 13.0, 13.0, 11.5, Color(0.10, 0.08, 0.05, 0.45))
+	# Viền ngoài nâu ấm sắc nét
+	circle(img, 13.0, 11.0, 11.0, Color(0.24, 0.16, 0.08, 0.95))
+	# Nền bong bóng trắng sáng
+	circle(img, 13.0, 11.0, 9.5, Color(1.0, 1.0, 1.0, 0.95))
+	# Điểm sáng bóng viền trên trái
+	circle(img, 9.5, 7.5, 3.0, Color(1.0, 1.0, 1.0, 1.0))
+	# Đuôi bong bóng chỉ xuống con vật
+	px(img, 11, 21, Color(0.24, 0.16, 0.08, 0.95))
+	px(img, 12, 21, Color(1.0, 1.0, 1.0, 0.95))
+	px(img, 13, 21, Color(1.0, 1.0, 1.0, 0.95))
+	px(img, 14, 21, Color(0.24, 0.16, 0.08, 0.95))
+	px(img, 12, 22, Color(0.24, 0.16, 0.08, 0.95))
+	px(img, 13, 22, Color(1.0, 1.0, 1.0, 0.95))
+	px(img, 13, 23, Color(0.24, 0.16, 0.08, 0.95))
+
+	# Ghép icon túi cám 16x16 vào chính giữa bong bóng (tâm tại 13, 11)
+	var feed_tex := get_feed_icon()
+	if feed_tex != null:
+		var feed_img: Image = feed_tex.get_image()
+		if feed_img != null:
+			var pw := mini(16, feed_img.get_width())
+			var ph := mini(16, feed_img.get_height())
+			var off_x := int(13 - pw / 2.0)
+			var off_y := int(11 - ph / 2.0)
+			img.blend_rect(feed_img, Rect2i(0, 0, pw, ph), Vector2i(off_x, off_y))
+
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+
 static func get_crate_fill_tex(id: String, type: String) -> ImageTexture:
 	var key := "crate_fill_%s_%s" % [id, type]
 	if _cache.has(key):
@@ -2878,7 +3448,7 @@ static func get_crate_fill_tex(id: String, type: String) -> ImageTexture:
 
 	var canvas := _img(13, 8)
 
-	if type == "crop":
+	if type == "crop" or type == "poultry":
 		var path := "res://picture/crops/prod_%s.png" % id
 		var loaded := _load_picture(path)
 		if loaded != null:
@@ -3099,3 +3669,463 @@ static func backpack_icon() -> ImageTexture:
 	_cache[key] = tex
 	return tex
 
+
+static func stamina_icon() -> ImageTexture:
+	var key := "stamina_icon"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var glow := Color(1.0, 0.88, 0.25)
+	var edge := Color(0.75, 0.50, 0.08)
+	var white := Color(1.0, 1.0, 0.85)
+	# Tia sét vàng pixel 16x16
+	rect(img, 8, 2, 3, 2, edge)
+	rect(img, 7, 3, 3, 2, glow)
+	rect(img, 6, 5, 4, 2, glow)
+	rect(img, 4, 7, 9, 2, edge)
+	rect(img, 5, 7, 7, 2, glow)
+	rect(img, 7, 9, 4, 2, glow)
+	rect(img, 6, 11, 3, 2, glow)
+	rect(img, 5, 13, 2, 2, edge)
+	px(img, 5, 14, glow)
+	px(img, 8, 3, white)
+	px(img, 7, 5, white)
+	px(img, 7, 8, white)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func meat_icon(color_hex: String = "d98a4a") -> ImageTexture:
+	var key := "meat_icon_%s" % color_hex
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var c := Color(color_hex)
+	var bone := Color(0.95, 0.92, 0.85)
+	var bone_d := Color(0.75, 0.70, 0.60)
+	# Khúc xương nhô ra
+	rect(img, 2, 11, 3, 3, bone_d)
+	rect(img, 3, 10, 3, 3, bone)
+	rect(img, 1, 12, 2, 2, bone)
+	# Miếng thịt đùi gà tròn trịa
+	circle(img, 9, 6, 5, c.darkened(0.25))
+	circle(img, 9, 6, 4, c)
+	circle(img, 8, 5, 2.5, c.lightened(0.2))
+	px(img, 7, 4, Color(1, 1, 1, 0.6))
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+# ---------- HẦM MỎ & KHOÁNG SẢN (MINING SYSTEM) ----------
+
+static func cave_entrance_tex() -> ImageTexture:
+	var loaded := _load_picture("res://picture/cave_entrance.png")
+	if loaded != null:
+		return _tex(loaded)
+	var key := "cave_entrance_tex"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(64, 56)
+	var rock_dark := Color(0.18, 0.16, 0.15)
+	var rock_mid := Color(0.35, 0.32, 0.28)
+	var rock_light := Color(0.52, 0.48, 0.42)
+	var rock_hl := Color(0.68, 0.64, 0.56)
+	var wood_dark := Color(0.24, 0.15, 0.08)
+	var wood_beam := Color(0.42, 0.28, 0.16)
+	var wood_light := Color(0.58, 0.38, 0.22)
+	var cave_void := Color(0.04, 0.03, 0.04)
+	var lantern_glow := Color(1.0, 0.85, 0.35)
+
+	# 1. Khối đá vách núi lớn bao quanh (x=4..60, y=0..55)
+	circle(img, 32, 28, 30, rock_mid)
+	circle(img, 20, 20, 18, rock_light)
+	circle(img, 44, 20, 18, rock_mid)
+	circle(img, 32, 10, 14, rock_light)
+	rect(img, 6, 24, 52, 32, rock_mid)
+
+	# Gờ đá nham nhở & đổ bóng vách núi
+	for y in range(0, 56, 4):
+		px(img, 6 + (y % 5), y, rock_dark)
+		px(img, 57 - (y % 6), y, rock_dark)
+		px(img, 15 + (y % 7), y, rock_hl)
+		px(img, 48 - (y % 5), y, rock_dark)
+
+	# 2. Vòm cửa hang tối sâu thẳm ở giữa (x=20..44, y=18..55)
+	circle(img, 32, 28, 13, cave_void)
+	rect(img, 19, 28, 26, 28, cave_void)
+	rect(img, 22, 24, 20, 32, Color(0.02, 0.02, 0.02))
+
+	# 3. Khung gỗ chống hầm mỏ (Timber support arch)
+	# Cột trái
+	rect(img, 16, 22, 4, 34, wood_beam)
+	rect(img, 17, 22, 2, 34, wood_light)
+	rect(img, 16, 22, 1, 34, wood_dark)
+	# Cột phải
+	rect(img, 44, 22, 4, 34, wood_beam)
+	rect(img, 45, 22, 2, 34, wood_light)
+	rect(img, 47, 22, 1, 34, wood_dark)
+	# Xà ngang trên vòm
+	rect(img, 14, 18, 36, 5, wood_beam)
+	rect(img, 15, 19, 34, 3, wood_light)
+	rect(img, 14, 18, 36, 1, wood_dark)
+	rect(img, 14, 22, 36, 1, wood_dark)
+
+	# 4. Đèn lồng treo giữa vòm phát sáng
+	rect(img, 31, 23, 2, 3, wood_dark) # xích sắt
+	rect(img, 30, 26, 4, 5, Color(0.2, 0.2, 0.2)) # khung đèn
+	rect(img, 31, 27, 2, 3, lantern_glow) # ngọn lửa vàng
+	px(img, 32, 28, Color(1.0, 1.0, 0.8))
+
+	# 5. Rêu và bụi cỏ mọc trên gờ đá
+	var moss := Color(0.35, 0.55, 0.25)
+	rect(img, 12, 12, 8, 3, moss)
+	rect(img, 44, 14, 9, 3, moss)
+	rect(img, 26, 6, 12, 3, moss)
+
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func mine_sign_tex() -> ImageTexture:
+	var loaded := _load_picture("res://picture/mine_sign.png")
+	if loaded != null:
+		return _tex(loaded)
+	var key := "mine_sign_tex"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(20, 24)
+	var wood_d := Color(0.32, 0.18, 0.10)
+	var wood_m := Color(0.55, 0.35, 0.18)
+	var wood_l := Color(0.70, 0.48, 0.26)
+	var gold := Color(0.95, 0.82, 0.30)
+	# Cọc gỗ cắm đất
+	rect(img, 9, 12, 3, 12, wood_d)
+	rect(img, 10, 12, 1, 12, wood_m)
+	# Bảng gỗ treo ngang
+	rect(img, 2, 2, 16, 12, wood_d)
+	rect(img, 3, 3, 14, 10, wood_m)
+	rect(img, 4, 4, 12, 8, wood_l)
+	# Biểu tượng Cúp đào mỏ khắc nổi trên bảng
+	px(img, 7, 6, gold)
+	px(img, 8, 7, gold)
+	px(img, 9, 8, gold)
+	px(img, 10, 9, wood_d)
+	px(img, 11, 10, wood_d)
+	# Đầu cúp
+	rect(img, 6, 5, 3, 2, Color(0.85, 0.85, 0.90))
+	px(img, 5, 6, Color(0.85, 0.85, 0.90))
+	px(img, 9, 5, Color(0.85, 0.85, 0.90))
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+static func pickaxe_icon(tier: String = "basic") -> ImageTexture:
+	var loaded := _load_picture("res://picture/pickaxe_%s.png" % tier)
+	if loaded == null and tier == "basic":
+		loaded = _load_picture("res://picture/pickaxe_icon.png")
+	if loaded != null:
+		return _tex(loaded)
+	var key := "pickaxe_icon_%s" % tier
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var head_col := Color(0.75, 0.75, 0.80)
+	var head_hl := Color(0.92, 0.92, 0.96)
+	var head_d := Color(0.45, 0.45, 0.50)
+	match tier:
+		"copper":
+			head_col = Color(0.88, 0.50, 0.24)
+			head_hl = Color(1.0, 0.70, 0.45)
+			head_d = Color(0.58, 0.28, 0.10)
+		"iron":
+			head_col = Color(0.82, 0.86, 0.92)
+			head_hl = Color(0.96, 0.98, 1.0)
+			head_d = Color(0.50, 0.55, 0.62)
+		"gold":
+			head_col = Color(1.0, 0.84, 0.22)
+			head_hl = Color(1.0, 0.96, 0.60)
+			head_d = Color(0.70, 0.52, 0.08)
+
+	var wood_d := Color(0.35, 0.20, 0.10)
+	var wood_l := Color(0.65, 0.42, 0.22)
+
+	# Cán gỗ chéo (x=2..12, y=3..13)
+	for i in 9:
+		px(img, 3 + i, 13 - i, wood_d)
+		px(img, 4 + i, 13 - i, wood_l)
+
+	# Đầu cúp cong sắc bén ở góc trên bên phải
+	px(img, 13, 1, head_hl)
+	px(img, 14, 2, head_col)
+	px(img, 12, 2, head_hl)
+	px(img, 13, 3, head_col)
+	px(img, 11, 3, head_hl)
+	px(img, 12, 4, head_col)
+	px(img, 10, 4, head_col)
+	px(img, 11, 5, head_d)
+	px(img, 9, 5, head_col)
+	px(img, 10, 6, head_d)
+	px(img, 8, 6, head_col)
+	px(img, 9, 7, head_d)
+	px(img, 7, 7, head_d)
+	px(img, 8, 8, head_d)
+	px(img, 6, 8, head_d)
+
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func mine_floor_tex(theme: String = "") -> ImageTexture:
+	var path := "res://picture/mine/mine_floor.png"
+	if theme != "":
+		path = "res://picture/mine/mine_floor_%s.png" % theme
+	var loaded := _load_picture(path)
+	if loaded == null and theme != "":
+		loaded = _load_picture("res://picture/mine/mine_floor.png")
+	if loaded != null:
+		return _tex(loaded)
+	var key := "mine_floor_tex_%s" % theme
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(32, 32)
+	var base := Color(0.22, 0.20, 0.20)
+	var dark := Color(0.16, 0.14, 0.14)
+	var light := Color(0.28, 0.26, 0.25)
+	rect(img, 0, 0, 32, 32, base)
+	# Vân gạch đá tự nhiên & sỏi vụn
+	for y in range(0, 32, 4):
+		for x in range(0, 32, 4):
+			if (x + y) % 6 == 0:
+				px(img, x, y, light)
+			elif (x * 3 + y) % 8 == 0:
+				px(img, x, y, dark)
+	rect(img, 0, 31, 32, 1, dark)
+	rect(img, 31, 0, 1, 32, dark)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func mine_wall_tex(theme: String = "") -> ImageTexture:
+	var path := "res://picture/mine/mine_wall.png"
+	if theme != "":
+		path = "res://picture/mine/mine_wall_%s.png" % theme
+	var loaded := _load_picture(path)
+	if loaded == null and theme != "":
+		loaded = _load_picture("res://picture/mine/mine_wall.png")
+	if loaded != null:
+		return _tex(loaded)
+	var key := "mine_wall_tex_%s" % theme
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(32, 32)
+	var w_dark := Color(0.10, 0.08, 0.08)
+	var w_mid := Color(0.18, 0.15, 0.14)
+	var w_light := Color(0.28, 0.24, 0.22)
+	rect(img, 0, 0, 32, 32, w_mid)
+	# Gờ đá tầng tầng lớp lớp
+	for y in range(0, 32, 6):
+		rect(img, 0, y, 32, 2, w_dark)
+		rect(img, 0, y + 2, 32, 2, w_light)
+	for x in range(0, 32, 8):
+		rect(img, x, 0, 2, 32, w_dark)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func mine_ladder_tex(down: bool) -> ImageTexture:
+	var loaded := _load_picture("res://picture/mine/mine_ladder_%s.png" % ("down" if down else "up"))
+	if loaded != null:
+		return _tex(loaded)
+	var key := "mine_ladder_%s" % ("down" if down else "up")
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(24, 24)
+	var wood_d := Color(0.28, 0.16, 0.08)
+	var wood_m := Color(0.48, 0.30, 0.16)
+	var wood_l := Color(0.68, 0.44, 0.24)
+	if down:
+		# Hố sâu xuống tầng dưới
+		circle(img, 12, 12, 10, Color(0.04, 0.03, 0.04))
+		# Thang gỗ đặt nghiêng vào hố
+		rect(img, 7, 2, 2, 20, wood_m)
+		rect(img, 15, 2, 2, 20, wood_m)
+		for r in range(4, 21, 4):
+			rect(img, 7, r, 10, 2, wood_l)
+			rect(img, 7, r + 1, 10, 1, wood_d)
+	else:
+		# Thang leo ngược lên mặt đất
+		rect(img, 6, 1, 3, 22, wood_d)
+		rect(img, 15, 1, 3, 22, wood_d)
+		rect(img, 7, 1, 1, 22, wood_l)
+		rect(img, 16, 1, 1, 22, wood_l)
+		for r in range(3, 22, 4):
+			rect(img, 6, r, 12, 3, wood_m)
+			rect(img, 7, r, 10, 1, wood_l)
+			rect(img, 6, r + 2, 12, 1, wood_d)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func mine_rock_tex(rock_type: String) -> ImageTexture:
+	var loaded := _load_picture("res://picture/mine/rock_%s.png" % rock_type)
+	if loaded == null and not rock_type.ends_with("_ore"):
+		loaded = _load_picture("res://picture/mine/rock_%s_ore.png" % rock_type)
+	if loaded == null and rock_type.ends_with("_ore"):
+		loaded = _load_picture("res://picture/mine/rock_%s.png" % rock_type.trim_suffix("_ore"))
+	if loaded != null:
+		return _tex(loaded)
+	var key := "mine_rock_%s" % rock_type
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(26, 24)
+	var base_dark := Color(0.22, 0.20, 0.20)
+	var base_mid := Color(0.42, 0.40, 0.38)
+	var base_light := Color(0.60, 0.58, 0.54)
+	var base_hl := Color(0.78, 0.76, 0.72)
+
+	# 1. Bóng tròn dưới chân đá
+	circle(img, 13, 20, 9, Color(0.08, 0.06, 0.06, 0.6))
+
+	# 2. Khối đá 3D đa giác
+	circle(img, 13, 12, 10, base_mid)
+	rect(img, 6, 8, 14, 11, base_mid)
+	rect(img, 5, 10, 16, 8, base_dark)
+	rect(img, 7, 6, 11, 7, base_light)
+	rect(img, 9, 5, 6, 4, base_hl)
+
+	# Gờ đá góc cạnh
+	px(img, 4, 12, base_dark)
+	px(img, 21, 12, base_dark)
+	px(img, 13, 3, base_hl)
+	px(img, 14, 4, base_hl)
+
+	# 3. Vết quặng / Tinh thể khoáng sản lấp lánh bên trong
+	var ore_col := Color.TRANSPARENT
+	var ore_hl := Color.TRANSPARENT
+	match rock_type:
+		"copper_ore":
+			ore_col = Color(0.85, 0.45, 0.20)
+			ore_hl = Color(1.0, 0.70, 0.40)
+		"iron_ore":
+			ore_col = Color(0.75, 0.82, 0.90)
+			ore_hl = Color(0.95, 0.98, 1.0)
+		"gold_ore":
+			ore_col = Color(1.0, 0.80, 0.15)
+			ore_hl = Color(1.0, 0.98, 0.60)
+		"ruby":
+			ore_col = Color(0.90, 0.15, 0.20)
+			ore_hl = Color(1.0, 0.55, 0.60)
+		"diamond":
+			ore_col = Color(0.35, 0.85, 0.95)
+			ore_hl = Color(0.80, 1.0, 1.0)
+		"coal":
+			ore_col = Color(0.12, 0.12, 0.14)
+			ore_hl = Color(0.30, 0.30, 0.35)
+
+	if ore_col != Color.TRANSPARENT:
+		# Các cụm quặng sáng đính trên đá
+		rect(img, 8, 9, 3, 3, ore_col)
+		px(img, 9, 9, ore_hl)
+		rect(img, 14, 7, 4, 3, ore_col)
+		px(img, 15, 7, ore_hl)
+		rect(img, 12, 13, 3, 3, ore_col)
+		px(img, 13, 13, ore_hl)
+		px(img, 17, 12, ore_col)
+		px(img, 7, 14, ore_col)
+
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func ore_item_icon(id: String) -> ImageTexture:
+	var loaded := _load_picture("res://picture/mine/item_%s.png" % id)
+	if loaded == null and not id.ends_with("_ore"):
+		loaded = _load_picture("res://picture/mine/item_%s_ore.png" % id)
+	if loaded == null and id.ends_with("_ore"):
+		loaded = _load_picture("res://picture/mine/item_%s.png" % id.trim_suffix("_ore"))
+	if loaded == null:
+		loaded = _load_picture("res://picture/item_%s.png" % id)
+	if loaded != null:
+		return _tex(loaded)
+	var key := "ore_item_icon_%s" % id
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	match id:
+		"stone":
+			var d := Color(0.38, 0.36, 0.34)
+			var m := Color(0.58, 0.56, 0.52)
+			var l := Color(0.78, 0.76, 0.72)
+			circle(img, 8, 8, 5, m)
+			rect(img, 5, 6, 6, 6, m)
+			rect(img, 7, 5, 4, 4, l)
+			rect(img, 5, 9, 6, 3, d)
+		"coal":
+			var cd := Color(0.08, 0.08, 0.10)
+			var cm := Color(0.20, 0.20, 0.24)
+			var cl := Color(0.38, 0.38, 0.44)
+			circle(img, 8, 8, 5, cm)
+			rect(img, 6, 6, 5, 5, cm)
+			rect(img, 7, 5, 3, 3, cl)
+			rect(img, 5, 9, 6, 3, cd)
+		"copper_ore":
+			var cod := Color(0.55, 0.26, 0.10)
+			var com := Color(0.85, 0.48, 0.22)
+			var col := Color(1.0, 0.72, 0.45)
+			circle(img, 8, 8, 5, com)
+			rect(img, 6, 6, 5, 5, com)
+			rect(img, 7, 5, 3, 3, col)
+			rect(img, 5, 9, 6, 3, cod)
+		"iron_ore":
+			var iod := Color(0.42, 0.46, 0.52)
+			var iom := Color(0.72, 0.78, 0.86)
+			var iol := Color(0.92, 0.95, 1.0)
+			circle(img, 8, 8, 5, iom)
+			rect(img, 6, 6, 5, 5, iom)
+			rect(img, 7, 5, 3, 3, iol)
+			rect(img, 5, 9, 6, 3, iod)
+		"gold_ore":
+			var god := Color(0.65, 0.48, 0.08)
+			var gom := Color(0.98, 0.80, 0.18)
+			var gol := Color(1.0, 0.96, 0.55)
+			circle(img, 8, 8, 5, gom)
+			rect(img, 6, 6, 5, 5, gom)
+			rect(img, 7, 5, 3, 3, gol)
+			rect(img, 5, 9, 6, 3, god)
+		"ruby":
+			var rd := Color(0.60, 0.08, 0.12)
+			var rm := Color(0.92, 0.18, 0.24)
+			var rl := Color(1.0, 0.60, 0.65)
+			# Hình thoi viên hồng ngọc
+			rect(img, 7, 3, 2, 10, rm)
+			rect(img, 5, 5, 6, 6, rm)
+			rect(img, 4, 7, 8, 2, rm)
+			px(img, 7, 5, rl)
+			px(img, 8, 5, rl)
+			px(img, 7, 10, rd)
+		"diamond":
+			var dd := Color(0.18, 0.60, 0.75)
+			var dm := Color(0.45, 0.85, 0.96)
+			var dl := Color(0.90, 1.0, 1.0)
+			# Viên kim cương giác cắt 8 cạnh
+			rect(img, 5, 4, 6, 3, dl)
+			rect(img, 4, 7, 8, 2, dm)
+			rect(img, 5, 9, 6, 2, dm)
+			rect(img, 6, 11, 4, 2, dd)
+			px(img, 7, 13, dd)
+			px(img, 8, 13, dd)
+			px(img, 6, 5, Color.WHITE)
+			px(img, 7, 5, Color.WHITE)
+		_:
+			circle(img, 8, 8, 5, Color(0.6, 0.6, 0.6))
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
