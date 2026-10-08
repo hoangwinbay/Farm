@@ -12,6 +12,7 @@ var seeds: Dictionary = {}
 var produce: Dictionary = {}
 var selected_seed := ""
 var hoes := 0
+var hoe_tier: String = "basic"  # "basic", "copper", "iron", "gold"
 var water_level := 20
 var water_max := 20
 var pickaxe := ""  # "basic", "copper", "iron", "gold", "" = chưa có
@@ -33,6 +34,7 @@ func reset() -> void:
 	produce = {}
 	selected_seed = ""
 	hoes = 0
+	hoe_tier = "basic"
 	water_level = 20
 	water_max = 20
 	pickaxe = ""
@@ -154,6 +156,72 @@ func get_pickaxe_power() -> int:
 	if not has_pickaxe():
 		return 0
 	return OreDB.pickaxe_power(pickaxe)
+
+
+func get_hoe_tier() -> String:
+	return hoe_tier if hoe_tier != "" else "basic"
+
+
+func set_hoe_tier(tier: String) -> void:
+	hoe_tier = tier
+	changed.emit()
+
+
+func get_pickaxe_tier() -> String:
+	return pickaxe if pickaxe != "" else "basic"
+
+
+func upgrade_hoe() -> Dictionary:
+	var cur_idx := 0
+	for i in OreDB.HOES.size():
+		if OreDB.HOES[i].tier == get_hoe_tier():
+			cur_idx = i
+			break
+	if cur_idx >= OreDB.HOES.size() - 1:
+		return {"ok": false, "msg": "Cuốc đất đã đạt cấp tối đa!"}
+	var next_h = OreDB.HOES[cur_idx + 1]
+	var price: int = int(next_h.price)
+	var ore_type: String = str(next_h.ore_type)
+	var ore_count: int = int(next_h.ore_count)
+	if GameState.money < price:
+		return {"ok": false, "msg": "Không đủ tiền! Cần %d xu." % price}
+	if ore_type != "" and ore_count(ore_type) < ore_count:
+		var o_info := OreDB.get_ore(ore_type)
+		return {"ok": false, "msg": "Thiếu nguyên liệu! Cần %d %s." % [ore_count, str(o_info.get("name", "quặng"))]}
+	GameState.money -= price
+	GameState.money_changed.emit(GameState.money)
+	if ore_type != "":
+		take_ore(ore_type, ore_count)
+	set_hoe_tier(str(next_h.tier))
+	return {"ok": true, "msg": "Đã nâng cấp lên %s (-%d xu, giảm tốn thể lực còn %.0f⚡)!" % [str(next_h.name), price, float(next_h.stamina)]}
+
+
+func upgrade_pickaxe() -> Dictionary:
+	if not has_pickaxe():
+		add_pickaxe("basic")
+	var cur_tier := get_pickaxe_tier()
+	var cur_idx := 0
+	for i in OreDB.PICKAXES.size():
+		if OreDB.PICKAXES[i].tier == cur_tier:
+			cur_idx = i
+			break
+	if cur_idx >= OreDB.PICKAXES.size() - 1:
+		return {"ok": false, "msg": "Cúp khai mỏ đã đạt cấp tối đa!"}
+	var next_p = OreDB.PICKAXES[cur_idx + 1]
+	var price: int = int(next_p.price)
+	var ore_type: String = str(next_p.ore_type)
+	var ore_count: int = int(next_p.ore_count)
+	if GameState.money < price:
+		return {"ok": false, "msg": "Không đủ tiền! Cần %d xu." % price}
+	if ore_type != "" and ore_count(ore_type) < ore_count:
+		var o_info := OreDB.get_ore(ore_type)
+		return {"ok": false, "msg": "Thiếu nguyên liệu! Cần %d %s." % [ore_count, str(o_info.get("name", "quặng"))]}
+	GameState.money -= price
+	GameState.money_changed.emit(GameState.money)
+	if ore_type != "":
+		take_ore(ore_type, ore_count)
+	add_pickaxe(str(next_p.tier))
+	return {"ok": true, "msg": "Đã nâng cấp lên %s (-%d xu, giảm tốn thể lực còn %.0f⚡)!" % [str(next_p.name), price, float(next_p.stamina)]}
 
 
 # ---- khoáng sản & quặng (ores) ----
@@ -816,7 +884,7 @@ func cycle_seed() -> String:
 func get_state() -> Dictionary:
 	return {
 		"seeds": seeds.duplicate(), "produce": produce.duplicate(), "sel": selected_seed,
-		"hoes": hoes, "water_level": water_level, "water_max": water_max,
+		"hoes": hoes, "hoe_tier": get_hoe_tier(), "water_level": water_level, "water_max": water_max,
 		"pickaxe": pickaxe, "ores": ores.duplicate(),
 		"active_item": active_item.duplicate(),
 		"rods": rods.duplicate(), "fish": fish.duplicate(),
@@ -899,6 +967,7 @@ func set_state(d: Dictionary) -> void:
 					storage[cat][str(k)] = int(st[cat][k])
 	selected_seed = str(d.get("sel", ""))
 	hoes = int(d.get("hoes", 0))
+	hoe_tier = str(d.get("hoe_tier", "basic"))
 	water_level = int(d.get("water_level", 20))
 	water_max = int(d.get("water_max", 20))
 	if d.has("active_item") and d["active_item"] is Dictionary:

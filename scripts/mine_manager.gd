@@ -280,7 +280,7 @@ func _hit_rock(rock_data: Dictionary) -> void:
 			main_game.hud.toast("Cần có Cúp khai mỏ để đập đá! (Nói chuyện với Leah)", Color(1.0, 0.6, 0.5))
 		return
 
-	var cost: float = 2.0
+	var cost: float = 5.0
 	if main_game != null and main_game.has_method("_get_action_stamina_cost"):
 		cost = main_game._get_action_stamina_cost("mine")
 

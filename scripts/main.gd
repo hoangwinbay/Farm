@@ -31,6 +31,7 @@ const QuestManagerScript := preload("res://scripts/quest_manager.gd")
 const QuestPanelScript := preload("res://scripts/ui/quest_panel.gd")
 const QuestDB := preload("res://scripts/quest_db.gd")
 const OreDB := preload("res://scripts/ore_db.gd")
+const ToolUpgradePanelScript := preload("res://scripts/ui/tool_upgrade_panel.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 const PenAnimal := preload("res://scripts/pen_animal.gd")
 
@@ -180,6 +181,7 @@ var shop_panel: CanvasLayer
 var fish_shop: CanvasLayer
 var poultry_shop: CanvasLayer
 var quest_panel: CanvasLayer
+var tool_upgrade_panel: CanvasLayer
 var stall_panel: CanvasLayer
 var stall_slots: Array = [{}, {}, {}, {}, {}, {}]
 var stall_crate_sprites: Array[Sprite2D] = []
@@ -443,7 +445,7 @@ func _build_world() -> void:
 		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪", "cb": _open_market_stall},
 		{"pos": MINE_ENTRANCE_POS + Vector2(0, 10), "r": 45.0, "label": "Vào Hầm Mỏ ⛏️", "cb": _enter_mine},
 		{"pos": MINE_SIGN_POS, "r": 40.0, "label": "Biển báo Hầm Mỏ 📜", "cb": _read_mine_sign},
-		{"pos": LEAH_MINER_POS, "r": 45.0, "label": "Leah ⛏️", "cb": _talk_leah},
+		{"pos": LEAH_MINER_POS, "r": 45.0, "label": "Leah ⛏️ (Nâng cấp Nông Cụ)", "cb": _talk_leah},
 		{"pos": NPC_POS, "r": 60.0, "label": "Bác Tư", "cb": _talk_npc},
 		{"pos": CHU_HAI_POS, "r": 60.0, "label": "Chú Hai", "cb": _talk_hai},
 		{"pos": COTU_POS, "r": 60.0, "label": "Cô Tư", "cb": _talk_tu},
@@ -1238,6 +1240,10 @@ func _build_ui() -> void:
 	quest_panel.setup(quest_mgr)
 	quest_panel.closed.connect(_close_panels)
 	quest_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
+	tool_upgrade_panel = ToolUpgradePanelScript.new()
+	add_child(tool_upgrade_panel)
+	tool_upgrade_panel.closed.connect(_close_panels)
+	tool_upgrade_panel.feedback.connect(func(t: String, c: Color) -> void: hud.toast(t, c))
 	hud.setup_quests(quest_mgr)
 	hud.open_quests_requested.connect(_open_quest_panel)
 	pause_menu = PauseMenuScript.new()
@@ -1651,14 +1657,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().paused = true
 		elif pause_menu.visible:
 			_resume_from_pause()
-		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible) or (quest_panel != null and quest_panel.visible):
+		elif shop_panel.visible or inv_panel.visible or fish_shop.visible or poultry_shop.visible or (stall_panel != null and stall_panel.visible) or (mailbox_panel != null and mailbox_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible) or (quest_panel != null and quest_panel.visible) or (tool_upgrade_panel != null and tool_upgrade_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("interact"):
 		if mode == Mode.PLAY and not get_tree().paused:
 			_do_interact()
 		elif mode == Mode.DIALOG:
 			dialog_box.advance()
-		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible) or (quest_panel != null and quest_panel.visible):
+		elif (mailbox_panel != null and mailbox_panel.visible) or (stall_panel != null and stall_panel.visible) or (storage_panel != null and storage_panel.visible) or (cat_panel != null and cat_panel.visible) or (quest_panel != null and quest_panel.visible) or (tool_upgrade_panel != null and tool_upgrade_panel.visible):
 			_close_panels()
 	elif event.is_action_pressed("inventory"):
 		if mode == Mode.PLAY and not get_tree().paused:
@@ -1710,12 +1716,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _get_action_stamina_cost(act: String) -> float:
 	match act:
-		"till": return 3.0
-		"water": return 2.0
-		"plant": return 1.0
+		"till": return OreDB.get_hoe_stamina(Inventory.get_hoe_tier())
+		"water": return 5.0
+		"plant": return 5.0
 		"harvest": return 1.5
 		"catch_pest": return 1.0
-		"mine": return 2.0
+		"fish": return 15.0
+		"mine": return OreDB.get_pickaxe_stamina(Inventory.get_pickaxe_tier())
 	return 0.0
 
 
@@ -1907,6 +1914,8 @@ func _on_dialog_finished() -> void:
 		Inventory.add_pickaxe("basic")
 		hud.toast("Nhận được Cúp khai mỏ sơ cấp từ Leah! ⛏️", Color(0.7, 1.0, 0.7))
 		return
+	elif _dialog_next == "tool_upgrade":
+		_open_tool_upgrade_panel()
 	elif _dialog_next == "fish":
 		_open_fish_shop()
 	elif _dialog_next == "poultry":
@@ -1929,10 +1938,10 @@ func _talk_leah() -> void:
 		])
 		_leah_met = true
 	else:
-		_dialog_next = "none"
+		_dialog_next = "tool_upgrade"
 		dialog_box.start("Leah", [
-			"Chào bạn! Càng xuống sâu, các tầng mỏ sẽ càng có nhiều quặng quý hiếm.",
-			"Chúc bạn một ngày khai thác được thật nhiều quặng vàng và đá quý nhé!"
+			"Chào bạn! Càng xuống sâu hầm mỏ sẽ càng có nhiều quặng quý hiếm.",
+			"Nếu có đủ Quặng và Vàng, mình sẽ rèn nâng cấp Cuốc đất và Cúp mỏ cho bạn để làm việc đỡ tốn thể lực hơn nhé!"
 		])
 
 
@@ -2041,6 +2050,12 @@ func _open_poultry_shop() -> void:
 	mode = Mode.PANEL
 	get_tree().paused = true
 	poultry_shop.open()
+
+
+func _open_tool_upgrade_panel() -> void:
+	mode = Mode.PANEL
+	get_tree().paused = true
+	tool_upgrade_panel.open()
 
 
 func _talk_tu() -> void:
@@ -2210,6 +2225,8 @@ func _close_panels() -> void:
 		stall_panel.visible = false
 	if quest_panel != null:
 		quest_panel.visible = false
+	if tool_upgrade_panel != null:
+		tool_upgrade_panel.visible = false
 	pause_menu.visible = false
 	get_tree().paused = false
 	if mode != Mode.TITLE:
@@ -2369,14 +2386,15 @@ func _refill_water_can() -> void:
 func _start_fishing() -> void:
 	if fishing:
 		return
-	if GameState.stamina < 3.0:
-		hud.toast("Bạn đã kiệt sức! Không đủ sức câu cá (cần 3⚡). Hãy ăn nông sản hoặc thịt!", Color(1.0, 0.45, 0.35))
+	var fish_stamina := _get_action_stamina_cost("fish")
+	if GameState.stamina < fish_stamina:
+		hud.toast("Bạn đã kiệt sức! Không đủ sức câu cá (cần %d⚡). Hãy ăn nông sản hoặc thịt!" % int(fish_stamina), Color(1.0, 0.45, 0.35))
 		return
 	var tier := str(Inventory.take_cast())
 	if tier == "":
 		hud.toast("Hết lượt câu! Mua cần câu ở Chú Hai (bờ ao).", Color(1.0, 0.6, 0.5))
 		return
-	GameState.use_stamina(3.0)
+	GameState.use_stamina(fish_stamina)
 	var rod := FishDB.get_rod(tier)
 	fishing = true
 	var fish_time: float = FishDB.FISH_TIME
@@ -3452,7 +3470,7 @@ func _clicktest_step() -> void:
 			}
 			var stam_before_hit := GameState.stamina
 			mine_manager._hit_rock(mock_rock)
-			var hit_stamina_ok: bool = (is_equal_approx(GameState.stamina, stam_before_hit - 2.0))
+			var hit_stamina_ok: bool = (is_equal_approx(GameState.stamina, stam_before_hit - 5.0))
 			var rock_damaged: bool = (int(mock_rock.hits_left) == 1)
 
 			# 3. Kiệt sức không đập được
@@ -3461,9 +3479,40 @@ func _clicktest_step() -> void:
 			var exhausted_prevented: bool = (int(mock_rock.hits_left) == 1 and is_equal_approx(GameState.stamina, 1.0))
 			mock_rock_body.queue_free()
 
+			# 4. Kiểm tra các chi phí thể lực theo yêu cầu
+			Inventory.set_hoe_tier("basic")
+			Inventory.add_pickaxe("basic")
+			var till_cost_ok: bool = is_equal_approx(_get_action_stamina_cost("till"), 7.0)
+			var plant_cost_ok: bool = is_equal_approx(_get_action_stamina_cost("plant"), 5.0)
+			var water_cost_ok: bool = is_equal_approx(_get_action_stamina_cost("water"), 5.0)
+			var fish_cost_ok: bool = is_equal_approx(_get_action_stamina_cost("fish"), 15.0)
+			var mine_cost_ok: bool = is_equal_approx(_get_action_stamina_cost("mine"), 5.0)
+
+			# 5. Kiểm tra nâng cấp dụng cụ giảm thể lực
+			GameState.money = 10000
+			Inventory.add_ore("copper_ore", 10)
+			Inventory.add_ore("iron_ore", 10)
+			Inventory.add_ore("gold_ore", 10)
+
+			var hoe_up_res := Inventory.upgrade_hoe()
+			var hoe_reduced_ok: bool = (hoe_up_res.ok and is_equal_approx(_get_action_stamina_cost("till"), 5.0))
+
+			var pick_up_res := Inventory.upgrade_pickaxe()
+			var pick_reduced_ok: bool = (pick_up_res.ok and is_equal_approx(_get_action_stamina_cost("mine"), 4.0))
+
+			# 6. Mở và đóng tool_upgrade_panel
+			_open_tool_upgrade_panel()
+			var panel_opened: bool = (tool_upgrade_panel != null and tool_upgrade_panel.visible)
+			_close_panels()
+			var panel_closed: bool = (tool_upgrade_panel != null and not tool_upgrade_panel.visible)
+
 			print("MINING_AND_WALKING_STAMINA_TEST walk_ok=", walk_stamina_ok,
 					" hit_ok=", hit_stamina_ok, " rock_damaged=", rock_damaged,
 					" exhausted_prevented=", exhausted_prevented)
+			print("ACTION_STAMINA_TEST till_7=", till_cost_ok, " plant_5=", plant_cost_ok,
+					" water_5=", water_cost_ok, " fish_15=", fish_cost_ok, " mine_5=", mine_cost_ok)
+			print("TOOL_UPGRADE_TEST hoe_up=", hoe_reduced_ok, " pick_up=", pick_reduced_ok,
+					" panel_open=", panel_opened, " panel_close=", panel_closed)
 
 			print("CLICKTEST_DONE")
 			get_tree().quit()

@@ -2,6 +2,7 @@ extends CanvasLayer
 # HUD Nông Trại: Bảng trạng thái gỗ mộc, thanh hotbar hạt giống, gợi ý thao tác & thông báo cuộn giấy.
 
 const CropDB := preload("res://scripts/crop_db.gd")
+const OreDB := preload("res://scripts/ore_db.gd")
 const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 const WeatherManager := preload("res://scripts/weather_manager.gd")
@@ -437,13 +438,14 @@ func rebuild_hotbar() -> void:
 
 	# Ô 1: Cuốc
 	var hoe_active: bool = (act_t == "hoe")
+	var h_info := OreDB.get_hoe(Inventory.get_hoe_tier())
 	_slots_cache.append({
 		"key": "1",
 		"type": "hoe",
-		"name": "Cuốc",
+		"name": str(h_info.name),
 		"qty": Inventory.hoes,
-		"tooltip": "Cuốc (×%d)" % Inventory.hoes,
-		"icon": TextureGen.hoe_icon(),
+		"tooltip": "%s (×%d - Tốn %.0f⚡)" % [str(h_info.name), Inventory.hoes, float(h_info.stamina)],
+		"icon": TextureGen.hoe_icon(Inventory.get_hoe_tier()),
 		"active": hoe_active,
 		"action": func():
 			Inventory.select_tool("hoe")
@@ -456,7 +458,7 @@ func rebuild_hotbar() -> void:
 		"type": "watering_can",
 		"name": "Bình tưới",
 		"qty": Inventory.water_level,
-		"tooltip": "Bình tưới (%d/%d)" % [Inventory.water_level, Inventory.water_max],
+		"tooltip": "Bình tưới (%d/%d - Tốn 5⚡)" % [Inventory.water_level, Inventory.water_max],
 		"icon": TextureGen.watering_can_icon(),
 		"active": water_active,
 		"action": func():
@@ -470,7 +472,7 @@ func rebuild_hotbar() -> void:
 		"type": "rod",
 		"name": "Cần câu",
 		"qty": Inventory.total_casts(),
-		"tooltip": "Cần câu (%d lượt)" % Inventory.total_casts(),
+		"tooltip": "Cần câu (%d lượt - Tốn 15⚡)" % Inventory.total_casts(),
 		"icon": TextureGen.get_tex("fx_rod"),
 		"active": rod_active,
 		"action": func():
@@ -481,13 +483,14 @@ func rebuild_hotbar() -> void:
 	var seed_start_idx := 4
 	if Inventory.has_pickaxe():
 		var pick_active: bool = (act_t == "pickaxe")
+		var p_info := OreDB.get_pickaxe(Inventory.get_pickaxe_tier())
 		_slots_cache.append({
 			"key": "4",
 			"type": "pickaxe",
-			"name": "Cúp",
+			"name": str(p_info.name),
 			"qty": Inventory.get_pickaxe_power(),
-			"tooltip": "Cúp khai mỏ (Cấp %d)" % Inventory.get_pickaxe_power(),
-			"icon": TextureGen.pickaxe_icon(Inventory.pickaxe),
+			"tooltip": "%s (Cấp %d - Tốn %.0f⚡)" % [str(p_info.name), Inventory.get_pickaxe_power(), float(p_info.stamina)],
+			"icon": TextureGen.pickaxe_icon(Inventory.get_pickaxe_tier()),
 			"active": pick_active,
 			"action": func():
 				Inventory.select_tool("pickaxe")
@@ -658,16 +661,18 @@ func _update_active_label() -> void:
 	var act_type: String = str(Inventory.active_item.get("type", "hoe"))
 	match act_type:
 		"hoe":
-			active_label.text = "⛏ Cuốc (×%d)" % Inventory.hoes
+			var h_info := OreDB.get_hoe(Inventory.get_hoe_tier())
+			active_label.text = "🌱 %s (×%d - Tốn %.0f⚡)" % [str(h_info.name), Inventory.hoes, float(h_info.stamina)]
 			active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_TITLE)
 		"watering_can":
-			active_label.text = "💧 Bình tưới (%d/%d)" % [Inventory.water_level, Inventory.water_max]
+			active_label.text = "💧 Bình tưới (%d/%d - Tốn 5⚡)" % [Inventory.water_level, Inventory.water_max]
 			active_label.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0))
 		"rod":
-			active_label.text = "🎣 Cần câu (%d lượt)" % Inventory.total_casts()
+			active_label.text = "🎣 Cần câu (%d lượt - Tốn 15⚡)" % Inventory.total_casts()
 			active_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.4))
 		"pickaxe":
-			active_label.text = "⛏️ Cúp khai mỏ (Cấp %d)" % Inventory.get_pickaxe_power()
+			var p_info := OreDB.get_pickaxe(Inventory.get_pickaxe_tier())
+			active_label.text = "⛏️ %s (Cấp %d - Tốn %.0f⚡)" % [str(p_info.name), Inventory.get_pickaxe_power(), float(p_info.stamina)]
 			active_label.add_theme_color_override("font_color", Color(0.85, 0.90, 1.0))
 		"seed":
 			var sid := Inventory.selected_seed

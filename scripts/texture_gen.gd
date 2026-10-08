@@ -3002,11 +3002,13 @@ static func _shape_tree(img: Image, stage: int, accent: Color, leaf: Color, dark
 
 # ---------- icon ----------
 
-static func hoe_icon() -> ImageTexture:
-	var key := "hoe_icon"
+static func hoe_icon(tier: String = "basic") -> ImageTexture:
+	var key := "hoe_icon_%s" % tier
 	if _cache.has(key):
 		return _cache[key]
-	var loaded := _load_picture("res://picture/hoe_icon.png")
+	var loaded := _load_picture("res://picture/hoe_%s.png" % tier)
+	if loaded == null and tier == "basic":
+		loaded = _load_picture("res://picture/hoe_icon.png")
 	if loaded != null:
 		var t := _tex(loaded)
 		_cache[key] = t
@@ -3014,6 +3016,13 @@ static func hoe_icon() -> ImageTexture:
 	var img := _img(16, 16)
 	var wood := Color(0.55, 0.38, 0.22)
 	var metal := Color(0.72, 0.75, 0.78)
+	match tier:
+		"copper":
+			metal = Color(0.88, 0.50, 0.24)
+		"iron":
+			metal = Color(0.82, 0.86, 0.92)
+		"gold":
+			metal = Color(1.0, 0.84, 0.22)
 	# cán chéo
 	for i in 8:
 		px(img, 3 + i, 13 - i, wood)

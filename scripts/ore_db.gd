@@ -68,10 +68,93 @@ const ORES := [
 ]
 
 const PICKAXES := [
-	{"tier": "basic", "name": "Cúp sơ cấp", "power": 1, "price": 0, "color": "9e9e9e", "desc": "Cúp bằng đá và gỗ do Leah tặng, đủ đào các tầng đầu."},
-	{"tier": "copper", "name": "Cúp đồng", "power": 2, "price": 500, "color": "d87d38", "desc": "Cúp đúc bằng đồng, đào đá nhanh gấp đôi."},
-	{"tier": "iron", "name": "Cúp sắt", "power": 3, "price": 1500, "color": "cfd8dc", "desc": "Cúp rèn từ sắt già, phá vỡ quặng cứng dễ dàng."},
-	{"tier": "gold", "name": "Cúp vàng", "power": 4, "price": 4000, "color": "ffe082", "desc": "Cúp mạ vàng tinh xảo, sức đào thần tốc."}
+	{
+		"tier": "basic",
+		"name": "Cúp sơ cấp",
+		"power": 1,
+		"stamina": 5.0,
+		"price": 0,
+		"ore_type": "",
+		"ore_count": 0,
+		"color": "9e9e9e",
+		"desc": "Cúp bằng đá và gỗ do Leah tặng. Tiêu hao 5⚡ mỗi lần đập."
+	},
+	{
+		"tier": "copper",
+		"name": "Cúp đồng",
+		"power": 2,
+		"stamina": 4.0,
+		"price": 350,
+		"ore_type": "copper_ore",
+		"ore_count": 5,
+		"color": "d87d38",
+		"desc": "Cúp đúc bằng đồng, sức đào x2. Tiêu hao giảm còn 4⚡ mỗi lần đập."
+	},
+	{
+		"tier": "iron",
+		"name": "Cúp sắt",
+		"power": 3,
+		"stamina": 3.0,
+		"price": 1000,
+		"ore_type": "iron_ore",
+		"ore_count": 5,
+		"color": "b0bec5",
+		"desc": "Cúp rèn từ sắt già, phá quặng cứng dễ dàng. Tiêu hao giảm còn 3⚡ mỗi lần đập."
+	},
+	{
+		"tier": "gold",
+		"name": "Cúp vàng",
+		"power": 4,
+		"stamina": 2.0,
+		"price": 2500,
+		"ore_type": "gold_ore",
+		"ore_count": 5,
+		"color": "ffd54f",
+		"desc": "Cúp mạ vàng tinh xảo, đào thần tốc. Tiêu hao chỉ còn 2⚡ mỗi lần đập."
+	}
+]
+
+const HOES := [
+	{
+		"tier": "basic",
+		"name": "Cuốc thường",
+		"stamina": 7.0,
+		"price": 0,
+		"ore_type": "",
+		"ore_count": 0,
+		"color": "9e9e9e",
+		"desc": "Cuốc nông nghiệp cơ bản. Tiêu hao 7⚡ thể lực mỗi lần cuốc."
+	},
+	{
+		"tier": "copper",
+		"name": "Cuốc đồng",
+		"stamina": 5.0,
+		"price": 300,
+		"ore_type": "copper_ore",
+		"ore_count": 5,
+		"color": "d87d38",
+		"desc": "Lưỡi cuốc đúc bằng đồng. Giảm tiêu hao xuống còn 5⚡ thể lực."
+	},
+	{
+		"tier": "iron",
+		"name": "Cuốc sắt",
+		"stamina": 4.0,
+		"price": 800,
+		"ore_type": "iron_ore",
+		"ore_count": 5,
+		"color": "b0bec5",
+		"desc": "Lưỡi cuốc rèn sắt già bền bỉ. Giảm tiêu hao xuống còn 4⚡ thể lực."
+	},
+	{
+		"tier": "gold",
+		"name": "Cuốc vàng",
+		"stamina": 3.0,
+		"price": 2000,
+		"ore_type": "gold_ore",
+		"ore_count": 5,
+		"color": "ffd54f",
+		"desc": "Cuốc mạ vàng tinh xảo, nhẹ tựa lông hồng. Giảm tiêu hao xuống còn 3⚡ thể lực."
+	}
 ]
 
 static func get_ore(id: String) -> Dictionary:
@@ -84,8 +167,22 @@ static func get_pickaxe(tier: String) -> Dictionary:
 	for p in PICKAXES:
 		if p.tier == tier:
 			return p
-	return {}
+	return PICKAXES[0]
 
 static func pickaxe_power(tier: String) -> int:
 	var p := get_pickaxe(tier)
 	return int(p.get("power", 1))
+
+static func get_pickaxe_stamina(tier: String) -> float:
+	var p := get_pickaxe(tier)
+	return float(p.get("stamina", 5.0))
+
+static func get_hoe(tier: String) -> Dictionary:
+	for h in HOES:
+		if h.tier == tier:
+			return h
+	return HOES[0]
+
+static func get_hoe_stamina(tier: String) -> float:
+	var h := get_hoe(tier)
+	return float(h.get("stamina", 7.0))
