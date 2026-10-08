@@ -250,10 +250,13 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _fx_water()
 		"fx_harvest":
 			tex = _fx_harvest()
-		"fx_rod":
+		"fx_rod", "sdv_rod":
 			tex = _fx_rod()
-		"fx_bobber":
+		"fx_bobber", "sdv_bobber":
 			tex = _fx_bobber()
+		"sdv_bobber_float":
+			var loaded_bf := _load_picture("res://picture/sdv_bobber_float.png")
+			tex = _tex(loaded_bf) if loaded_bf != null else _fx_bobber()
 	if tex != null:
 		_cache[key] = tex
 	return tex
@@ -1077,6 +1080,9 @@ static func _fx_harvest() -> ImageTexture:
 
 
 static func _fx_rod() -> ImageTexture:
+	var loaded := _load_picture("res://picture/sdv_rod.png")
+	if loaded != null:
+		return _tex(loaded)
 	var img := _img(16, 16)
 	var wood := Color(0.5, 0.35, 0.2)
 	for i in 9:
@@ -1091,6 +1097,9 @@ static func _fx_rod() -> ImageTexture:
 
 
 static func _fx_bobber() -> ImageTexture:
+	var loaded := _load_picture("res://picture/sdv_bobber.png")
+	if loaded != null:
+		return _tex(loaded)
 	var img := _img(16, 16)
 	circle(img, 8, 6, 2.5, Color(0.85, 0.25, 0.2))
 	circle(img, 8, 9, 2.5, Color(0.95, 0.95, 0.95))
@@ -3099,6 +3108,21 @@ static func rod_icon(color_hex: String) -> ImageTexture:
 	var key := "rod_icon_%s" % color_hex
 	if _cache.has(key):
 		return _cache[key]
+	var pic_path := ""
+	match color_hex:
+		"9aa0a6":
+			pic_path = "res://picture/rod_basic.png"
+		"66bb6a":
+			pic_path = "res://picture/rod_mid.png"
+		"ffd54f":
+			pic_path = "res://picture/rod_high.png"
+		_:
+			pic_path = "res://picture/sdv_rod.png"
+	var loaded := _load_picture(pic_path)
+	if loaded != null:
+		var t := _tex(loaded)
+		_cache[key] = t
+		return t
 	var img := _img(16, 16)
 	var c := Color(color_hex)
 	var dark := c.darkened(0.3)
@@ -3116,6 +3140,19 @@ static func rod_icon(color_hex: String) -> ImageTexture:
 	var tex := _tex(img)
 	_cache[key] = tex
 	return tex
+
+
+static func water_ripple_frame(idx: int) -> Texture2D:
+	var i := clampi(idx, 0, 7)
+	var key := "sdv_ripple_%d" % i
+	if _cache.has(key):
+		return _cache[key]
+	var loaded := _load_picture("res://picture/sdv_ripple_%d.png" % i)
+	if loaded != null:
+		var t := _tex(loaded)
+		_cache[key] = t
+		return t
+	return null
 
 
 static func fish_icon(color_hex: String) -> ImageTexture:

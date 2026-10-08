@@ -257,6 +257,9 @@ var fishing := false
 var fishing_left := 0.0
 var _rod_spr: Sprite2D
 var _bobber_spr: Sprite2D
+var _fishing_line: Line2D
+var _lake_ripple_timer: float = 0.5
+var _bobber_ripple_timer: float = 0.0
 
 var _debug_mode := ""
 var _debug_frame := 0
@@ -1347,11 +1350,34 @@ func _process(delta: float) -> void:
 	_process_stall_customers(delta)
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
-	_update_hint_and_highlight()
+	# Gợn sóng nước hồ tự nhiên phong cách Stardew Valley
+	if not in_mine:
+		_lake_ripple_timer -= delta
+		if _lake_ripple_timer <= 0.0:
+			_lake_ripple_timer = randf_range(1.5, 2.5)
+			var r_angle := randf() * TAU
+			var r_dist := sqrt(randf())
+			var rx := 1440.0 + cos(r_angle) * (r_dist * 115.0)
+			var ry := 900.0 + sin(r_angle) * (r_dist * 75.0)
+			if ry >= 820.0 and ry <= 990.0:
+				_spawn_water_ripple(Vector2(rx, ry), randf_range(0.85, 1.15), randf_range(0.7, 0.9))
+
 	if fishing:
 		fishing_left -= delta
 		hud.set_hint("Đang thả câu... còn %d giây" % int(ceil(maxf(fishing_left, 0.0))))
 		highlight.visible = false
+		# Dây câu mảnh kết nối đầu cần tới phao
+		if is_instance_valid(_fishing_line) and is_instance_valid(_bobber_spr):
+			var tip: Vector2 = player.get_rod_tip_position()
+			var bpos: Vector2 = _bobber_spr.position
+			var mid: Vector2 = (tip + bpos) * 0.5 + Vector2(0, 4.0)
+			_fishing_line.points = PackedVector2Array([tip, mid, bpos])
+		# Gợn sóng nước lan tỏa từ phao câu
+		_bobber_ripple_timer -= delta
+		if _bobber_ripple_timer <= 0.0:
+			_bobber_ripple_timer = 0.85
+			if is_instance_valid(_bobber_spr):
+				_spawn_water_ripple(_bobber_spr.position, 0.75, 0.7)
 		if fishing_left <= 0.0:
 			_finish_fishing()
 	if GameState.clock >= GameState.COLLAPSE_MIN and GameState.clock < GameState.DAY_START:
@@ -2436,6 +2462,31 @@ func _refill_water_can() -> void:
 	hud.toast("Đã múc nước từ ao (-2⚡)! Bình tưới: %d/%d 💧" % [Inventory.water_level, Inventory.water_max], Color(0.4, 0.85, 1.0))
 
 
+# Tạo hiệu ứng gợn sóng nước lan tỏa chuẩn Stardew Valley (8 khung hình từ TileSheets/animations.png)
+func _spawn_water_ripple(pos: Vector2, r_scale: float = 1.0, r_dur: float = 0.7) -> Sprite2D:
+	var spr := Sprite2D.new()
+	spr.texture = TextureGen.water_ripple_frame(0)
+	spr.position = pos
+	spr.scale = Vector2(r_scale, r_scale)
+	spr.z_index = 2
+	world.add_child(spr)
+	var tw := spr.create_tween()
+	var frame_dur: float = r_dur / 8.0
+	for f in range(1, 8):
+		var frame_idx := f
+		tw.tween_interval(frame_dur)
+		tw.tween_callback(func():
+			if is_instance_valid(spr):
+				spr.texture = TextureGen.water_ripple_frame(frame_idx)
+		)
+	tw.tween_property(spr, "modulate:a", 0.0, frame_dur)
+	tw.tween_callback(func():
+		if is_instance_valid(spr):
+			spr.queue_free()
+	)
+	return spr
+
+
 func _start_fishing() -> void:
 	if fishing:
 		return
@@ -2458,34 +2509,67 @@ func _start_fishing() -> void:
 	fishing_left = fish_time
 	player.can_move = false
 	hud.toast("Đã thả câu (%s — còn %d lượt)" % [rod.name, Inventory.total_casts()], Color(0.6, 0.9, 1.0))
-	# animation: cần câu trên tay + phao nhấp nhô trên mặt nước
+
+	# Hướng nhân vật về phía mặt hồ và bắt đầu diễn hoạt câu cá Stardew Valley
 	var dir := (POND_RECT.get_center() - player.position).normalized()
-	_rod_spr = Sprite2D.new()
-	_rod_spr.texture = TextureGen.get_tex("fx_rod")
-	_rod_spr.z_index = 50
-	_rod_spr.position = player.position + Vector2(dir.x * 12.0, dir.y * 12.0 - 10.0)
-	world.add_child(_rod_spr)
+	player.facing = dir
+	player.start_fishing_anim()
+
+	# Tính vị trí phao tiếp nước trong hồ
+	var pond_center := POND_RECT.get_center()
+	var dist_to_center := player.position.distance_to(pond_center)
+	var cast_dist: float = clampf(dist_to_center * 0.65, 42.0, 85.0)
+	var bobber_target := player.position + dir * cast_dist
+
+	# Tạo phao câu Stardew Valley
 	_bobber_spr = Sprite2D.new()
 	_bobber_spr.texture = TextureGen.get_tex("fx_bobber")
 	_bobber_spr.z_index = 50
-	_bobber_spr.position = player.position + dir * 46.0
+	var tip_pos: Vector2 = player.get_rod_tip_position()
+	_bobber_spr.position = tip_pos
 	world.add_child(_bobber_spr)
-	var bob := _bobber_spr.create_tween().set_loops()
-	bob.tween_property(_bobber_spr, "position:y", _bobber_spr.position.y - 2.0, 0.5).set_ease(Tween.EASE_OUT)
-	bob.tween_property(_bobber_spr, "position:y", _bobber_spr.position.y, 0.5).set_ease(Tween.EASE_IN)
+
+	# Dây câu mảnh kết nối đầu cần tới phao
+	if _fishing_line != null and is_instance_valid(_fishing_line):
+		_fishing_line.queue_free()
+	_fishing_line = Line2D.new()
+	_fishing_line.width = 1.0
+	_fishing_line.default_color = Color(0.92, 0.94, 0.98, 0.82)
+	_fishing_line.z_index = 49
+	_fishing_line.points = PackedVector2Array([tip_pos, (tip_pos + bobber_target) * 0.5, bobber_target])
+	world.add_child(_fishing_line)
+
+	# Hiệu ứng ném phao bay vào mặt nước
+	var cast_tw := _bobber_spr.create_tween()
+	cast_tw.tween_property(_bobber_spr, "position", bobber_target, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	cast_tw.tween_callback(func():
+		if is_instance_valid(_bobber_spr):
+			# Phao chạm mặt nước: tạo sóng tròn Stardew Valley và bọt nước
+			_spawn_water_ripple(bobber_target, 1.25, 0.8)
+			_spawn_effect("fx_water", bobber_target)
+			# Nhấp nhô bồng bềnh
+			var bob := _bobber_spr.create_tween().set_loops()
+			bob.tween_property(_bobber_spr, "position:y", bobber_target.y - 2.5, 0.55).set_ease(Tween.EASE_OUT)
+			bob.tween_property(_bobber_spr, "position:y", bobber_target.y + 0.5, 0.55).set_ease(Tween.EASE_IN)
+	)
 
 
 func _finish_fishing() -> void:
 	fishing = false
 	player.can_move = true
-	var bobber_pos := _bobber_spr.position if _bobber_spr != null else POND_RECT.get_center()
-	if _rod_spr != null:
+	var bobber_pos := _bobber_spr.position if is_instance_valid(_bobber_spr) else POND_RECT.get_center()
+	if _rod_spr != null and is_instance_valid(_rod_spr):
 		_rod_spr.queue_free()
 		_rod_spr = null
-	if _bobber_spr != null:
+	if _fishing_line != null and is_instance_valid(_fishing_line):
+		_fishing_line.queue_free()
+		_fishing_line = null
+	if _bobber_spr != null and is_instance_valid(_bobber_spr):
+		_spawn_water_ripple(bobber_pos, 1.35, 0.65)
 		_bobber_spr.queue_free()
 		_bobber_spr = null
 	_spawn_effect("fx_water", bobber_pos)
+	player.stop_fishing_anim()
 	var night := GameState.clock < GameState.DAY_START or GameState.clock >= 1140
 	var f := FishDB.roll_cast(night)
 	if f.is_empty():
@@ -3585,7 +3669,40 @@ func _clicktest_step() -> void:
 					" water_5=", water_cost_ok, " fish_15=", fish_cost_ok, " mine_5=", mine_cost_ok)
 			print("TOOL_UPGRADE_TEST hoe_up=", hoe_reduced_ok, " pick_up=", pick_reduced_ok,
 					" panel_open=", panel_opened, " panel_close=", panel_closed)
-			print("SLEEP_NO_HEAL_TEST sleep_no_heal=", sleep_no_heal_ok, " forced_no_heal=", forced_no_heal_ok)
+			# 8. Kiểm tra hoạt ảnh câu cá, cần câu và gợn sóng nước Stardew Valley
+			var ripple_frames_ok := true
+			for ri in range(8):
+				if TextureGen.water_ripple_frame(ri) == null:
+					ripple_frames_ok = false
+					break
+
+			var rod_icons_ok: bool = (TextureGen.get_tex("fx_rod") != null
+					and TextureGen.get_tex("fx_bobber") != null
+					and TextureGen.rod_icon("9aa0a6") != null
+					and TextureGen.rod_icon("66bb6a") != null
+					and TextureGen.rod_icon("ffd54f") != null)
+
+			var farmer_fish_anim_ok := true
+			for d_name in ["down", "side", "up"]:
+				for st in range(5):
+					if TextureGen.char_action_tex(d_name, "fish", st) == null:
+						farmer_fish_anim_ok = false
+						break
+
+			# Kiểm tra quy trình thả câu và thu cần
+			Inventory.add_rod("basic", 5)
+			player.position = FISH_SPOT_POS + Vector2(-50, 0)
+			_start_fishing()
+			var fishing_started_ok: bool = (fishing and player.is_fishing()
+					and is_instance_valid(_bobber_spr) and is_instance_valid(_fishing_line))
+			var ripple_spawn_ok: bool = is_instance_valid(_spawn_water_ripple(Vector2(1440, 900), 1.0, 0.5))
+
+			_finish_fishing()
+			var fishing_finished_ok: bool = (not fishing and _bobber_spr == null and _fishing_line == null)
+
+			print("SDV_FISHING_RIPPLE_TEST ripples=", ripple_frames_ok, " rods=", rod_icons_ok,
+					" farmer_anims=", farmer_fish_anim_ok, " start_cast=", fishing_started_ok,
+					" ripple_spawn=", ripple_spawn_ok, " finish_cast=", fishing_finished_ok)
 
 			print("CLICKTEST_DONE")
 			get_tree().quit()

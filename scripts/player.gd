@@ -31,11 +31,14 @@ var _dir := "down"
 var _anim_t := 0.0
 var _walk_stamina_timer: float = 0.0
 
+var _is_fishing := false
+
 const ACTION_STEPS := {
 	"till": 5,
 	"water": 3,
 	"plant": 3,
 	"harvest": 4,
+	"fish": 5,
 }
 
 const ACTION_DURATIONS := {
@@ -43,6 +46,7 @@ const ACTION_DURATIONS := {
 	"water": [0.08, 0.20, 0.08],            # Total 0.36s
 	"plant": [0.08, 0.16, 0.08],            # Total 0.32s
 	"harvest": [0.08, 0.08, 0.08, 0.16],    # Total 0.40s
+	"fish": [0.12, 0.10, 0.10, 999.0, 0.28],
 }
 
 
@@ -127,8 +131,77 @@ func get_action_duration(act: String = "till") -> float:
 	return sum
 
 
-# Diễn hoạt hành động chuẩn Stardew Valley (cuốc đất / tưới cây / gieo hạt / gặt cây).
+# Diễn hoạt hành động chuẩn Stardew Valley (cuốc đất / tưới cây / gieo hạt / gặt cây / câu cá).
+func is_fishing() -> bool:
+	return _is_fishing
+
+
+func start_fishing_anim() -> void:
+	if _action_tween and _action_tween.is_valid():
+		_action_tween.kill()
+	_is_acting = true
+	_is_fishing = true
+	_sprite.scale = Vector2(1.2, 1.2)
+	# Bước 0: Nhấc cần chuẩn bị vung
+	_sprite.texture = TextureGen.char_action_tex(_dir, "fish", 0)
+	var tw := create_tween()
+	_action_tween = tw
+	# Bước 1: Vung cần qua đầu
+	tw.tween_interval(0.12)
+	tw.tween_callback(func():
+		if _is_fishing:
+			_sprite.texture = TextureGen.char_action_tex(_dir, "fish", 1)
+	)
+	# Bước 2: Quăng cần về phía trước thả phao
+	tw.tween_interval(0.10)
+	tw.tween_callback(func():
+		if _is_fishing:
+			_sprite.texture = TextureGen.char_action_tex(_dir, "fish", 2)
+	)
+	# Bước 3: Giữ tư thế cầm cần câu kiên nhẫn chờ cá cắn
+	tw.tween_interval(0.10)
+	tw.tween_callback(func():
+		if _is_fishing:
+			_sprite.texture = TextureGen.char_action_tex(_dir, "fish", 3)
+	)
+
+
+func stop_fishing_anim() -> void:
+	if not _is_fishing:
+		return
+	_is_fishing = false
+	if _action_tween and _action_tween.is_valid():
+		_action_tween.kill()
+	# Bước 4: Giật cần kéo cá lên (reel)
+	_sprite.texture = TextureGen.char_action_tex(_dir, "fish", 4)
+	var tw := create_tween()
+	_action_tween = tw
+	tw.tween_interval(0.28)
+	tw.tween_callback(func():
+		_is_acting = false
+		_sprite.scale = Vector2(1.2, 1.2)
+		_update_tex(0)
+	)
+
+
+func get_rod_tip_position() -> Vector2:
+	var offset := Vector2.ZERO
+	match _dir:
+		"side":
+			offset = Vector2(16.0 if not _sprite.flip_h else -16.0, -20.0)
+		"down":
+			offset = Vector2(5.0, -10.0)
+		"up":
+			offset = Vector2(5.0, -32.0)
+		_:
+			offset = Vector2(14.0, -18.0)
+	return global_position + offset
+
+
 func play_action_anim(act: String = "till") -> void:
+	if act == "fish":
+		start_fishing_anim()
+		return
 	if _action_tween and _action_tween.is_valid():
 		_action_tween.kill()
 	_is_acting = true
