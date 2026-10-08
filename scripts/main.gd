@@ -113,7 +113,9 @@ const STAND_TU_POS := Vector2(1410, 416)    # quầy Cô Tư
 const NPC_POS := Vector2(1580, 430)         # điểm tương tác Bác Tư
 const CHU_HAI_POS := Vector2(1750, 430)     # điểm tương tác Chú Hai
 const COTU_POS := Vector2(1410, 430)        # điểm tương tác Cô Tư
-const SCARECROW_POS := Vector2(790, 436)     # bù nhìn rơm bên lề cỏ cạnh góc rào Thửa Bắc
+const SCARECROW_NORTH_POS := Vector2(1048, 368) # bù nhìn rơm ở giữa Thửa Bắc
+const SCARECROW_SOUTH_POS := Vector2(1048, 576) # bù nhìn rơm ở giữa Thửa Nam
+const SCARECROW_POS := SCARECROW_NORTH_POS      # bù nhìn rơm (tương thích)
 const PLAYER_START := Vector2(650, 470)
 const POND_RECT := Rect2(1304, 738, 272, 192)
 const FISH_SPOT_POS := Vector2(1447, 863)   # tâm hồ Stardew Valley — câu được ở MỌI bờ
@@ -357,8 +359,9 @@ func _build_world() -> void:
 	_add_decor(TextureGen.get_tex("tent"), TENT_POS, 1.0, Rect2(-20, -56, 40, 42))
 	# hòm thư Stardew Valley cạnh bậc thềm hiên nhà
 	_build_mailbox()
-	# bù nhìn Stardew Valley
-	_add_decor(TextureGen.get_tex("scarecrow"), SCARECROW_POS, 1.5, Rect2(-6, -10, 12, 10))
+	# bù nhìn Stardew Valley ở giữa mỗi thửa ruộng
+	_add_decor(TextureGen.get_tex("scarecrow"), SCARECROW_NORTH_POS, 1.2, Rect2(-4, -6, 8, 6))
+	_add_decor(TextureGen.get_tex("scarecrow"), SCARECROW_SOUTH_POS, 1.2, Rect2(-4, -6, 8, 6))
 	# sạp hàng nông sản Stardew Valley tại góc rẽ trái (kèm bóng đổ mềm mại trên nền cỏ)
 	_build_market_stall()
 	# Khu vực cửa hầm mỏ đá & Leah phía Tây Bắc
@@ -1012,8 +1015,8 @@ func _is_grass_surface(pos: Vector2) -> bool:
 	if pos.distance_to(MAYOR_POS) < 32.0:
 		return false
 
-	# 6. Bù nhìn rơm
-	if pos.distance_to(SCARECROW_POS) < 32.0:
+	# 6. Bù nhìn rơm ở giữa 2 thửa ruộng
+	if pos.distance_to(SCARECROW_NORTH_POS) < 32.0 or pos.distance_to(SCARECROW_SOUTH_POS) < 32.0:
 		return false
 
 	# 7. Vị trí xuất phát của người chơi
@@ -1157,7 +1160,7 @@ func _sprout_random_plant() -> void:
 func _build_fences() -> void:
 	var fh: Texture2D = TextureGen.get_tex("fence_h")
 	var fv: Texture2D = TextureGen.get_tex("fence_v")
-	var f_gate: Texture2D = TextureGen.get_tex("gate_coop")
+	var f_gate: Texture2D = TextureGen.get_tex("gate_farm")
 	var f_tl: Texture2D = TextureGen.get_tex("fence_corner_tl")
 	var f_tr: Texture2D = TextureGen.get_tex("fence_corner_tr")
 	var f_bl: Texture2D = TextureGen.get_tex("fence_corner_bl")

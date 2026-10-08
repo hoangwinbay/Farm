@@ -211,6 +211,8 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _gate_v()
 		"gate_coop":
 			tex = _coop_gate()
+		"gate_farm":
+			tex = _farm_gate()
 		"stand_seed_roof":
 			tex = _stand_seed_roof()
 		"stand_seed_back":
@@ -993,6 +995,24 @@ static func _coop_gate() -> ImageTexture:
 		rect(img, sx, 25, 2, 2, stone)
 		px(img, sx, 25, Color(0.7, 0.68, 0.65))
 
+	return _tex(img)
+
+
+# Cổng ruộng 64x32: Nối liền hàng rào hai bên không có khe hở, gồm 2 cột cổng, cánh cổng Stardew Valley ở giữa và thanh xà gỗ nối khít vào rào hai bên
+static func _farm_gate() -> ImageTexture:
+	var loaded := _load_picture("res://picture/gate_farm.png")
+	if loaded != null:
+		return _tex(loaded)
+	var img := Image.create(64, 32, false, Image.FORMAT_RGBA8)
+	var gate_src := _load_picture("res://picture/gate_coop.png")
+	var fence_src := _load_picture("res://picture/fence_h.png")
+	if fence_src != null:
+		for x in range(0, 16, 4):
+			img.blit_rect(fence_src, Rect2i(28, 0, 4, 32), Vector2i(x, 0))
+		for x in range(44, 64, 4):
+			img.blit_rect(fence_src, Rect2i(28, 0, 4, 32), Vector2i(x, 0))
+	if gate_src != null:
+		img.blend_rect(gate_src, Rect2i(0, 0, 48, 32), Vector2i(8, 0))
 	return _tex(img)
 
 
