@@ -2072,8 +2072,8 @@ func _handle_world_tap(world_tap_pos: Vector2) -> void:
 	# 1. Kiểm tra nếu chạm vào ô đất nông trại
 	var tile = farm.tile_at_world(world_tap_pos)
 	if tile != null:
-		var t_center := farm.tile_center(tile.coord)
-		var dist := player.position.distance_to(t_center)
+		var t_center: Vector2 = farm.tile_center(tile.coord)
+		var dist: float = player.position.distance_to(t_center)
 		if dist <= 80.0:
 			_face_towards(t_center)
 			_do_farm_action(tile)
