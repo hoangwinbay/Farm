@@ -296,8 +296,8 @@ func _get_random_yard_point() -> Vector2:
 
 func get_trough_eating_spot() -> Vector2:
 	# Vị trí đứng trước máng ăn (máng tại trough_pos)
-	var offset_x: float = -18.0 + (animal_index % 3) * 18.0
-	return Vector2(trough_pos.x + offset_x, trough_pos.y + 12.0)
+	var offset_x: float = -20.0 + (animal_index % 3) * 20.0
+	return Vector2(trough_pos.x + offset_x, trough_pos.y + 15.0)
 
 
 # Cho con vật ăn cám:

@@ -707,9 +707,9 @@ func _rebuild_pen() -> void:
 			bldg_body.add_child(bcol)
 			pen_node.add_child(bldg_body)
 
-			# Máng ăn & máng nước
-			_add_sprite(TextureGen.get_tex("trough"), Vector2(rx + 126, ry + 40), pen_node)
-			_add_sprite(TextureGen.get_tex("water_trough"), Vector2(rx + 126, ry + 58), pen_node)
+			# Máng ăn & máng nước (to hơn 1.65x, rõ nét và nổi bật trong chuồng)
+			_add_sprite(TextureGen.get_tex("trough"), Vector2(rx + 126, ry + 38), pen_node, Vector2(1.65, 1.65))
+			_add_sprite(TextureGen.get_tex("water_trough"), Vector2(rx + 126, ry + 62), pen_node, Vector2(1.65, 1.65))
 			_add_sprite(TextureGen.get_tex("hay_bale"), Vector2(rx + 190, ry + 40), pen_node)
 
 			if is_coop:
@@ -740,7 +740,7 @@ func _rebuild_pen() -> void:
 			var spot: Vector2 = anim_spots[idx % anim_spots.size()] + Vector2(rng.randf_range(-5, 5), rng.randf_range(-3, 3))
 			var animal_node := PenAnimal.new()
 			animal_node.position = spot
-			animal_node.setup(sid, a, idx, r, Vector2(rx + 126, ry + 40))
+			animal_node.setup(sid, a, idx, r, Vector2(rx + 126, ry + 38))
 			pen_node.add_child(animal_node)
 			active_pen_animals.append(animal_node)
 
@@ -1303,11 +1303,13 @@ func _build_fences() -> void:
 	_wall(Vector2((1080 + x_right) / 2.0, s_ytop), Vector2(x_right - 1080, 10))
 
 
-func _add_sprite(tex: Texture2D, pos: Vector2, parent: Node = null) -> void:
+func _add_sprite(tex: Texture2D, pos: Vector2, parent: Node = null, spr_scale: Vector2 = Vector2.ONE) -> Sprite2D:
 	var s := Sprite2D.new()
 	s.texture = tex
 	s.position = pos
+	s.scale = spr_scale
 	(parent if parent != null else world).add_child(s)
+	return s
 
 
 func _build_walls() -> void:

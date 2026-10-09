@@ -240,8 +240,8 @@ func _place() -> void:
 	# Nút ĂN NHANH (ở góc chéo trên-trái)
 	_btn_eat.position = Vector2(vs.x - 186, vs.y - 230)
 
-	# Nút TẠM DỪNG (ở trên cao bên phải, gần góc màn hình)
-	_btn_pause.position = Vector2(vs.x - 64, 20)
+	# Nút TẠM DỪNG (ở giữa phía trên màn hình, không đè bản đồ)
+	_btn_pause.position = Vector2((vs.x - 44) / 2.0, 16)
 
 
 func set_action_label(hint: String) -> void:
