@@ -15,6 +15,7 @@ var rows: VBoxContainer
 var scroll: ScrollContainer
 var capacity_label: Label
 var stamina_label: Label
+var money_label: Label
 var _active_filter := "all" # "all", "seed", "crop", "fish", "ore"
 var _tab_all: Button
 var _tab_seed: Button
@@ -98,8 +99,13 @@ func _ready() -> void:
 	mic.custom_minimum_size = Vector2(16, 16)
 	mic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	hm.add_child(mic)
-	UIKit.label(hm, "%d xu" % GameState.money, 15, UIKit.COLOR_TEXT_GOLD)
+	money_label = UIKit.label(hm, "%d xu" % GameState.money, 15, UIKit.COLOR_TEXT_GOLD)
 	head.add_child(money_box)
+
+	GameState.money_changed.connect(func(v: int) -> void:
+		if money_label != null:
+			money_label.text = "%d xu" % v
+	)
 
 	var close_btn := UIKit.styled_button(head, "✕ Đóng", 13, "danger")
 	close_btn.pressed.connect(close)
@@ -181,6 +187,9 @@ func refresh() -> void:
 		var col := Color(1.0, 0.45, 0.4) if used >= cap else (Color(1.0, 0.8, 0.3) if used >= cap - 2 else UIKit.COLOR_TEXT_GOLD)
 		capacity_label.add_theme_color_override("font_color", col)
 
+	if money_label != null:
+		money_label.text = "%d xu" % GameState.money
+
 	for c in rows.get_children():
 		c.queue_free()
 
@@ -191,7 +200,8 @@ func refresh() -> void:
 		var any_seed := false
 		for crop in CropDB.CROPS:
 			var id := str(crop.id)
-			if not GameState.has_crop(id):
+			var n := Inventory.seed_count(id)
+			if n < 1:
 				continue
 			any_seed = true
 			rows.add_child(_build_seed_card(crop))
@@ -325,7 +335,7 @@ func _empty_placeholder(text: String) -> void:
 func _build_seed_card(crop: Dictionary) -> Control:
 	var id := str(crop.id)
 	var count := Inventory.seed_count(id)
-	var is_held := (Inventory.selected_seed == id)
+	var is_held := (Inventory.selected_seed == id and count > 0)
 
 	var p := PanelContainer.new()
 	p.add_theme_stylebox_override("panel", UIKit.row_box())
@@ -370,7 +380,7 @@ func _build_seed_card(crop: Dictionary) -> Control:
 	var btn_text := "✓ Đang cầm" if is_held else "Cầm"
 	var sel_btn := UIKit.styled_button(h, btn_text, 13, btn_type)
 	sel_btn.custom_minimum_size = Vector2(90, 30)
-	sel_btn.disabled = (count < 1 and not is_held)
+	sel_btn.disabled = is_held or count < 1
 	sel_btn.pressed.connect(_select.bind(id))
 
 	return p
@@ -564,5 +574,6 @@ func _eat(category: String, id: String) -> void:
 
 
 func _select(id: String) -> void:
-	Inventory.select_seed(id)
+	if Inventory.seed_count(id) > 0:
+		Inventory.select_seed(id)
 	refresh()

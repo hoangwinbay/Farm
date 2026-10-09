@@ -435,26 +435,33 @@ func rebuild_hotbar() -> void:
 	_slots_cache.clear()
 
 	var act_t: String = str(Inventory.active_item.get("type", "hoe"))
+	if (act_t == "hoe" and Inventory.hoes <= 0) or (act_t == "rod" and Inventory.total_casts() <= 0):
+		Inventory.active_item = Inventory.get_fallback_tool()
+		act_t = str(Inventory.active_item.get("type", "hand"))
 
-	# Ô 1: Cuốc
-	var hoe_active: bool = (act_t == "hoe")
-	var h_info := OreDB.get_hoe(Inventory.get_hoe_tier())
-	_slots_cache.append({
-		"key": "1",
-		"type": "hoe",
-		"name": str(h_info.name),
-		"qty": Inventory.hoes,
-		"tooltip": "%s (×%d - Tốn %.0f⚡)" % [str(h_info.name), Inventory.hoes, float(h_info.stamina)],
-		"icon": TextureGen.hoe_icon(Inventory.get_hoe_tier()),
-		"active": hoe_active,
-		"action": func():
-			Inventory.select_tool("hoe")
-	})
+	var cur_slot_key := 1
+
+	# Ô: Cuốc (chỉ hiển thị khi còn cuốc > 0)
+	if Inventory.hoes > 0:
+		var hoe_active: bool = (act_t == "hoe")
+		var h_info := OreDB.get_hoe(Inventory.get_hoe_tier())
+		_slots_cache.append({
+			"key": str(cur_slot_key),
+			"type": "hoe",
+			"name": str(h_info.name),
+			"qty": Inventory.hoes,
+			"tooltip": "%s (×%d - Tốn %.0f⚡)" % [str(h_info.name), Inventory.hoes, float(h_info.stamina)],
+			"icon": TextureGen.hoe_icon(Inventory.get_hoe_tier()),
+			"active": hoe_active,
+			"action": func():
+				Inventory.select_tool("hoe")
+		})
+		cur_slot_key += 1
 
 	# Ô 2: Bình tưới (hiện rõ số nước X/20)
 	var water_active: bool = (act_t == "watering_can")
 	_slots_cache.append({
-		"key": "2",
+		"key": str(cur_slot_key),
 		"type": "watering_can",
 		"name": "Bình tưới",
 		"qty": Inventory.water_level,
@@ -464,28 +471,30 @@ func rebuild_hotbar() -> void:
 		"action": func():
 			Inventory.select_tool("watering_can")
 	})
+	cur_slot_key += 1
 
-	# Ô 3: Cần câu
-	var rod_active: bool = (act_t == "rod")
-	_slots_cache.append({
-		"key": "3",
-		"type": "rod",
-		"name": "Cần câu",
-		"qty": Inventory.total_casts(),
-		"tooltip": "Cần câu (%d lượt - Tốn 15⚡)" % Inventory.total_casts(),
-		"icon": TextureGen.get_tex("fx_rod"),
-		"active": rod_active,
-		"action": func():
-			Inventory.select_tool("rod")
-	})
+	# Ô: Cần câu (chỉ hiển thị khi còn lượt câu)
+	if Inventory.total_casts() > 0:
+		var rod_active: bool = (act_t == "rod")
+		_slots_cache.append({
+			"key": str(cur_slot_key),
+			"type": "rod",
+			"name": "Cần câu",
+			"qty": Inventory.total_casts(),
+			"tooltip": "Cần câu (%d lượt - Tốn 15⚡)" % Inventory.total_casts(),
+			"icon": TextureGen.get_tex("fx_rod"),
+			"active": rod_active,
+			"action": func():
+				Inventory.select_tool("rod")
+		})
+		cur_slot_key += 1
 
-	# Ô 4: Cúp đào mỏ (nếu đã nhận cúp từ Leah)
-	var seed_start_idx := 4
+	# Ô: Cúp đào mỏ (nếu đã nhận cúp từ Leah)
 	if Inventory.has_pickaxe():
 		var pick_active: bool = (act_t == "pickaxe")
 		var p_info := OreDB.get_pickaxe(Inventory.get_pickaxe_tier())
 		_slots_cache.append({
-			"key": "4",
+			"key": str(cur_slot_key),
 			"type": "pickaxe",
 			"name": str(p_info.name),
 			"qty": Inventory.get_pickaxe_power(),
@@ -495,13 +504,13 @@ func rebuild_hotbar() -> void:
 			"action": func():
 				Inventory.select_tool("pickaxe")
 		})
-		seed_start_idx = 5
+		cur_slot_key += 1
 
 	# Ô Túi Cám (nếu có trong túi)
 	if Inventory.feed_count() > 0:
 		var feed_active: bool = (act_t == "feed")
 		_slots_cache.append({
-			"key": str(seed_start_idx),
+			"key": str(cur_slot_key),
 			"type": "feed",
 			"name": "Túi Cám",
 			"qty": Inventory.feed_count(),
@@ -511,13 +520,10 @@ func rebuild_hotbar() -> void:
 			"action": func():
 				Inventory.active_item = {"type": "feed"}
 		})
-		seed_start_idx += 1
+		cur_slot_key += 1
 
-	# Các ô tiếp theo: Hạt giống (hotkey)
+	# Các ô tiếp theo: Hạt giống (chỉ hiện các loại hạt có số lượng > 0)
 	var ids: Array = Inventory.owned_seed_ids()
-	if ids.is_empty():
-		ids = GameState.unlocked.duplicate()
-
 	var max_seed_slots: int = 6
 	var shown: int = mini(ids.size(), max_seed_slots)
 	for i in shown:
@@ -527,7 +533,7 @@ func rebuild_hotbar() -> void:
 			continue
 		var is_seed_active: bool = (act_t == "seed" and Inventory.selected_seed == sid)
 		_slots_cache.append({
-			"key": str(seed_start_idx + i),
+			"key": str(cur_slot_key),
 			"type": "seed",
 			"id": sid,
 			"name": str(crop.name),
@@ -538,6 +544,7 @@ func rebuild_hotbar() -> void:
 			"action": func():
 				Inventory.select_seed(sid)
 		})
+		cur_slot_key += 1
 
 	for slot in _slots_cache:
 		var b := Button.new()
@@ -661,6 +668,10 @@ func _update_active_label() -> void:
 	var act_type: String = str(Inventory.active_item.get("type", "hoe"))
 	match act_type:
 		"hoe":
+			if Inventory.hoes <= 0:
+				Inventory.active_item = Inventory.get_fallback_tool()
+				_update_active_label()
+				return
 			var h_info := OreDB.get_hoe(Inventory.get_hoe_tier())
 			active_label.text = "🌱 %s (×%d - Tốn %.0f⚡)" % [str(h_info.name), Inventory.hoes, float(h_info.stamina)]
 			active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_TITLE)
@@ -668,6 +679,10 @@ func _update_active_label() -> void:
 			active_label.text = "💧 Bình tưới (%d/%d - Tốn 5⚡)" % [Inventory.water_level, Inventory.water_max]
 			active_label.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0))
 		"rod":
+			if Inventory.total_casts() <= 0:
+				Inventory.active_item = Inventory.get_fallback_tool()
+				_update_active_label()
+				return
 			active_label.text = "🎣 Cần câu (%d lượt - Tốn 15⚡)" % Inventory.total_casts()
 			active_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.4))
 		"pickaxe":

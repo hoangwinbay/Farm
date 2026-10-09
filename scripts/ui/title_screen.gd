@@ -1,8 +1,8 @@
 extends CanvasLayer
-# Màn hình chính Nông Trại Việt: Phong cách Nông trại ấm cúng & Mộc mạc.
+# Màn hình khởi đầu Fluffy Farm: Phong cách Nông trại ấm cúng & Mộc mạc Stardew Valley.
+# Tái hiện chuẩn xác thiết kế đồ họa pixel art: Logo Fluffy Farm, phong cảnh hoàng hôn ấm áp,
+# nhãn "ẤN BẮT ĐẦU" nhấp nháy, các nút gỗ "BẮT ĐẦU MỚI", "TIẾP TỤC", "HƯỚNG DẪN" (kèm cà rốt).
 
-const CropDB := preload("res://scripts/crop_db.gd")
-const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 signal start_requested
@@ -11,170 +11,166 @@ signal continue_requested
 var start_btn: Button
 var _continue_btn: Button
 var _guide: PanelContainer
+var _guide_overlay: Control
 
 
 func _ready() -> void:
 	layer = 30
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	# --- Nền phong cảnh làng quê vẽ bằng code ---
-	var bg := _build_landscape_background()
-	add_child(bg)
-
-	# --- Bố cục trung tâm ---
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(center)
-
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 14)
-	v.alignment = BoxContainer.ALIGNMENT_CENTER
-	center.add_child(v)
-
-	# --- Biển hiệu gỗ treo (Title Plaque) ---
-	var plaque := PanelContainer.new()
-	plaque.add_theme_stylebox_override("panel", UIKit.wood_frame(16, 3, UIKit.COLOR_WOOD_BG, UIKit.COLOR_BORDER_BRIGHT))
-	plaque.custom_minimum_size = Vector2(620, 0)
-	v.add_child(plaque)
-
-	var pv := VBoxContainer.new()
-	pv.add_theme_constant_override("separation", 10)
-	plaque.add_child(pv)
-
-	# Dải khay gỗ trưng bày nông sản
-	var shelf := PanelContainer.new()
-	shelf.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.10, 0.06, 0.04, 0.8), UIKit.COLOR_BORDER_WOOD, 8))
-	pv.add_child(shelf)
-	var icons := HBoxContainer.new()
-	icons.alignment = BoxContainer.ALIGNMENT_CENTER
-	icons.add_theme_constant_override("separation", 5)
-	shelf.add_child(icons)
-	for crop in CropDB.CROPS:
-		var slot := PanelContainer.new()
-		slot.add_theme_stylebox_override("panel", UIKit.slot_box(false))
-		var tr := TextureRect.new()
-		tr.texture = TextureGen.prod_icon(crop)
-		tr.custom_minimum_size = Vector2(26, 26)
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-		slot.add_child(tr)
-		icons.add_child(slot)
-
-	# Tên game chạm khắc vàng lúa
-	var title := UIKit.title_label(pv, "🌾 NÔNG TRẠI VIỆT 🌾", 52, UIKit.COLOR_TEXT_TITLE)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_constant_override("outline_size", 10)
-
-	var sub := UIKit.label(pv, "Hành Trình Lập Nghiệp Làng Quê Yên Bình", 17, UIKit.COLOR_TEXT_BODY)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-	UIKit.divider(pv)
-
-	# Khẩu hiệu quy trình mùa màng
-	var flow := UIKit.label(pv, "🌱 Cày đất  •  Gieo hạt  •  Tưới nước  •  Thu hoạch  •  Mở khóa 16 loại cây 🌾", 14, UIKit.COLOR_BORDER_GOLD)
-	flow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-	# --- Cột nút bấm gỗ ---
-	var btn_box := VBoxContainer.new()
-	btn_box.add_theme_constant_override("separation", 10)
-	btn_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	v.add_child(btn_box)
-
-	start_btn = UIKit.styled_button(btn_box, "▶ BẮT ĐẦU MỚI", 20, "buy")
-	start_btn.custom_minimum_size = Vector2(300, 48)
-	start_btn.pressed.connect(func(): start_requested.emit())
-
-	_continue_btn = UIKit.styled_button(btn_box, "TIẾP TỤC CUỘC CHƠI", 18, "primary")
-	_continue_btn.custom_minimum_size = Vector2(300, 44)
-	_continue_btn.pressed.connect(func(): continue_requested.emit())
-
-	var guide_btn := UIKit.styled_button(btn_box, "📖 CẨM NANG NÔNG DÂN", 16, "default")
-	guide_btn.custom_minimum_size = Vector2(300, 40)
-	guide_btn.pressed.connect(func(): _guide.visible = not _guide.visible)
-
-	# Dòng chữ chân trang ấm cúng
-	var footer := UIKit.label(v, "Bấm Enter hoặc C để bắt đầu ngay · Godot 4.7", 13, UIKit.COLOR_TEXT_MUTED)
-	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-	# --- Bảng cẩm nang mở rộng ---
-	_guide = _build_guide()
-	v.add_child(_guide)
-	_guide.visible = false
-
-
-func _build_landscape_background() -> Control:
 	var root := Control.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(root)
 
-	# 1. Bầu trời bình minh ấm áp
-	var sky := ColorRect.new()
-	sky.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	sky.color = Color(0.18, 0.28, 0.32) # Xanh sớm mai
-	sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(sky)
+	# 1. Hình nền Full cảnh Fluffy Farm (chứa logo Fluffy Farm trên nền trời hoàng hôn làng quê)
+	var bg := TextureRect.new()
+	bg.texture = load("res://picture/title_screen/title_bg.png")
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.add_child(bg)
 
-	# Gradient vầng đông vàng cam
-	var dawn := ColorRect.new()
-	dawn.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	dawn.offset_top = -420
-	dawn.color = Color(0.85, 0.58, 0.28, 0.45) # Ánh nắng vàng ấm
-	dawn.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(dawn)
+	# 2. Khối trung tâm chứa các nút bấm gỗ & nhãn "ẤN BẮT ĐẦU"
+	var v := VBoxContainer.new()
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_theme_constant_override("separation", 10)
+	v.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	v.offset_top = 335
+	v.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	root.add_child(v)
 
-	# 2. Mặt trời mọc ở đường chân trời
-	var sun_center := Panel.new()
-	var sun_sb := StyleBoxFlat.new()
-	sun_sb.bg_color = Color(1.0, 0.92, 0.55, 0.85)
-	sun_sb.set_corner_radius_all(90)
-	sun_sb.shadow_color = Color(1.0, 0.85, 0.40, 0.4)
-	sun_sb.shadow_size = 30
-	sun_center.add_theme_stylebox_override("panel", sun_sb)
-	sun_center.custom_minimum_size = Vector2(180, 180)
-	sun_center.set_anchors_preset(Control.PRESET_CENTER)
-	sun_center.offset_left = -90
-	sun_center.offset_right = 90
-	sun_center.offset_top = -140
-	sun_center.offset_bottom = 40
-	sun_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(sun_center)
+	# Dòng chữ "ẤN BẮT ĐẦU" với hiệu ứng nhấp nháy êm dịu (pulsing breathing)
+	var prompt_lbl := Label.new()
+	prompt_lbl.text = "ẤN BẮT ĐẦU"
+	prompt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt_lbl.add_theme_font_size_override("font_size", 21)
+	prompt_lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+	prompt_lbl.add_theme_color_override("font_outline_color", Color(0.12, 0.08, 0.04, 0.98))
+	prompt_lbl.add_theme_constant_override("outline_size", 6)
+	v.add_child(prompt_lbl)
 
-	# 3. Dãy đồi xanh xa xa
-	var hills_far := ColorRect.new()
-	hills_far.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	hills_far.offset_top = -260
-	hills_far.color = Color(0.24, 0.38, 0.22, 0.75)
-	hills_far.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(hills_far)
+	var p_tween := create_tween().set_loops()
+	p_tween.tween_property(prompt_lbl, "modulate:a", 0.55, 0.75).set_trans(Tween.TRANS_SINE)
+	p_tween.tween_property(prompt_lbl, "modulate:a", 1.0, 0.75).set_trans(Tween.TRANS_SINE)
 
-	# 4. Đồi xanh gần
-	var hills_near := ColorRect.new()
-	hills_near.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	hills_near.offset_top = -170
-	hills_near.color = Color(0.18, 0.32, 0.16, 0.85)
-	hills_near.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(hills_near)
+	# Khối 3 nút gỗ chạm khắc - kích thước đồng bộ tuyệt đối với ô trên cùng
+	var btn_box := VBoxContainer.new()
+	btn_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_box.add_theme_constant_override("separation", 8)
+	v.add_child(btn_box)
 
-	# 5. Cánh đồng lúa vàng màu mỡ cận cảnh
-	var field := ColorRect.new()
-	field.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	field.offset_top = -80
-	field.color = Color(0.42, 0.32, 0.14, 0.95)
-	field.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(field)
+	var base_btn_size := Vector2(292, 78)
 
-	# Lớp phủ ấm cúng làm dịu toàn bộ phong cảnh
-	var vignette := ColorRect.new()
-	vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	vignette.color = Color(0.12, 0.08, 0.04, 0.35)
-	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(vignette)
+	# Nút 1: BẮT ĐẦU MỚI (ô trên cùng làm chuẩn kích thước)
+	start_btn = _create_wood_button("res://picture/title_screen/btn_new_game.png", base_btn_size)
+	start_btn.pressed.connect(func(): start_requested.emit())
+	btn_box.add_child(start_btn)
 
-	return root
+	# Nút 2: TIẾP TỤC (bằng chính xác kích thước ô trên cùng)
+	_continue_btn = _create_wood_button("res://picture/title_screen/btn_continue.png", base_btn_size)
+	_continue_btn.pressed.connect(func(): continue_requested.emit())
+	btn_box.add_child(_continue_btn)
+
+	# Nút 3: HƯỚNG DẪN (thanh gỗ bằng chính xác ô trên cùng, kèm củ cà rốt xinh xắn ở góc)
+	var guide_tex_size := Vector2(base_btn_size.x * 481.0 / 442.0, base_btn_size.y * 134.0 / 118.0)
+	var guide_btn := _create_wood_button("res://picture/title_screen/btn_guide.png", base_btn_size, guide_tex_size)
+	guide_btn.pressed.connect(func():
+		_guide_overlay.visible = not _guide_overlay.visible
+	)
+	btn_box.add_child(guide_btn)
+
+	# 3. Dòng bản quyền dưới cùng: "© 2026 FLUFFY GAME STUDIO"
+	var footer := Label.new()
+	footer.text = "© 2026 FLUFFY GAME STUDIO"
+	footer.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	footer.offset_bottom = -16
+	footer.offset_top = -42
+	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	footer.add_theme_font_size_override("font_size", 14)
+	footer.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.95))
+	footer.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.95))
+	footer.add_theme_constant_override("outline_size", 4)
+	root.add_child(footer)
+
+	# 4. Lớp phủ cửa sổ Cẩm Nang / Hướng Dẫn Nông Dân
+	_guide_overlay = Control.new()
+	_guide_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_guide_overlay.visible = false
+	root.add_child(_guide_overlay)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0.08, 0.05, 0.03, 0.70)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.gui_input.connect(func(e: InputEvent):
+		if e is InputEventMouseButton and e.pressed:
+			_guide_overlay.visible = false
+	)
+	_guide_overlay.add_child(dim)
+
+	var g_center := CenterContainer.new()
+	g_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_guide_overlay.add_child(g_center)
+
+	_guide = _build_guide()
+	g_center.add_child(_guide)
+
+
+func _create_wood_button(tex_path: String, btn_size: Vector2, tex_size: Vector2 = Vector2.ZERO) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = btn_size
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.flat = true
+
+	var empty_sb := StyleBoxEmpty.new()
+	btn.add_theme_stylebox_override("normal", empty_sb)
+	btn.add_theme_stylebox_override("hover", empty_sb)
+	btn.add_theme_stylebox_override("pressed", empty_sb)
+	btn.add_theme_stylebox_override("disabled", empty_sb)
+	btn.add_theme_stylebox_override("focus", empty_sb)
+
+	var tr := TextureRect.new()
+	tr.name = "Texture"
+	tr.texture = load(tex_path)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_SCALE
+	if tex_size == Vector2.ZERO:
+		tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	else:
+		tr.position = Vector2.ZERO
+		tr.size = tex_size
+	tr.pivot_offset = btn_size * 0.5
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(tr)
+
+	# Vi diễn hoạt tương tác khi rê chuột (Hover) & bấm (Pressed)
+	btn.mouse_entered.connect(func():
+		if not btn.disabled:
+			var tw := btn.create_tween()
+			tw.tween_property(tr, "scale", Vector2(1.04, 1.04), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw.parallel().tween_property(tr, "modulate", Color(1.15, 1.15, 1.1), 0.12)
+	)
+	btn.mouse_exited.connect(func():
+		var tw := btn.create_tween()
+		tw.tween_property(tr, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_QUAD)
+		tw.parallel().tween_property(tr, "modulate", Color.WHITE if not btn.disabled else Color(0.55, 0.55, 0.55, 0.6), 0.12)
+	)
+	btn.button_down.connect(func():
+		if not btn.disabled:
+			var tw := btn.create_tween()
+			tw.tween_property(tr, "scale", Vector2(0.96, 0.96), 0.08)
+	)
+	btn.button_up.connect(func():
+		if not btn.disabled:
+			var tw := btn.create_tween()
+			tw.tween_property(tr, "scale", Vector2(1.04, 1.04) if btn.is_hovered() else Vector2.ONE, 0.08)
+	)
+
+	return btn
 
 
 func _build_guide() -> PanelContainer:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", UIKit.wood_frame(14, 2, UIKit.COLOR_WOOD_DARK, UIKit.COLOR_BORDER_GOLD))
+	p.add_theme_stylebox_override("panel", UIKit.wood_frame(14, 3, UIKit.COLOR_WOOD_DARK, UIKit.COLOR_BORDER_GOLD))
 	p.custom_minimum_size = Vector2(740, 0)
 
 	var v := VBoxContainer.new()
@@ -183,10 +179,10 @@ func _build_guide() -> PanelContainer:
 
 	var head := HBoxContainer.new()
 	v.add_child(head)
-	var t := UIKit.title_label(head, "📜 CẨM NANG NHÀ NÔNG VIỆT NAM", 19, UIKit.COLOR_TEXT_TITLE)
+	var t := UIKit.title_label(head, "📜 CẨM NANG NHÀ NÔNG - FLUFFY FARM", 19, UIKit.COLOR_TEXT_TITLE)
 	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var close_btn := UIKit.styled_button(head, "✕ Đóng", 13, "danger")
-	close_btn.pressed.connect(func(): _guide.visible = false)
+	close_btn.pressed.connect(func(): _guide_overlay.visible = false)
 
 	UIKit.divider(v)
 
@@ -207,7 +203,7 @@ func _build_guide() -> PanelContainer:
 	# Thẻ 2: Câu cá & Chăn nuôi
 	var c2 := _guide_card("🎣 CÂU CÁ & CHĂN NUÔI",
 		"• Câu cá: Gặp Chú Hai ở bờ ao mua cần câu. Đứng bờ ao bấm [E] thả câu (15s tự giật cần). Ban đêm có cơ hội câu được Cá Trê Vàng và Cá Chiên huyền thoại!\n" +
-		"• Chăn nuôi: Gặp Cô Tư mua chuồng & con giống (Gà, Bò, Lợn, Cừu). Nuôi 2 con cùng loài có thể sinh ra con non baby! Gà cho trứng, bò cho sữa, lợn cho thịt, cừu cho lông. Ra chuồng bấm [E] thu gom bán lại cho cô.")
+		"• Chăn nuôi: Gặp Cô Tư mua chuồng & con giống (Gà, Bò, Lợn, Cừu). Nuôi 2 con cùng loài có thể sinh sản! Gà cho trứng, bò cho sữa, lợn cho thịt, cừu cho lông.")
 	grid.add_child(c2)
 
 	# Thẻ 3: Thời gian & Sinh hoạt
@@ -247,14 +243,23 @@ func _guide_card(heading: String, body: String) -> PanelContainer:
 func open(has_save: bool) -> void:
 	visible = true
 	_continue_btn.disabled = not has_save
-	_guide.visible = false
+	var tr := _continue_btn.get_node_or_null("Texture") as CanvasItem
+	if tr != null:
+		tr.modulate = Color.WHITE if has_save else Color(0.55, 0.55, 0.55, 0.6)
+	if _guide_overlay != null:
+		_guide_overlay.visible = false
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
+	if _guide_overlay != null and _guide_overlay.visible:
+		if event.is_action_pressed("ui_cancel") or (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE):
+			_guide_overlay.visible = false
+			get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER or event.keycode == KEY_C:
+		if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER or event.keycode == KEY_C or event.keycode == KEY_SPACE:
 			start_requested.emit()
 
 

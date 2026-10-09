@@ -229,6 +229,8 @@ var pause_menu: CanvasLayer
 var minimap: CanvasLayer
 var touch_ui: CanvasLayer
 var fade_rect: ColorRect
+var _shed_decor: StaticBody2D
+var _house_decor: StaticBody2D
 
 var interactables: Array = []
 var _npc_met := false
@@ -354,12 +356,8 @@ func _build_world() -> void:
 	highlight.visible = false
 	farm.add_child(highlight)
 
-	# nhà (chỗ ngủ) - Nhà gỗ Stardew Valley
-	_add_decor(TextureGen.get_tex("house"), HOUSE_POS, 1.0, Rect2(-68, -140, 134, 104))
-	# nhà kho Stardew Valley cạnh nhà chính
-	_add_decor(TextureGen.get_tex("shed"), SHED_POS, 1.0, Rect2(-48, -100, 96, 75))
-	# lều của Mèo Stardew Valley cạnh nhà chính
-	_add_decor(TextureGen.get_tex("tent"), TENT_POS, 1.0, Rect2(-20, -56, 40, 42))
+	# cụm công trình cư trú (Nhà chính, Nhà kho, Lều mèo) kèm giới hạn va chạm kiên cố chống đi xuyên
+	_build_residence_complex()
 	# hòm thư Stardew Valley cạnh bậc thềm hiên nhà
 	_build_mailbox()
 	# bù nhìn Stardew Valley ở giữa mỗi thửa ruộng
@@ -450,17 +448,8 @@ func _build_world() -> void:
 	add_child(weather_mgr)
 	weather_mgr.setup(self, player, farm)
 
-	# ao cá tròn Stardew Valley: bờ đá phía bắc và mặt nước sâu
-	var cliff_body := StaticBody2D.new()
-	cliff_body.position = Vector2(1440, 765)
-	var cliff_col := CollisionShape2D.new()
-	var cliff_shape := RectangleShape2D.new()
-	cliff_shape.size = Vector2(200, 20)
-	cliff_col.shape = cliff_shape
-	cliff_body.add_child(cliff_col)
-	world.add_child(cliff_body)
-
-	_add_ellipse_wall(Vector2(1440, 900), 160.0, 140.0)
+	# ao cá tròn Stardew Valley: bờ đá phía bắc và toàn bộ lòng hồ chống đi xuyên qua
+	_build_pond_collision()
 
 	# khu chuồng nuôi: hàng rào + nhà chuồng + nơi con vật đứng
 	_build_pen()
@@ -468,6 +457,7 @@ func _build_world() -> void:
 	interactables = [
 		{"pos": HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ 🛏️ (Lưu game)", "cb": _ask_sleep},
 		{"pos": SHED_POS + Vector2(0, -6), "r": 50.0, "label": "Nhà kho 🏚️", "cb": _open_storage},
+		{"pos": TENT_POS, "r": 50.0, "label": "Lều Mèo ⛺ (Quản lý Mèo)", "cb": _open_cat_panel},
 		{"pos": MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": _open_mailbox},
 		{"pos": MAYOR_POS, "r": 50.0, "label": "Trưởng Thôn 📜", "cb": _talk_mayor},
 		{"pos": MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪", "cb": _open_market_stall},
@@ -481,7 +471,7 @@ func _build_world() -> void:
 		{"pos": PEN_CHICKEN.get_center(), "r": 85.0, "label": "Chuồng Gà", "cb": func(): _interact_pen("chicken")},
 		{"pos": PEN_SHEEP.get_center(), "r": 85.0, "label": "Chuồng Cừu", "cb": func(): _interact_pen("sheep")},
 		{"pos": PEN_PIG.get_center(), "r": 85.0, "label": "Chuồng Lợn", "cb": func(): _interact_pen("pig")},
-		{"pos": FISH_SPOT_POS, "r": 180.0, "label": "Câu cá", "cb": _start_fishing},
+		{"pos": FISH_SPOT_POS, "r": 210.0, "label": "Câu cá", "cb": _start_fishing},
 	]
 
 
@@ -513,19 +503,88 @@ func _add_shop_stall(shop_id: String, pos: Vector2, npc_obj: StaticBody2D) -> vo
 	world.add_child(front)
 
 
-func _add_ellipse_wall(center: Vector2, rx: float, ry: float) -> void:
+func _build_residence_complex() -> void:
+	# 1. Các Sprite hiển thị công trình (nhà kho, nhà chính, lều mèo)
+	_shed_decor = _add_decor(TextureGen.get_tex("shed"), SHED_POS, 1.0, Rect2())
+	_house_decor = _add_decor(TextureGen.get_tex("house"), HOUSE_POS, 1.0, Rect2())
+	_add_decor(TextureGen.get_tex("tent"), TENT_POS, 1.0, Rect2())
+
 	var body := StaticBody2D.new()
-	body.position = center
-	var col := CollisionShape2D.new()
-	var shape := ConvexPolygonShape2D.new()
-	var pts := PackedVector2Array()
-	for i in 16:
-		var a := TAU * i / 16.0
-		pts.append(Vector2(cos(a) * rx, sin(a) * ry))
-	shape.points = pts
-	col.shape = shape
-	body.add_child(col)
+	body.name = "ResidenceCollision"
+
+	# 2. Vách núi phía Bắc: chỉ chắn từ y <= 65 (đỉnh vách đá), để ngỏ toàn bộ dải hành lang
+	# từ y = 65 đến chân tường nhà (y ≈ 174) cho người chơi tự do đi ngang từ phía tây nhà kho sang bãi cỏ phía đông.
+	var back_wall := CollisionShape2D.new()
+	var bw_shape := RectangleShape2D.new()
+	bw_shape.size = Vector2(400, 40)
+	back_wall.shape = bw_shape
+	back_wall.position = Vector2(580, 45) # y: 25..65
+	body.add_child(back_wall)
+
+	# 3. Nhà kho (Shed): chỉ chắn phần tường và chân đế nhà kho (x: 450..560, y: 174..244).
+	# Phần mái trên (y < 174) không đặt va chạm để người chơi đi ngang tự do phía sau.
+	var shed_col := CollisionShape2D.new()
+	var shed_shape := RectangleShape2D.new()
+	shed_shape.size = Vector2(110, 70)
+	shed_col.shape = shed_shape
+	shed_col.position = Vector2(505, 209)
+	body.add_child(shed_col)
+
+	# 4. Nhà chính (House): khối đặc toàn bộ từ chân tường (y=174) xuống hết chân thềm trước cửa (y=244).
+	# Phủ trọn toàn bộ chiều ngang nhà (x: 569..713), ngăn tuyệt đối không cho nhân vật bước xuyên qua cửa/thềm vào trong nhà.
+	# Người chơi đứng ngay trước bậc thềm/cửa nhà (y ≈ 255) để tương tác [E] Ngủ / Lưu game.
+	var house_col := CollisionShape2D.new()
+	var hm_shape := RectangleShape2D.new()
+	hm_shape.size = Vector2(144, 70)
+	house_col.shape = hm_shape
+	house_col.position = Vector2(641, 209) # y: 174..244, x: 569..713
+	body.add_child(house_col)
+
+	# 5. Lều của Mèo Stardew Valley (chỉ chiếm diện tích chiếc lều: x: 746..786, y: 196..244)
+	# Để ngỏ lối đi giữa nhà chính và lều (x: 713..744) và bãi cỏ sau lều
+	var tent_col := CollisionShape2D.new()
+	var tent_shape := RectangleShape2D.new()
+	tent_shape.size = Vector2(40, 48)
+	tent_col.shape = tent_shape
+	tent_col.position = Vector2(766, 220)
+	body.add_child(tent_col)
+
 	world.add_child(body)
+
+
+func _build_pond_collision() -> void:
+	var pond_body := StaticBody2D.new()
+	pond_body.name = "PondBody"
+
+	# Chu vi mép bờ ao hồ Stardew Valley:
+	# Cạnh bờ Bắc đặt tại y = 756 (mép gờ đá/bờ đất tự nhiên) để người chơi dừng chân
+	# đứng vững trên bờ ao (y in [750..756]), không bị trượt/đi sâu xuống đáy nước (y ≈ 780).
+	var pond_poly := CollisionPolygon2D.new()
+	var pond_pts := PackedVector2Array([
+		Vector2(1296, 756),
+		Vector2(1440, 756),
+		Vector2(1568, 756),
+		Vector2(1584, 768),
+		Vector2(1600, 784),
+		Vector2(1608, 840),
+		Vector2(1610, 900),
+		Vector2(1605, 930),
+		Vector2(1592, 960),
+		Vector2(1585, 1000),
+		Vector2(1576, 1085),
+		Vector2(1303, 1085),
+		Vector2(1302, 1020),
+		Vector2(1295, 990),
+		Vector2(1287, 960),
+		Vector2(1285, 930),
+		Vector2(1269, 900),
+		Vector2(1271, 840),
+		Vector2(1280, 800),
+		Vector2(1280, 768),
+	])
+	pond_poly.polygon = pond_pts
+	pond_body.add_child(pond_poly)
+	world.add_child(pond_body)
 
 
 func _build_pen() -> void:
@@ -1350,6 +1409,16 @@ func _process(delta: float) -> void:
 	_process_stall_customers(delta)
 	hud.set_clock(GameState.clock_text())
 	canvas_mod.color = _tint()
+	# Hiệu ứng làm mờ nhẹ mái nhà/nhà kho khi nhân vật đi ở lối đi phía sau giúp nhìn rõ người chơi
+	if is_instance_valid(player):
+		if is_instance_valid(_shed_decor):
+			var behind_shed := player.position.x >= 435.0 and player.position.x <= 565.0 and player.position.y < 230.0 and player.position.y > 60.0
+			var target_shed_a: float = 0.6 if behind_shed else 1.0
+			_shed_decor.modulate.a = move_toward(_shed_decor.modulate.a, target_shed_a, delta * 4.0)
+		if is_instance_valid(_house_decor):
+			var behind_house := player.position.x >= 565.0 and player.position.x <= 720.0 and player.position.y < 216.0 and player.position.y > 60.0
+			var target_house_a: float = 0.6 if behind_house else 1.0
+			_house_decor.modulate.a = move_toward(_house_decor.modulate.a, target_house_a, delta * 4.0)
 	# Gợn sóng nước hồ tự nhiên phong cách Stardew Valley
 	if not in_mine:
 		_lake_ripple_timer -= delta
@@ -1364,7 +1433,10 @@ func _process(delta: float) -> void:
 
 	if fishing:
 		fishing_left -= delta
-		hud.set_hint("Đang thả câu... còn %d giây" % int(ceil(maxf(fishing_left, 0.0))))
+		if fishing_left <= 0.0:
+			_finish_fishing()
+		else:
+			hud.set_hint("Đang thả câu... còn %d giây" % int(ceil(maxf(fishing_left, 0.0))))
 		highlight.visible = false
 		# Dây câu mảnh kết nối đầu cần tới phao
 		if is_instance_valid(_fishing_line) and is_instance_valid(_bobber_spr):
@@ -1378,8 +1450,8 @@ func _process(delta: float) -> void:
 			_bobber_ripple_timer = 0.85
 			if is_instance_valid(_bobber_spr):
 				_spawn_water_ripple(_bobber_spr.position, 0.75, 0.7)
-		if fishing_left <= 0.0:
-			_finish_fishing()
+	else:
+		_update_hint_and_highlight()
 	if GameState.clock >= GameState.COLLAPSE_MIN and GameState.clock < GameState.DAY_START:
 		_do_sleep(true)  # 2h sáng chưa ngủ -> gục ngã
 
@@ -1662,6 +1734,25 @@ func _nearest_interactable() -> Dictionary:
 				else:
 					best.label = "Bình nước đã đầy (20/20) 💧"
 					best.cb = func(): hud.toast("Bình nước đã đầy rồi (20/20)!")
+
+	# Kiểm tra chú mèo tam thể làm nông (tương tác trực tiếp bất cứ lúc nào bằng phím E)
+	if is_instance_valid(cat_helper):
+		var d_cat: float = player.position.distance_to(cat_helper.position)
+		if d_cat <= 50.0 and d_cat < best_d:
+			best_d = d_cat
+			var cat_lbl: String = "Mèo Tam Thể 🐱"
+			if not cat_helper.is_hired:
+				cat_lbl = "Mèo Tam Thể 🐱 (Phỏng vấn / Thuê)"
+			elif cat_helper.state == CatHelperScript.State.SLEEPING:
+				cat_lbl = "Mèo Tam Thể 🐱 (Đang ngủ Zzz...)"
+			else:
+				cat_lbl = "Mèo Tam Thể 🐱 (Quản lý / Giao việc)"
+			best = {
+				"pos": cat_helper.position,
+				"r": 50.0,
+				"label": cat_lbl,
+				"cb": func(): _open_cat_panel()
+			}
 
 	# Kiểm tra khách NPC đang đứng chờ quanh sạp để người chơi có thể từ chối / báo hết hàng
 	for c in _stall_customers:
@@ -2569,6 +2660,8 @@ func _start_fishing() -> void:
 func _finish_fishing() -> void:
 	fishing = false
 	player.can_move = true
+	if hud != null and is_instance_valid(hud):
+		hud.set_hint("")
 	var bobber_pos := _bobber_spr.position if is_instance_valid(_bobber_spr) else POND_RECT.get_center()
 	if _rod_spr != null and is_instance_valid(_rod_spr):
 		_rod_spr.queue_free()

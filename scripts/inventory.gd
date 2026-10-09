@@ -83,16 +83,51 @@ func take_seed(id: String, n: int = 1) -> bool:
 	var c := seed_count(id)
 	if c < n:
 		return false
-	seeds[id] = c - n
+	var remaining := c - n
+	if remaining <= 0:
+		seeds.erase(id)
+		if selected_seed == id:
+			var pool := owned_seed_ids()
+			if pool.is_empty():
+				selected_seed = ""
+				if active_item.get("type") == "seed":
+					active_item = get_fallback_tool()
+			else:
+				selected_seed = str(pool[0])
+				if active_item.get("type") == "seed":
+					active_item = {"type": "seed", "id": selected_seed}
+	else:
+		seeds[id] = remaining
 	changed.emit()
 	return true
+
+
+func get_fallback_tool() -> Dictionary:
+	if hoes > 0:
+		return {"type": "hoe"}
+	if water_max > 0:
+		return {"type": "watering_can"}
+	if total_casts() > 0:
+		return {"type": "rod"}
+	if has_pickaxe():
+		return {"type": "pickaxe"}
+	if feed > 0:
+		return {"type": "feed"}
+	var s := owned_seed_ids()
+	if not s.is_empty():
+		return {"type": "seed", "id": str(s[0])}
+	return {"type": "hand"}
 
 
 func take_produce(id: String, n: int = 1) -> bool:
 	var c := produce_count(id)
 	if c < n:
 		return false
-	produce[id] = c - n
+	var remaining := c - n
+	if remaining <= 0:
+		produce.erase(id)
+	else:
+		produce[id] = remaining
 	changed.emit()
 	return true
 
@@ -116,6 +151,8 @@ func take_hoe() -> bool:
 	if hoes < 1:
 		return false
 	hoes -= 1
+	if hoes <= 0 and active_item.get("type", "") == "hoe":
+		active_item = get_fallback_tool()
 	changed.emit()
 	return true
 
@@ -235,7 +272,11 @@ func take_ore(id: String, n: int = 1) -> bool:
 	var c := ore_count(id)
 	if c < n:
 		return false
-	ores[id] = c - n
+	var remaining := c - n
+	if remaining <= 0:
+		ores.erase(id)
+	else:
+		ores[id] = remaining
 	changed.emit()
 	return true
 
@@ -457,13 +498,19 @@ func store_all_category(category: String) -> int:
 # ---- chọn đồ thanh công cụ ----
 
 func select_tool(tool_type: String) -> void:
+	if tool_type == "hoe" and hoes <= 0:
+		return
+	if tool_type == "rod" and total_casts() <= 0:
+		return
 	active_item = {"type": tool_type}
 	changed.emit()
 
 
 func select_seed(id: String) -> void:
+	if id != "" and seed_count(id) <= 0:
+		return
 	selected_seed = id
-	active_item = {"type": "seed", "id": id}
+	active_item = {"type": "seed", "id": id} if id != "" else get_fallback_tool()
 	changed.emit()
 
 
@@ -481,7 +528,9 @@ func rod_casts(tier: String) -> int:
 func total_casts() -> int:
 	var n := 0
 	for k in rods:
-		n += int(rods[k])
+		var c := int(rods[k])
+		if c > 0:
+			n += c
 	return n
 
 
@@ -489,7 +538,13 @@ func total_casts() -> int:
 func take_cast() -> String:
 	for tier in ["basic", "mid", "high"]:
 		if int(rods.get(tier, 0)) > 0:
-			rods[tier] = int(rods[tier]) - 1
+			var rem := int(rods[tier]) - 1
+			if rem <= 0:
+				rods.erase(tier)
+			else:
+				rods[tier] = rem
+			if total_casts() <= 0 and active_item.get("type", "") == "rod":
+				active_item = get_fallback_tool()
 			changed.emit()
 			return tier
 	return ""
@@ -510,7 +565,11 @@ func take_fish(id: String, n: int = 1) -> bool:
 	var c := fish_count(id)
 	if c < n:
 		return false
-	fish[id] = c - n
+	var remaining := c - n
+	if remaining <= 0:
+		fish.erase(id)
+	else:
+		fish[id] = remaining
 	changed.emit()
 	return true
 
@@ -914,19 +973,29 @@ func set_state(d: Dictionary) -> void:
 	pickaxe = str(d.get("pickaxe", ""))
 	if d.has("seeds"):
 		for k in d["seeds"]:
-			seeds[str(k)] = int(d["seeds"][k])
+			var c := int(d["seeds"][k])
+			if c > 0:
+				seeds[str(k)] = c
 	if d.has("produce"):
 		for k in d["produce"]:
-			produce[str(k)] = int(d["produce"][k])
+			var c := int(d["produce"][k])
+			if c > 0:
+				produce[str(k)] = c
 	if d.has("ores"):
 		for k in d["ores"]:
-			ores[str(k)] = int(d["ores"][k])
+			var c := int(d["ores"][k])
+			if c > 0:
+				ores[str(k)] = c
 	if d.has("rods"):
 		for k in d["rods"]:
-			rods[str(k)] = int(d["rods"][k])
+			var c := int(d["rods"][k])
+			if c > 0:
+				rods[str(k)] = c
 	if d.has("fish"):
 		for k in d["fish"]:
-			fish[str(k)] = int(d["fish"][k])
+			var c := int(d["fish"][k])
+			if c > 0:
+				fish[str(k)] = c
 	if d.has("coops"):
 		for k in d["coops"]:
 			coops[str(k)] = int(d["coops"][k])

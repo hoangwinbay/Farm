@@ -168,6 +168,14 @@ func _ready() -> void:
 		refresh()
 	)
 
+	var store_ores_btn := UIKit.styled_button(bot_h, "⛏️ Cất hết Khoáng sản", 13, "primary")
+	store_ores_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	store_ores_btn.pressed.connect(func():
+		var n := Inventory.store_all_category("ores")
+		_set_msg("Đã cất %d khoáng sản vào nhà kho! ⛏️" % n if n > 0 else "Không có khoáng sản nào trong túi để cất.", Color(0.7, 0.95, 0.6))
+		refresh()
+	)
+
 
 func _on_dim_input(e: InputEvent) -> void:
 	if e is InputEventMouseButton and e.pressed:
