@@ -227,7 +227,9 @@ func _update_bubble(ready_now: bool, hungry_now: bool) -> void:
 
 func _move_towards(destination: Vector2, delta: float) -> void:
 	var diff := destination - position
-	if diff.length() < 1.0:
+	var dist := diff.length()
+	if dist <= move_speed * delta or dist < 1.0:
+		position = destination
 		return
 	var dir := diff.normalized()
 	current_facing = dir

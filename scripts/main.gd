@@ -194,6 +194,7 @@ var mine_manager: Node2D
 var in_mine: bool = false
 var pen_node: Node2D
 var active_pen_animals: Array = []
+var _pen_bubbles: Dictionary = {}
 var cam: Camera2D
 var ground: Sprite2D
 var canvas_mod: CanvasModulate
@@ -301,7 +302,8 @@ func _ready() -> void:
 	stall_panel.closed.connect(_close_panels)
 	stall_panel.stall_changed.connect(_on_stall_changed)
 	stall_panel.revenue_collected.connect(_on_stall_revenue_collected)
-	Inventory.changed.connect(_rebuild_pen)
+	Inventory.pens_structure_changed.connect(_rebuild_pen)
+	Inventory.changed.connect(_update_pen_bubbles)
 	Inventory.baby_born.connect(func(_sid: String, sname: String) -> void:
 		hud.toast("🐣 Tin vui: Đàn %s vừa sinh một chú con non (baby)!" % sname, Color(1.0, 0.85, 0.3))
 	)
@@ -604,6 +606,7 @@ func _rebuild_pen() -> void:
 	if pen_node == null:
 		return
 	active_pen_animals.clear()
+	_pen_bubbles.clear()
 	for c in pen_node.get_children():
 		c.queue_free()
 
@@ -742,17 +745,25 @@ func _rebuild_pen() -> void:
 			active_pen_animals.append(animal_node)
 
 		# 5. Biểu tượng thu hoạch chung nổi trên chuồng khi có sản phẩm (KHÔNG ĐƯỢC CÓ CHỮ GÌ THÊM)
-		var ready_count := Inventory.ready_products_for_species(sid)
-		if ready_count > 0:
-			var pen_bubble := Sprite2D.new()
-			pen_bubble.texture = TextureGen.get_harvest_bubble(str(d.product))
-			pen_bubble.scale = Vector2(1.35, 1.35)
-			pen_bubble.position = Vector2(rx + 112, ry + 22)
-			pen_node.add_child(pen_bubble)
+		var pen_bubble := Sprite2D.new()
+		pen_bubble.texture = TextureGen.get_harvest_bubble(str(d.product))
+		pen_bubble.scale = Vector2(1.35, 1.35)
+		var base_by: float = ry + 22.0
+		pen_bubble.position = Vector2(rx + 112, base_by)
+		pen_bubble.visible = (Inventory.ready_products_for_species(sid) > 0)
+		pen_node.add_child(pen_bubble)
+		_pen_bubbles[sid] = pen_bubble
 
-			var ptw := pen_bubble.create_tween().set_loops()
-			ptw.tween_property(pen_bubble, "position:y", pen_bubble.position.y - 4.0, 0.6).set_trans(Tween.TRANS_SINE)
-			ptw.tween_property(pen_bubble, "position:y", pen_bubble.position.y, 0.6).set_trans(Tween.TRANS_SINE)
+		var ptw := pen_bubble.create_tween().set_loops()
+		ptw.tween_property(pen_bubble, "position:y", base_by - 4.0, 0.6).set_trans(Tween.TRANS_SINE)
+		ptw.tween_property(pen_bubble, "position:y", base_by, 0.6).set_trans(Tween.TRANS_SINE)
+
+
+func _update_pen_bubbles() -> void:
+	for sid in _pen_bubbles:
+		var pb: Sprite2D = _pen_bubbles[sid]
+		if is_instance_valid(pb):
+			pb.visible = (Inventory.ready_products_for_species(sid) > 0)
 
 
 func _build_mailbox() -> void:
@@ -1436,7 +1447,7 @@ func _process(delta: float) -> void:
 		if fishing_left <= 0.0:
 			_finish_fishing()
 		else:
-			hud.set_hint("Đang thả câu... còn %d giây" % int(ceil(maxf(fishing_left, 0.0))))
+			_set_current_hint("Đang thả câu... còn %d giây" % int(ceil(maxf(fishing_left, 0.0))))
 		highlight.visible = false
 		# Dây câu mảnh kết nối đầu cần tới phao
 		if is_instance_valid(_fishing_line) and is_instance_valid(_bobber_spr):
@@ -1642,14 +1653,21 @@ func _tint() -> Color:
 	return night
 
 
+func _set_current_hint(t: String) -> void:
+	if hud != null:
+		hud.set_hint(t)
+	if touch_ui != null and touch_ui.has_method("set_action_label"):
+		touch_ui.set_action_label(t)
+
+
 func _update_hint_and_highlight() -> void:
 	if in_mine:
 		highlight.visible = false
 		var near_m: Dictionary = mine_manager.get_interactable_near(player.position) if mine_manager else {}
 		if not near_m.is_empty():
-			hud.set_hint("E: " + str(near_m.get("label", "")))
+			_set_current_hint("E: " + str(near_m.get("label", "")))
 		else:
-			hud.set_hint("")
+			_set_current_hint("")
 		return
 
 	var near := _nearest_interactable()
@@ -1694,18 +1712,18 @@ func _update_hint_and_highlight() -> void:
 				lbl = "Sạp hàng 🏪 (%d/6 ô · %d món)" % [occupied_crates, count_items]
 			else:
 				lbl = "Sạp hàng 🏪"
-		hud.set_hint("E: " + lbl)
+		_set_current_hint("E: " + lbl)
 		return
 	var tile = farm.tile_at_world(player.get_facing_point())
 	if tile == null:
 		highlight.visible = false
-		hud.set_hint("")
+		_set_current_hint("")
 		return
 	var info: Dictionary = farm.action_at(tile)
 	highlight.visible = true
 	highlight.global_position = farm.tile_center(tile.coord)
 	highlight.modulate = Color(0.5, 1.0, 0.5, 0.95) if bool(info.ok) else Color(1, 1, 1, 0.35)
-	hud.set_hint(("E: " + str(info.label)) if str(info.label) != "" else "")
+	_set_current_hint(("E: " + str(info.label)) if str(info.label) != "" else "")
 
 
 func _nearest_interactable() -> Dictionary:
@@ -1877,14 +1895,32 @@ func _unhandled_input(event: InputEvent) -> void:
 			_close_panels()
 			get_viewport().set_input_as_handled()
 			return
-	elif event is InputEventMouseButton and event.pressed and mode == Mode.PLAY and not get_tree().paused:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			hud.cycle_slot(-1)
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			hud.cycle_slot(1)
+	elif (event is InputEventScreenTouch or event is InputEventMouseButton) and event.pressed and mode == Mode.PLAY and not get_tree().paused:
+		if event is InputEventMouseButton:
+			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				hud.cycle_slot(-1)
+				return
+			elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				hud.cycle_slot(1)
+				return
+			elif event.button_index != MOUSE_BUTTON_LEFT:
+				return
+		var tap_pos := player.get_global_mouse_position() if is_instance_valid(player) else get_global_mouse_position()
+		_handle_world_tap(tap_pos)
 
 
 # ---------------- hành động ----------------
+
+func _face_towards(target_pos: Vector2) -> void:
+	if not is_instance_valid(player):
+		return
+	var diff := target_pos - player.position
+	if diff.length_squared() > 1.0:
+		if absf(diff.x) >= absf(diff.y):
+			player.facing = Vector2(signf(diff.x), 0)
+		else:
+			player.facing = Vector2(0, signf(diff.y))
+
 
 func _get_action_stamina_cost(act: String) -> float:
 	match act:
@@ -1953,36 +1989,26 @@ func _quick_eat() -> void:
 		hud.toast(str(res.get("msg", "")), Color(1.0, 0.65, 0.4))
 
 
-func _do_interact() -> void:
-	if fishing:
-		return
-	if in_mine and mine_manager != null:
-		var near_m: Dictionary = mine_manager.get_interactable_near(player.position)
-		if not near_m.is_empty() and near_m.has("cb") and near_m.cb is Callable:
-			near_m.cb.call()
-		return
-	var near := _nearest_interactable()
-	if not near.is_empty():
-		near.cb.call()
-		return
-	var tile = farm.tile_at_world(player.get_facing_point())
-	if tile == null:
-		return
+func _do_farm_action(tile: Node) -> bool:
+	if tile == null or fishing:
+		return false
 	var info: Dictionary = farm.action_at(tile)
 	var act := str(info.act)
 	if act == "none":
-		return
+		if str(info.label) != "":
+			hud.toast(str(info.label))
+		return false
 
 	var cost := _get_action_stamina_cost(act)
 	if cost > 0.0 and GameState.stamina < cost:
 		hud.toast("Bạn đã kiệt sức! Hãy ăn nông sản hoặc thịt (phím F hoặc I) để hồi thể lực ⚡", Color(1.0, 0.45, 0.35))
-		return
+		return false
 
 	var crop_id_before: String = tile.crop_id if tile != null else ""
 	var selected_seed_before := Inventory.selected_seed
 	var msg: String = farm.perform_at(tile)
 	if msg == "":
-		return
+		return false
 
 	if cost > 0.0:
 		GameState.use_stamina(cost)
@@ -2008,8 +2034,96 @@ func _do_interact() -> void:
 	player.can_move = false
 	var act_time: float = player.get_action_duration(act)
 	await get_tree().create_timer(act_time).timeout
-	if not fishing:
+	if not fishing and is_instance_valid(player):
 		player.can_move = true
+	return true
+
+
+func _do_interact() -> void:
+	if fishing:
+		return
+	if in_mine and mine_manager != null:
+		var near_m: Dictionary = mine_manager.get_interactable_near(player.position)
+		if not near_m.is_empty() and near_m.has("cb") and near_m.cb is Callable:
+			near_m.cb.call()
+		return
+	var near := _nearest_interactable()
+	if not near.is_empty():
+		near.cb.call()
+		return
+	var tile = farm.tile_at_world(player.get_facing_point())
+	if tile != null:
+		_do_farm_action(tile)
+
+
+func _handle_world_tap(world_tap_pos: Vector2) -> void:
+	if mode != Mode.PLAY or get_tree().paused or fishing:
+		return
+	if not is_instance_valid(player):
+		return
+
+	if in_mine and mine_manager != null:
+		if mine_manager.has_method("handle_tap"):
+			mine_manager.handle_tap(world_tap_pos)
+		return
+
+	# 1. Kiểm tra nếu chạm vào ô đất nông trại
+	var tile = farm.tile_at_world(world_tap_pos)
+	if tile != null:
+		var t_center := farm.tile_center(tile.coord)
+		var dist := player.position.distance_to(t_center)
+		if dist <= 80.0:
+			_face_towards(t_center)
+			_do_farm_action(tile)
+		else:
+			hud.toast("Hãy lại gần hơn để thao tác ô đất này! 🌱", Color(1.0, 0.85, 0.5))
+		return
+
+	# 2. Kiểm tra nếu chạm vào các vật thể tương tác
+	var best_it: Dictionary = {}
+	var best_dist := INF
+	for it in interactables:
+		var it_pos: Vector2 = it.pos
+		var it_r: float = maxf(float(it.get("r", 32.0)), 28.0)
+		if world_tap_pos.distance_to(it_pos) <= it_r + 14.0:
+			var d_p := player.position.distance_to(it_pos)
+			if d_p < best_dist:
+				best_dist = d_p
+				best_it = it
+
+	# Kiểm tra chuồng gia cầm
+	if best_it.is_empty():
+		for pcfg in PENS_CONFIG:
+			var r: Rect2 = pcfg.rect
+			if r.has_point(world_tap_pos):
+				for it in interactables:
+					if it.pos == r.get_center():
+						best_it = it
+						best_dist = player.position.distance_to(it.pos)
+						break
+				break
+
+	# Kiểm tra chú mèo tam thể
+	if best_it.is_empty() and is_instance_valid(cat_helper):
+		if world_tap_pos.distance_to(cat_helper.position) <= 36.0:
+			var d_p := player.position.distance_to(cat_helper.position)
+			if d_p <= 65.0:
+				_face_towards(cat_helper.position)
+				_open_cat_panel()
+			else:
+				hud.toast("Hãy lại gần Mèo Tam Thể hơn để tương tác! 🐱", Color(1.0, 0.85, 0.5))
+			return
+
+	if not best_it.is_empty():
+		var it_pos: Vector2 = best_it.pos
+		var max_interact_dist: float = maxf(float(best_it.get("r", 32.0)) + 36.0, 68.0)
+		if player.position.distance_to(it_pos) <= max_interact_dist:
+			_face_towards(it_pos)
+			if best_it.has("cb") and best_it.cb is Callable:
+				best_it.cb.call()
+		else:
+			hud.toast("Hãy lại gần hơn để tương tác!", Color(1.0, 0.85, 0.5))
+		return
 
 
 # Hiệu ứng nhỏ bốc lên rồi tan (đất bay / hạt giống / giọt nước / sao vàng).
@@ -2112,7 +2226,7 @@ func _talk_leah() -> void:
 	else:
 		_dialog_next = "tool_upgrade"
 		dialog_box.start("Leah", [
-			"Chào bạn! Càng xuống sâu hầm mỏ sẽ càng có nhiều quặng quý hiếm.",
+			"Chào bạn! Hầm mỏ gồm tất cả 20 tầng, càng xuống sâu sẽ càng có nhiều quặng quý hiếm.",
 			"Nếu có đủ Quặng và Vàng, mình sẽ rèn nâng cấp Cuốc đất và Cúp mỏ cho bạn để làm việc đỡ tốn thể lực hơn nhé!"
 		])
 
@@ -2121,11 +2235,12 @@ func _read_mine_sign() -> void:
 	mode = Mode.DIALOG
 	get_tree().paused = true
 	_dialog_next = "none"
-	dialog_box.start("📜 Biển Báo Hầm Mỏ", [
-		"• Tầng 1 - 2: Nhiều Đá cuội, Than đá & Quặng Đồng.",
-		"• Tầng 3 - 5: Xuất hiện Quặng Sắt & Hồng Ngọc (Ruby).",
-		"• Tầng 6+: Quặng Vàng & Kim Cương quý hiếm.",
-		"⚠️ Hướng dẫn: Đứng gần khối quặng và bấm E để đập bằng Cúp. Bấm E tại cầu thang để chuyển tầng!"
+	dialog_box.start("📜 Biển Báo Hầm Mỏ (20 Tầng)", [
+		"⛏️ TẦNG 1 - 7 (Đất & Đá Thường): Nhiều Đá cuội, Than đá, Quặng Đồng. Quặng Sắt xuất hiện từ Tầng 4.",
+		"❄️ TẦNG 8 - 14 (Hầm Mỏ Băng Giá): Quặng Sắt dồi dào, Than đá, Hồng Ngọc (Ruby). Quặng Vàng xuất hiện từ Tầng 11.",
+		"🌋 TẦNG 15 - 19 (Nham Thạch): Nhiều Quặng Vàng, Hồng Ngọc, Quặng Sắt & Kim Cương quý hiếm.",
+		"🏆 TẦNG 20 (ĐÁY HẦM MỎ): Kho tàng cực kỳ quý hiếm với Kim Cương (25%), Hồng Ngọc (25%), Quặng Vàng (35%)!",
+		"⚠️ Hướng dẫn: Đứng gần khối quặng bấm [E] để đập bằng Cúp. Bấm [E] tại thang để xuống tầng tiếp theo hoặc trở lên mặt đất."
 	])
 
 
@@ -2660,8 +2775,7 @@ func _start_fishing() -> void:
 func _finish_fishing() -> void:
 	fishing = false
 	player.can_move = true
-	if hud != null and is_instance_valid(hud):
-		hud.set_hint("")
+	_set_current_hint("")
 	var bobber_pos := _bobber_spr.position if is_instance_valid(_bobber_spr) else POND_RECT.get_center()
 	if _rod_spr != null and is_instance_valid(_rod_spr):
 		_rod_spr.queue_free()

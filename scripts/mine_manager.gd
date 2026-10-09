@@ -10,6 +10,7 @@ const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
 const TILE := 32
 const MINE_TILES := Vector2i(24, 15)  # 768 x 480 px
+const MAX_FLOORS := 20
 
 var current_floor: int = 1
 var max_floor_reached: int = 1
@@ -47,7 +48,7 @@ func setup(main_ref, player_ref: CharacterBody2D) -> void:
 
 
 func enter_mine(floor_num: int = 1) -> void:
-	current_floor = floor_num
+	current_floor = clampi(floor_num, 1, MAX_FLOORS)
 	if current_floor > max_floor_reached:
 		max_floor_reached = current_floor
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -193,23 +194,26 @@ func _build_mine_hud() -> void:
 	m.add_theme_constant_override("margin_bottom", 6)
 	panel.add_child(m)
 
-	_floor_label = UIKit.label(m, "⛏️ HẦM MỎ — TẦNG 1", 16, UIKit.COLOR_TEXT_GOLD)
+	_floor_label = UIKit.label(m, "⛏️ HẦM MỎ — TẦNG 1 / 20", 16, UIKit.COLOR_TEXT_GOLD)
 
 
 func _update_hud() -> void:
 	if _floor_label != null:
 		var theme_name := "ĐẤT"
 		var icon := "⛏️"
-		if current_floor >= 8:
+		if current_floor >= 15:
 			theme_name = "NHAM THẠCH 🔥"
 			icon = "🌋"
-		elif current_floor >= 5:
+		elif current_floor >= 8:
 			theme_name = "BĂNG GIÁ ❄️"
 			icon = "❄️"
-		_floor_label.text = "%s HẦM MỎ %s — TẦNG %d" % [icon, theme_name, current_floor]
+		if current_floor >= MAX_FLOORS:
+			_floor_label.text = "🏆 HẦM MỎ %s — TẦNG %d/%d (ĐÁY MỎ)" % [theme_name, current_floor, MAX_FLOORS]
+		else:
+			_floor_label.text = "%s HẦM MỎ %s — TẦNG %d/%d" % [icon, theme_name, current_floor, MAX_FLOORS]
 
 
-# Sinh ngẫu nhiên các tảng đá & quặng theo độ sâu tầng mỏ
+# Sinh ngẫu nhiên các tảng đá & quặng theo độ sâu tầng mỏ (giới hạn 20 tầng)
 func _generate_floor(floor_num: int) -> void:
 	for child in _rocks_node.get_children():
 		child.queue_free()
@@ -217,10 +221,14 @@ func _generate_floor(floor_num: int) -> void:
 
 	_update_floor_theme(floor_num)
 
+	# Thang xuống chỉ hiển thị khi chưa đạt đáy mỏ (Tầng 20)
+	if _ladder_down != null:
+		_ladder_down.visible = (floor_num < MAX_FLOORS)
+
 	var rng := RandomNumberGenerator.new()
 	rng.seed = floor_num * 997 + (GameState.day if GameState else 1) * 31
 
-	var rock_count := rng.randi_range(16, 24)
+	var rock_count := rng.randi_range(18, 26)
 	var occupied: Array[Vector2i] = [LADDER_UP_TILE, LADDER_DOWN_TILE]
 	occupied.append(LADDER_UP_TILE + Vector2i(0, 1))
 	occupied.append(LADDER_DOWN_TILE + Vector2i(0, -1))
@@ -237,20 +245,54 @@ func _generate_floor(floor_num: int) -> void:
 
 		var ore_type := "stone"
 		var roll := rng.randf()
-		if floor_num >= 8 and roll < 0.08:
-			ore_type = "diamond"
-		elif floor_num >= 6 and roll < 0.22:
-			ore_type = "gold_ore"
-		elif floor_num >= 4 and roll < 0.12:
-			ore_type = "ruby"
-		elif floor_num >= 3 and roll < 0.35:
-			ore_type = "iron_ore"
-		elif roll < 0.40:
-			ore_type = "copper_ore"
-		elif roll < 0.60:
-			ore_type = "coal"
+
+		# Phân bổ quặng cân đối theo 20 tầng
+		if floor_num == MAX_FLOORS:
+			# Tầng 20 (Đáy Mỏ): Kho tàng khoáng sản quý hiếm bậc nhất
+			if roll < 0.25:
+				ore_type = "diamond"
+			elif roll < 0.50:
+				ore_type = "ruby"
+			elif roll < 0.85:
+				ore_type = "gold_ore"
+			else:
+				ore_type = "iron_ore"
+		elif floor_num >= 15:
+			# Tầng 15 - 19 (Nham thạch): Vàng, Hồng ngọc, Kim cương
+			if roll < 0.12:
+				ore_type = "diamond"
+			elif roll < 0.35:
+				ore_type = "gold_ore"
+			elif roll < 0.50:
+				ore_type = "ruby"
+			elif roll < 0.75:
+				ore_type = "iron_ore"
+			elif roll < 0.90:
+				ore_type = "coal"
+			else:
+				ore_type = "stone"
+		elif floor_num >= 8:
+			# Tầng 8 - 14 (Băng giá): Sắt, Hồng ngọc, Vàng xuất hiện từ T11
+			if floor_num >= 11 and roll < 0.16:
+				ore_type = "gold_ore"
+			elif roll < 0.25:
+				ore_type = "ruby"
+			elif roll < 0.60:
+				ore_type = "iron_ore"
+			elif roll < 0.80:
+				ore_type = "coal"
+			else:
+				ore_type = "stone"
 		else:
-			ore_type = "stone"
+			# Tầng 1 - 7 (Đất & Đá thường): Đồng, Than, Sắt xuất hiện từ T4
+			if floor_num >= 4 and roll < 0.30:
+				ore_type = "iron_ore"
+			elif roll < 0.45:
+				ore_type = "copper_ore"
+			elif roll < 0.70:
+				ore_type = "coal"
+			else:
+				ore_type = "stone"
 
 		var ore_info := OreDB.get_ore(ore_type)
 		var hits: int = int(ore_info.get("hits", 2))
@@ -281,9 +323,9 @@ func _generate_floor(floor_num: int) -> void:
 
 func _update_floor_theme(floor_num: int) -> void:
 	var theme := ""
-	if floor_num >= 8:
+	if floor_num >= 15:
 		theme = "lava"
-	elif floor_num >= 5:
+	elif floor_num >= 8:
 		theme = "frost"
 
 	# Nền sàn hầm mỏ
@@ -326,18 +368,28 @@ func get_interactable_near(p_pos: Vector2) -> Dictionary:
 	# 2. Thang xuống
 	var down_pos := _ladder_down.position
 	if p_pos.distance_to(down_pos) < 36.0:
-		return {
-			"pos": down_pos,
-			"r": 36.0,
-			"label": "Xuống Tầng %d ⬇️" % (current_floor + 1),
-			"cb": func():
-				if main_game != null:
-					main_game._fade_transition(func():
+		if current_floor < MAX_FLOORS:
+			return {
+				"pos": down_pos,
+				"r": 36.0,
+				"label": "Xuống Tầng %d/%d ⬇️" % [current_floor + 1, MAX_FLOORS],
+				"cb": func():
+					if main_game != null:
+						main_game._fade_transition(func():
+							enter_mine(current_floor + 1)
+						)
+					else:
 						enter_mine(current_floor + 1)
-					)
-				else:
-					enter_mine(current_floor + 1)
-		}
+			}
+		else:
+			return {
+				"pos": down_pos,
+				"r": 36.0,
+				"label": "Đáy Hầm Mỏ (Tầng 20/20) 🏆",
+				"cb": func():
+					if main_game != null and main_game.hud != null:
+						main_game.hud.toast("Bạn đã chinh phục tầng sâu nhất của Hầm Mỏ (Tầng 20/20)! 🏆✨", Color(1.0, 0.85, 0.3))
+			}
 
 	# 3. Các khối đá quặng gần nhất
 	for r in _rocks_data:
@@ -354,6 +406,49 @@ func get_interactable_near(p_pos: Vector2) -> Dictionary:
 			}
 
 	return {}
+
+
+func handle_tap(world_tap_pos: Vector2) -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	var p_pos := player.position
+
+	# 1. Chạm cầu thang lên
+	var up_pos := _tile_to_world(LADDER_UP_TILE)
+	if world_tap_pos.distance_to(up_pos) <= 36.0:
+		if p_pos.distance_to(up_pos) <= 56.0:
+			if current_floor == 1:
+				exit_requested.emit()
+			else:
+				enter_mine(current_floor - 1)
+		else:
+			if main_game != null and main_game.hud != null:
+				main_game.hud.toast("Hãy lại gần cầu thang hơn!", Color(1.0, 0.85, 0.5))
+		return
+
+	# 2. Chạm cầu thang xuống
+	if current_floor < MAX_FLOORS:
+		var down_pos := _tile_to_world(LADDER_DOWN_TILE)
+		if world_tap_pos.distance_to(down_pos) <= 36.0:
+			if p_pos.distance_to(down_pos) <= 56.0:
+				enter_mine(current_floor + 1)
+			else:
+				if main_game != null and main_game.hud != null:
+					main_game.hud.toast("Hãy lại gần cầu thang hơn!", Color(1.0, 0.85, 0.5))
+			return
+
+	# 3. Chạm vào tảng đá / quặng
+	for r in _rocks_data:
+		var b: StaticBody2D = r.get("body")
+		if is_instance_valid(b) and world_tap_pos.distance_to(b.position) <= 32.0:
+			if p_pos.distance_to(b.position) <= 56.0:
+				if main_game != null and main_game.has_method("_face_towards"):
+					main_game._face_towards(b.position)
+				_hit_rock(r)
+			else:
+				if main_game != null and main_game.hud != null:
+					main_game.hud.toast("Hãy lại gần khối quặng hơn để đập! ⛏️", Color(1.0, 0.85, 0.5))
+			return
 
 
 func _hit_rock(rock_data: Dictionary) -> void:

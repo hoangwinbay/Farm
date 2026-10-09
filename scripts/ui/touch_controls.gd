@@ -244,6 +244,60 @@ func _place() -> void:
 	_btn_pause.position = Vector2(vs.x - 64, 20)
 
 
+func set_action_label(hint: String) -> void:
+	if _btn_action == null or not is_instance_valid(_btn_action):
+		return
+	var clean := hint.trim_prefix("E: ").strip_edges()
+	if clean == "":
+		_btn_action.text = "THAO TÁC"
+		_btn_action.add_theme_font_size_override("font_size", 14)
+		return
+
+	var lower := clean.to_lower()
+	var act_txt := "THAO TÁC"
+	var font_sz := 13
+
+	if "thu hoạch" in lower:
+		act_txt = "🧺 THU"
+	elif "cày" in lower or "cuốc" in lower:
+		act_txt = "🌱 CUỐC"
+	elif "tưới" in lower:
+		act_txt = "💧 TƯỚI"
+	elif "gieo" in lower:
+		act_txt = "🌾 GIEO"
+	elif "bắt sâu" in lower or "sâu bọ" in lower:
+		act_txt = "🐛 BẮT"
+	elif "cho" in lower and "ăn" in lower:
+		act_txt = "🌾 CHO ĂN"
+		font_sz = 12
+	elif "nhặt" in lower:
+		act_txt = "✨ NHẶT"
+	elif "câu cá" in lower:
+		act_txt = "🎣 CÂU"
+	elif "múc nước" in lower:
+		act_txt = "💧 MÚC"
+	elif "hòm thư" in lower:
+		act_txt = "📬 THƯ"
+	elif "sạp hàng" in lower:
+		act_txt = "🏪 SẠP"
+	elif "đập" in lower or "đào" in lower or "khai thác" in lower:
+		act_txt = "⛏️ ĐÀO"
+	elif "xuống" in lower or "lên" in lower or "cầu thang" in lower:
+		act_txt = "🪜 THANG"
+	elif "nói" in lower or "bác tư" in lower or "chú hai" in lower or "cô tư" in lower or "trưởng thôn" in lower or "leah" in lower:
+		act_txt = "💬 NÓI"
+	elif "mèo" in lower:
+		act_txt = "🐱 MÈO"
+	else:
+		if clean.length() > 8:
+			act_txt = clean.substr(0, 7) + ".."
+		else:
+			act_txt = clean
+
+	_btn_action.text = act_txt
+	_btn_action.add_theme_font_size_override("font_size", font_sz)
+
+
 func _process(delta: float) -> void:
 	_time += delta
 	if _joy_touch != -1 and main != null and main.mode != main.Mode.PLAY:

@@ -3,6 +3,7 @@ extends Node
 
 signal changed
 signal baby_born(species_id: String, species_name: String)
+signal pens_structure_changed
 
 const CropDB := preload("res://scripts/crop_db.gd")
 const PoultryDB := preload("res://scripts/poultry_db.gd")
@@ -624,6 +625,7 @@ func add_coop(species_id: String) -> void:
 				coop_tiers[s] = 1
 				break
 	changed.emit()
+	pens_structure_changed.emit()
 
 
 func animals_of_species(species_id: String) -> int:
@@ -668,6 +670,7 @@ func buy_coop(species_id: String) -> String:
 		return "Không đủ xu mua %s (cần %d xu)!" % [str(c.name), price]
 	coop_tiers[sid] = 1
 	changed.emit()
+	pens_structure_changed.emit()
 	return ""
 
 
@@ -686,6 +689,7 @@ func upgrade_coop(species_id: String) -> String:
 		return "Không đủ xu nâng cấp (cần %d xu)!" % price
 	coop_tiers[sid] = 2
 	changed.emit()
+	pens_structure_changed.emit()
 	return ""
 
 
@@ -717,6 +721,7 @@ func buy_animal(id: String) -> String:
 		"is_sheared": false,
 	})
 	changed.emit()
+	pens_structure_changed.emit()
 	return ""
 
 
@@ -726,6 +731,7 @@ func buy_animal(id: String) -> String:
 # - Ghép đôi: nuôi từ 2 con lớn cùng loài trở lên, đủ thời gian sẽ sinh ra con non baby!
 func tick_animals(delta: float) -> void:
 	var had_change := false
+	var roster_changed := false
 
 	# 1. Quản lý từng con vật
 	for a in animals:
@@ -742,6 +748,7 @@ func tick_animals(delta: float) -> void:
 				a.grow_progress = 0.0
 				a.fed = false
 				had_change = true
+				roster_changed = true
 			continue
 
 		# Con trưởng thành:
@@ -785,9 +792,12 @@ func tick_animals(delta: float) -> void:
 					})
 					baby_born.emit(sid, str(d.name))
 					had_change = true
+					roster_changed = true
 
 	if had_change:
 		changed.emit()
+	if roster_changed:
+		pens_structure_changed.emit()
 
 
 func ready_products() -> int:
@@ -1044,3 +1054,4 @@ func set_state(d: Dictionary) -> void:
 	else:
 		active_item = {"type": "hoe"}
 	changed.emit()
+	pens_structure_changed.emit()

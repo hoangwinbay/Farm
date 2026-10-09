@@ -365,7 +365,7 @@ func _spawn_storm_ore_drop() -> void:
 		var y := rng.randf_range(80.0, main_node.WORLD_SIZE.y - 80.0)
 		var pos := Vector2(x, y)
 		if main_node._is_grass_surface(pos):
-			var ore_pool := ["than_da", "copper", "iron", "gold", "ruby"]
+			var ore_pool := ["coal", "copper_ore", "iron_ore", "gold_ore", "ruby"]
 			var ore_id: String = ore_pool[rng.randi_range(0, ore_pool.size() - 1)]
 			spawn_ground_item(ore_id, "ore", pos)
 			break
