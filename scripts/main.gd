@@ -1313,7 +1313,7 @@ func _build_ui() -> void:
 	minimap.setup(ground.texture, player, world, self)
 	minimap.toast_cb = func(t: String, c: Color) -> void: hud.toast(t, c)
 	# Điện thoại/tablet: thêm joystick ảo + nút cảm ứng (máy tính giữ bàn phím)
-	if DisplayServer.is_touchscreen_available() or OS.get_environment("FARM_TOUCH") != "":
+	if DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or OS.has_feature("android") or OS.get_environment("FARM_TOUCH") != "":
 		if not DisplayServer.is_touchscreen_available():
 			Input.emulate_touch_from_mouse = true  # chạy thử joystick bằng chuột trên PC
 		touch_ui = TouchControlsScript.new()
@@ -1755,6 +1755,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		var c := CropDB.get_crop(id)
 		if not c.is_empty():
 			hud.toast("Đổi hạt: %s" % c.name)
+	elif event.is_action_pressed("quick_eat") and mode == Mode.PLAY and not get_tree().paused:
+		_quick_eat()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if mode == Mode.PLAY and not get_tree().paused:
 			if event.keycode == KEY_K:
