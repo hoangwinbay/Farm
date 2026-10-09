@@ -411,27 +411,30 @@ func get_interactable_near(p_pos: Vector2) -> Dictionary:
 func handle_tap(world_tap_pos: Vector2) -> void:
 	if player == null or not is_instance_valid(player):
 		return
-	var p_pos := player.position
+	var p_pos: Vector2 = player.position
 
 	# 1. Chạm cầu thang lên
-	var up_pos := _tile_to_world(LADDER_UP_TILE)
-	if world_tap_pos.distance_to(up_pos) <= 36.0:
-		if p_pos.distance_to(up_pos) <= 56.0:
-			if current_floor == 1:
-				exit_requested.emit()
+	if is_instance_valid(_ladder_up):
+		var up_pos: Vector2 = _ladder_up.position
+		if world_tap_pos.distance_to(up_pos) <= 36.0:
+			if p_pos.distance_to(up_pos) <= 56.0:
+				leave_mine()
 			else:
-				enter_mine(current_floor - 1)
-		else:
-			if main_game != null and main_game.hud != null:
-				main_game.hud.toast("Hãy lại gần cầu thang hơn!", Color(1.0, 0.85, 0.5))
-		return
+				if main_game != null and main_game.hud != null:
+					main_game.hud.toast("Hãy lại gần cầu thang hơn!", Color(1.0, 0.85, 0.5))
+			return
 
 	# 2. Chạm cầu thang xuống
-	if current_floor < MAX_FLOORS:
-		var down_pos := _tile_to_world(LADDER_DOWN_TILE)
+	if is_instance_valid(_ladder_down) and current_floor < MAX_FLOORS:
+		var down_pos: Vector2 = _ladder_down.position
 		if world_tap_pos.distance_to(down_pos) <= 36.0:
 			if p_pos.distance_to(down_pos) <= 56.0:
-				enter_mine(current_floor + 1)
+				if main_game != null:
+					main_game._fade_transition(func():
+						enter_mine(current_floor + 1)
+					)
+				else:
+					enter_mine(current_floor + 1)
 			else:
 				if main_game != null and main_game.hud != null:
 					main_game.hud.toast("Hãy lại gần cầu thang hơn!", Color(1.0, 0.85, 0.5))
