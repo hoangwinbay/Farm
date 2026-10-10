@@ -70,7 +70,7 @@ func start_new_game() -> void:
 	main.player.facing = Vector2.DOWN
 	main.cam.reset_smoothing()
 	main._npc_met = false
-	main._populate_random_foliage(75)
+	main.world_builder.build_fixed_foliage()
 
 	if is_instance_valid(main.cat_helper):
 		main.cat_helper.dismiss()
@@ -125,7 +125,10 @@ func continue_game() -> void:
 	GameState.money_changed.emit(GameState.money)
 	GameState.crops_changed.emit()
 	GameState.stamina_changed.emit(GameState.stamina, GameState.max_stamina)
-	GameState.weather_changed.emit(GameState.weather)
+	if d.has("sound_enabled"):
+		GameState.set_sound_enabled(bool(d["sound_enabled"]))
+	if d.has("game_speed"):
+		GameState.set_game_speed(float(d["game_speed"]))
 
 	Inventory.set_state({
 		"seeds": d.get("seeds", {}),
@@ -170,7 +173,7 @@ func continue_game() -> void:
 	if typeof(f_arr) == TYPE_ARRAY and f_arr.size() > 0:
 		main._load_foliage(f_arr)
 	elif main.foliage_data.is_empty():
-		main._populate_random_foliage(75)
+		main.world_builder.build_fixed_foliage()
 
 	if d.has("cat") and is_instance_valid(main.cat_helper):
 		main.cat_helper.load_save_dict(d["cat"])

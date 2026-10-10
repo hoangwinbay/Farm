@@ -399,7 +399,7 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 	protect_rect.call(800.0, 288.0, 496.0, 160.0, 1) # Thửa Bắc
 	protect_rect.call(800.0, 496.0, 496.0, 160.0, 1) # Thửa Nam
 	protect_rect.call(641.0 - 72.0, 248.0 - 144.0, 160.0, 160.0, 2) # Nhà gỗ & hiên
-	protect_rect.call(240.0, 520.0, 540.0, 360.0, 2) # 4 khu chuồng gia cầm, gia súc & lối đi lát đá
+	protect_rect.call(130.0, 520.0, 650.0, 480.0, 2) # 4 khu chuồng gia cầm, gia súc & lối đi lát đá
 	protect_rect.call(1344.0, 352.0, 464.0, 96.0, 2) # Khu chợ quê
 	protect_rect.call(584.0 - 56.0, 440.0 - 66.0, 112.0, 66.0, 1) # Sạp hàng nông sản (nền cỏ xanh thanh sạch)
 	protect_rect.call(32.0, 140.0, 128.0, 60.0, 1) # Khu vách núi cửa hầm mỏ đá Tây Bắc
@@ -505,7 +505,7 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 				dark_grid[gy][gx] = false
 
 	# 4 Khu chuồng nuôi riêng biệt (Bò, Gà, Cừu, Lợn) - toàn bộ dùng đất không cỏ chuẩn Stardew Valley
-	# Không bị tràn ra ngoài hàng rào (mỗi chuồng 14x8 ô = 224x128px)
+	# Không bị tràn ra ngoài hàng rào (mỗi chuồng 18x12 ô = 288x192px)
 	var pen_grid: Array = []
 	for y in gh:
 		var row: Array = []
@@ -514,10 +514,10 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 		pen_grid.append(row)
 
 	var pens_bounds := [
-		Rect2i(16, 34, 14, 8), # Chuồng Bò (Tây Bắc: x=256..480, y=544..672)
-		Rect2i(33, 34, 14, 8), # Chuồng Gà (Đông Bắc: x=528..752, y=544..672)
-		Rect2i(16, 45, 14, 8), # Chuồng Cừu (Tây Nam: x=256..480, y=720..848)
-		Rect2i(33, 45, 14, 8), # Chuồng Lợn (Đông Nam: x=528..752, y=720..848)
+		Rect2i(9, 33, 18, 10),  # Chuồng Bò (Tây Bắc: x=144..432, y=528..688)
+		Rect2i(30, 33, 18, 10), # Chuồng Gà (Đông Bắc: x=480..768, y=528..688)
+		Rect2i(9, 46, 18, 10),  # Chuồng Cừu (Tây Nam: x=144..432, y=736..896)
+		Rect2i(30, 46, 18, 10), # Chuồng Lợn (Đông Nam: x=480..768, y=736..896)
 	]
 
 	for pb in pens_bounds:
@@ -595,7 +595,7 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 					e = true
 				elif gx == fgx1 and (gy >= 28 and gy <= 31):
 					w_val = true
-				elif (gx in [30, 31, 32]) and gy == 30:
+				elif (gx in [27, 28, 29]) and gy == 30:
 					s = true # Nối thông đại lộ với đường đá dọc dẫn xuống 4 chuồng
 
 				var nw: bool = road_grid[gy - 1][gx - 1] if gy > 0 and gx > 0 else false
@@ -643,8 +643,8 @@ static func make_ground(w: int, h: int, farm_rect: Rect2, paths: Array, pond: Re
 	var active_cobble_paths := cobble_paths
 	if active_cobble_paths.is_empty():
 		active_cobble_paths = [
-			Rect2(480, 480, 48, 384), # đường dọc giữa các chuồng nối từ đại lộ xuống
-			Rect2(240, 672, 528, 48), # đường ngang giữa hàng chuồng trên và dưới
+			Rect2(432, 480, 48, 520), # đường dọc giữa các chuồng nối từ đại lộ xuống
+			Rect2(144, 736, 624, 48), # đường ngang giữa hàng chuồng trên và dưới
 		]
 
 	for cp in active_cobble_paths:
@@ -1917,9 +1917,9 @@ static func _coop() -> ImageTexture:
 	return _tex(img)
 
 
-# Mặt sàn lót rơm và rải hạt ngô cho khu chuồng nuôi (224x128, nền trong suốt hòa vào đất autotile)
+# Mặt sàn lót rơm và rải hạt ngô cho khu chuồng nuôi (288x160, nền trong suốt hòa vào đất autotile)
 static func _pen_bedding() -> ImageTexture:
-	var img := _img(224, 128)
+	var img := _img(288, 160)
 	var straw_base := Color(0.85, 0.72, 0.36)
 	var straw_light := Color(0.95, 0.84, 0.48)
 	var straw_dark := Color(0.68, 0.52, 0.24)
@@ -1930,9 +1930,9 @@ static func _pen_bedding() -> ImageTexture:
 	rng.seed = 999
 
 	# Lớp rơm rạ rải rác tự nhiên trong sân chuồng
-	for i in 650:
-		var rx := rng.randi_range(6, 217)
-		var ry := rng.randi_range(6, 121)
+	for i in 900:
+		var rx := rng.randi_range(8, 278)
+		var ry := rng.randi_range(8, 150)
 		var len := rng.randi_range(3, 6)
 		var c := straw_base if rng.randf() > 0.4 else straw_light
 		for l in len:
@@ -1941,9 +1941,9 @@ static func _pen_bedding() -> ImageTexture:
 			px(img, rx + 1, ry + 1, straw_dark)
 
 	# Các hạt thóc / ngô vàng vương vãi quanh khu ăn uống
-	for i in 150:
-		var cx := rng.randi_range(30, 190)
-		var cy := rng.randi_range(20, 105)
+	for i in 200:
+		var cx := rng.randi_range(40, 250)
+		var cy := rng.randi_range(20, 135)
 		px(img, cx, cy, corn_seed)
 		if rng.randf() < 0.25:
 			px(img, cx + 1, cy, Color(0.92, 0.76, 0.20))
@@ -1951,13 +1951,13 @@ static func _pen_bedding() -> ImageTexture:
 	return _tex(img)
 
 
-# Nền đất trống cho chuồng Cấp 0 (224x128, rào gỗ trên nền đất trống, chưa xây chuồng)
+# Nền đất trống cho chuồng Cấp 0 (288x160, rào gỗ trên nền đất trống, chưa xây chuồng)
 static func _pen_dirt_bedding() -> ImageTexture:
-	var img := _img(224, 128)
+	var img := _img(288, 160)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 555
-	for y in range(4, 124):
-		for x in range(4, 220):
+	for y in range(4, 156):
+		for x in range(4, 284):
 			var n := rng.randf()
 			if n < 0.08:
 				px(img, x, y, Color(0.55, 0.40, 0.24, 0.45))
@@ -1965,9 +1965,9 @@ static func _pen_dirt_bedding() -> ImageTexture:
 				px(img, x, y, Color(0.45, 0.32, 0.18, 0.40))
 			elif n < 0.14:
 				px(img, x, y, Color(0.68, 0.52, 0.34, 0.35))
-	for i in 40:
-		var sx := rng.randi_range(10, 210)
-		var sy := rng.randi_range(10, 115)
+	for i in 60:
+		var sx := rng.randi_range(10, 270)
+		var sy := rng.randi_range(10, 145)
 		px(img, sx, sy, Color(0.48, 0.42, 0.35, 0.7))
 		px(img, sx + 1, sy, Color(0.38, 0.32, 0.25, 0.7))
 	return _tex(img)
@@ -3326,11 +3326,18 @@ static func get_product_icon(prod_id: String) -> Texture2D:
 			return milk_icon()
 		"long_cuu":
 			return wool_icon()
+		"thit_bo":
+			var sp := springobject_icon(639)
+			return sp if sp != null else meat_icon("b83a3a")
 		"thit_lon":
 			var sp := springobject_icon(640)
 			return sp if sp != null else meat_icon("e06d6d")
 		"thit_ga":
-			return meat_icon("d98a4a")
+			var sp := springobject_icon(641)
+			return sp if sp != null else meat_icon("d98a4a")
+		"thit_cuu":
+			var sp := springobject_icon(644)
+			return sp if sp != null else meat_icon("d46666")
 		_:
 			for a in PoultryDB.ANIMALS:
 				if str(a.product) == prod_id:
@@ -3628,6 +3635,34 @@ static func lock_icon() -> ImageTexture:
 	return tex
 
 
+static func gear_icon() -> ImageTexture:
+	var key := "gear_icon"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(16, 16)
+	var bronze := Color(0.85, 0.68, 0.32)
+	var bronze_d := Color(0.48, 0.32, 0.15)
+	var bronze_l := Color(1.0, 0.88, 0.50)
+	var hole := Color(0.18, 0.12, 0.08)
+	# Khối bánh răng tròn
+	circle(img, 7.5, 7.5, 5.2, bronze)
+	circle(img, 7.5, 7.5, 4.2, bronze_l)
+	# Các răng bánh răng (8 hướng)
+	rect(img, 7, 1, 2, 3, bronze)
+	rect(img, 7, 12, 2, 3, bronze_d)
+	rect(img, 1, 7, 3, 2, bronze)
+	rect(img, 12, 7, 3, 2, bronze_d)
+	rect(img, 3, 3, 2, 2, bronze)
+	rect(img, 11, 3, 2, 2, bronze)
+	rect(img, 3, 11, 2, 2, bronze_d)
+	rect(img, 11, 11, 2, 2, bronze_d)
+	# Lỗ trục bánh răng ở giữa
+	circle(img, 7.5, 7.5, 2.2, hole)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
 static func star_icon() -> ImageTexture:
 	var key := "star_icon"
 	if _cache.has(key):
@@ -3640,6 +3675,28 @@ static func star_icon() -> ImageTexture:
 	rect(img, 2, 7, 12, 2, star)
 	px(img, 7, 7, glow)
 	px(img, 8, 7, glow)
+	var tex := _tex(img)
+	_cache[key] = tex
+	return tex
+
+
+static func slash_effect_tex() -> ImageTexture:
+	var key := "slash_effect"
+	if _cache.has(key):
+		return _cache[key]
+	var img := _img(28, 28)
+	var white := Color(1.0, 1.0, 1.0, 0.95)
+	var glow := Color(1.0, 0.8, 0.6, 0.7)
+	var red_tint := Color(0.9, 0.25, 0.25, 0.8)
+	for i in range(24):
+		var t := float(i) / 23.0
+		var x := int(3.0 + t * 22.0)
+		var y := int(22.0 - sin(t * PI * 0.85) * 16.0)
+		px(img, x, y, white)
+		px(img, x, y - 1, white)
+		px(img, x, y + 1, glow)
+		if i % 3 == 0:
+			px(img, x, y + 2, red_tint)
 	var tex := _tex(img)
 	_cache[key] = tex
 	return tex

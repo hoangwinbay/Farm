@@ -467,6 +467,9 @@ func _get_item_name(category: String, id: String) -> String:
 			var c := CropDB.get_crop(id)
 			if not c.is_empty():
 				return str(c.get("name", id))
+			var p := PoultryDB.get_product_info(id)
+			if not p.is_empty():
+				return str(p.get("name", id))
 			for a in PoultryDB.ANIMALS:
 				if str(a.product) == id:
 					return str(a.product_name)
@@ -487,9 +490,7 @@ func _get_item_icon(category: String, id: String) -> Texture2D:
 			var c := CropDB.get_crop(id)
 			if not c.is_empty():
 				return TextureGen.prod_icon(c)
-			for a in PoultryDB.ANIMALS:
-				if str(a.product) == id:
-					return TextureGen.get_product_icon(id)
+			return TextureGen.get_product_icon(id)
 	return null
 
 

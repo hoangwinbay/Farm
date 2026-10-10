@@ -89,6 +89,7 @@ func _ready() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.custom_minimum_size = Vector2(0, 320)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	UIKit.style_scroll_container(scroll)
 	v.add_child(scroll)
 
 	items_vbox = VBoxContainer.new()
@@ -226,27 +227,34 @@ func refresh() -> void:
 func _add_row(icon: Texture2D, item_name: String, count_text: String, count_color: Color, on_claim: Callable) -> void:
 	var row := PanelContainer.new()
 	row.add_theme_stylebox_override("panel", UIKit.row_box())
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 10)
+	h.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_child(h)
 
 	var slot := PanelContainer.new()
 	slot.add_theme_stylebox_override("panel", UIKit.slot_box(false))
 	slot.custom_minimum_size = Vector2(36, 36)
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var ic := TextureRect.new()
 	ic.texture = icon
 	ic.custom_minimum_size = Vector2(24, 24)
 	ic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	slot.add_child(ic)
 	h.add_child(slot)
 
 	var lbl := UIKit.label(h, item_name, 13, UIKit.COLOR_TEXT_BODY)
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var pill := PanelContainer.new()
 	pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07), UIKit.COLOR_BORDER_WOOD, 6))
-	UIKit.label(pill, count_text, 12, count_color)
+	pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var pl := UIKit.label(pill, count_text, 12, count_color)
+	pl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	h.add_child(pill)
 
 	var btn := UIKit.styled_button(h, "Lấy", 11, "buy")
@@ -338,8 +346,11 @@ func _get_item_info(id: String, type: String) -> Dictionary:
 		var c := CropDB.get_crop(id)
 		if not c.is_empty():
 			return {"name": str(c.name), "icon": TextureGen.prod_icon(c)}
-		# Sản phẩm gia cầm
+		# Sản phẩm gia cầm & thịt
+		var pinfo := PoultryDB.get_product_info(id)
+		if not pinfo.is_empty():
+			return {"name": str(pinfo.name), "icon": TextureGen.get_product_icon(id)}
 		for a in PoultryDB.ANIMALS:
-			if str(a.product) == id:
+			if str(a.product) == id and id != "":
 				return {"name": str(a.product_name), "icon": TextureGen.get_product_icon(id)}
 		return {"name": id, "icon": TextureGen.star_icon()}

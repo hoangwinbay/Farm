@@ -141,6 +141,9 @@ func nearest_interactable() -> Dictionary:
 			if d_anim <= 42.0 and d_anim < best_d:
 				best_d = d_anim
 				var aname: String = anim.get_animal_name()
+				var times_fed: int = anim.get_times_fed()
+				var active_t: String = str(Inventory.active_item.get("type", ""))
+
 				if anim.is_ready():
 					best = {
 						"pos": anim.position,
@@ -148,12 +151,19 @@ func nearest_interactable() -> Dictionary:
 						"label": "Thu hoạch %s (%s) ⭐" % [aname, anim.get_product_name()],
 						"cb": func(): main.pen_manager.harvest_single_animal(anim)
 					}
+				elif anim.can_slaughter() and (anim.species_id == "pig" or active_t != "feed" or anim.is_fed()):
+					best = {
+						"pos": anim.position,
+						"r": 42.0,
+						"label": "Chém %s lấy thịt 🍖 (Đã ăn %d/5 lần)" % [aname, times_fed],
+						"cb": func(): main.pen_manager.slaughter_single_animal(anim)
+					}
 				elif not anim.is_fed():
 					if Inventory.feed_count() > 0:
 						best = {
 							"pos": anim.position,
 							"r": 42.0,
-							"label": "Cho %s ăn 🌾 (Cám x%d)" % [aname, Inventory.feed_count()],
+							"label": "Cho %s ăn 🌾 (Lần %d/5 · Cám x%d)" % [aname, times_fed + 1, Inventory.feed_count()],
 							"cb": func(): main.pen_manager.feed_single_animal(anim)
 						}
 					else:
@@ -167,7 +177,7 @@ func nearest_interactable() -> Dictionary:
 					best = {
 						"pos": anim.position,
 						"r": 42.0,
-						"label": "%s (Đang ăn trong máng 🌾)" % aname,
+						"label": "%s (Đang ăn trong máng 🌾 · Đã ăn %d/5 lần)" % [aname, times_fed],
 						"cb": func(): pass
 					}
 				else:
@@ -175,7 +185,7 @@ func nearest_interactable() -> Dictionary:
 					best = {
 						"pos": anim.position,
 						"r": 42.0,
-						"label": "%s (Đang lớn... còn %ds) ⏳" % [aname, rem],
+						"label": "%s (Đang tiêu hóa... còn %ds · Đã ăn %d/5) ⏳" % [aname, rem, times_fed],
 						"cb": func(): pass
 					}
 	return best
@@ -334,6 +344,24 @@ func handle_world_tap(world_tap_pos: Vector2) -> void:
 				if is_instance_valid(main.hud):
 					main.hud.toast("Hãy lại gần Mèo Tam Thể hơn để tương tác! 🐱", Color(1.0, 0.85, 0.5))
 			return
+
+	if best_it.is_empty():
+		for anim in main.pen_manager.active_pen_animals:
+			if is_instance_valid(anim) and world_tap_pos.distance_to(anim.position) <= 28.0:
+				var d_p: float = main.player.position.distance_to(anim.position)
+				if d_p <= 65.0:
+					main.farming_controller.face_towards(anim.position)
+					var active_t: String = str(Inventory.active_item.get("type", ""))
+					if anim.is_ready():
+						main.pen_manager.harvest_single_animal(anim)
+					elif anim.can_slaughter() and (anim.species_id == "pig" or active_t != "feed" or anim.is_fed()):
+						main.pen_manager.slaughter_single_animal(anim)
+					elif not anim.is_fed():
+						main.pen_manager.feed_single_animal(anim)
+				else:
+					if is_instance_valid(main.hud):
+						main.hud.toast("Hãy lại gần %s hơn để tương tác!" % anim.get_animal_name(), Color(1.0, 0.85, 0.5))
+				return
 
 	if not best_it.is_empty():
 		var it_pos: Vector2 = best_it.pos

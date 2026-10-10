@@ -3,15 +3,19 @@ extends CanvasLayer
 # Tái hiện chuẩn xác thiết kế đồ họa pixel art: Logo Fluffy Farm, phong cảnh hoàng hôn ấm áp,
 # nhãn "ẤN BẮT ĐẦU" nhấp nháy, các nút gỗ "BẮT ĐẦU MỚI", "TIẾP TỤC", "HƯỚNG DẪN" (kèm cà rốt).
 
+const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
+const SettingsPanelScript := preload("res://scripts/ui/settings_panel.gd")
 
 signal start_requested
 signal continue_requested
+signal settings_requested
 
 var start_btn: Button
 var _continue_btn: Button
 var _guide: PanelContainer
 var _guide_overlay: Control
+var _settings_panel: CanvasLayer
 
 
 func _ready() -> void:
@@ -29,6 +33,38 @@ func _ready() -> void:
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(bg)
+
+	# Bảng Cài Đặt (Modal)
+	_settings_panel = SettingsPanelScript.new()
+	add_child(_settings_panel)
+
+	# Nút Bánh Răng Cài Đặt (Góc trên bên phải màn hình)
+	var gear_btn := Button.new()
+	gear_btn.custom_minimum_size = Vector2(46, 46)
+	gear_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	gear_btn.offset_left = -70
+	gear_btn.offset_top = 22
+	gear_btn.offset_right = -24
+	gear_btn.offset_bottom = 68
+	gear_btn.focus_mode = Control.FOCUS_NONE
+	gear_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	gear_btn.tooltip_text = "Cài đặt trò chơi (Âm thanh & Tốc độ)"
+	gear_btn.add_theme_stylebox_override("normal", UIKit.wood_frame(8, 2, Color(0.18, 0.12, 0.08, 0.92), UIKit.COLOR_BORDER_GOLD))
+	gear_btn.add_theme_stylebox_override("hover", UIKit.wood_frame(8, 2, Color(0.28, 0.18, 0.12, 0.98), UIKit.COLOR_BORDER_BRIGHT))
+	gear_btn.add_theme_stylebox_override("pressed", UIKit.wood_frame(8, 2, Color(0.12, 0.08, 0.05, 0.95), UIKit.COLOR_BORDER_GOLD))
+
+	var gear_ic := TextureRect.new()
+	gear_ic.texture = TextureGen.gear_icon()
+	gear_ic.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	gear_ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	gear_ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gear_btn.add_child(gear_ic)
+
+	gear_btn.pressed.connect(func():
+		settings_requested.emit()
+		_settings_panel.open()
+	)
+	root.add_child(gear_btn)
 
 	# 2. Khối trung tâm chứa các nút bấm gỗ & nhãn "ẤN BẮT ĐẦU"
 	var v := VBoxContainer.new()
@@ -56,7 +92,7 @@ func _ready() -> void:
 	# Khối 3 nút gỗ chạm khắc - kích thước đồng bộ tuyệt đối với ô trên cùng
 	var btn_box := VBoxContainer.new()
 	btn_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_box.add_theme_constant_override("separation", 8)
+	btn_box.add_theme_constant_override("separation", 20)
 	v.add_child(btn_box)
 
 	var base_btn_size := Vector2(292, 78)
@@ -78,19 +114,6 @@ func _ready() -> void:
 		_guide_overlay.visible = not _guide_overlay.visible
 	)
 	btn_box.add_child(guide_btn)
-
-	# 3. Dòng bản quyền dưới cùng: "© 2026 FLUFFY GAME STUDIO"
-	var footer := Label.new()
-	footer.text = "© 2026 FLUFFY GAME STUDIO"
-	footer.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	footer.offset_bottom = -16
-	footer.offset_top = -42
-	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	footer.add_theme_font_size_override("font_size", 14)
-	footer.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.95))
-	footer.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.95))
-	footer.add_theme_constant_override("outline_size", 4)
-	root.add_child(footer)
 
 	# 4. Lớp phủ cửa sổ Cẩm Nang / Hướng Dẫn Nông Dân
 	_guide_overlay = Control.new()

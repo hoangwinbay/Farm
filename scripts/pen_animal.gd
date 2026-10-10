@@ -216,6 +216,12 @@ func _update_bubble(ready_now: bool, hungry_now: bool) -> void:
 		var prod_id := str(d.get("product", ""))
 		bubble_spr.texture = TextureGen.get_harvest_bubble(prod_id)
 		bubble_spr.position.y = _bubble_base_y + sin(_bubble_time) * 2.5
+	elif can_slaughter():
+		# Đã ăn đủ 5 lần: hiện bong bóng thịt Stardew Valley sẵn sàng chém lấy thịt!
+		bubble_spr.visible = true
+		var meat_id: String = PoultryDB.get_animal_meat_id(species_id)
+		bubble_spr.texture = TextureGen.get_harvest_bubble(meat_id)
+		bubble_spr.position.y = _bubble_base_y + sin(_bubble_time) * 2.5
 	elif hungry_now:
 		# Hiện bong bóng túi cám Stardew Valley!
 		bubble_spr.visible = true
@@ -312,6 +318,7 @@ func feed() -> bool:
 
 	animal_data["fed"] = true
 	animal_data["progress"] = 0.0
+	animal_data["times_fed"] = int(animal_data.get("times_fed", 0)) + 1
 
 	# Bắt đầu đi tới máng ăn
 	target_pos = get_trough_eating_spot()
@@ -366,6 +373,14 @@ func is_fed() -> bool:
 	return bool(animal_data.get("fed", false))
 
 
+func can_slaughter() -> bool:
+	return not is_baby and int(animal_data.get("times_fed", 0)) >= 5
+
+
+func get_times_fed() -> int:
+	return int(animal_data.get("times_fed", 0))
+
+
 func get_animal_name() -> String:
 	var d := PoultryDB.get_animal(species_id)
 	return str(d.get("name", "Vật nuôi"))
@@ -378,6 +393,6 @@ func get_product_name() -> String:
 
 func get_remaining_wait_time() -> float:
 	var d := PoultryDB.get_animal(species_id)
-	var interval: float = float(d.get("interval", 25.0))
+	var interval: float = float(d.get("interval", 90.0))
 	var prog: float = float(animal_data.get("progress", 0.0))
 	return maxf(0.0, interval - prog)

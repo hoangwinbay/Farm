@@ -134,18 +134,18 @@ func refresh() -> void:
 	rows.add_child(prod_head)
 
 	var any := false
-	for a in PoultryDB.ANIMALS:
-		var pid := str(a.product)
+	for pinfo in PoultryDB.PRODUCTS:
+		var pid := str(pinfo.id)
 		var n := Inventory.produce_count(pid)
 		if n < 1:
 			continue
 		any = true
-		rows.add_child(_build_product_row(a, n))
+		rows.add_child(_build_product_row(pinfo, n))
 
 	if not any:
 		var p := PanelContainer.new()
 		p.add_theme_stylebox_override("panel", UIKit.row_locked_box())
-		var l := UIKit.label(p, "(Chưa có sản phẩm nào — hãy nuôi gia cầm rồi ra chuồng bấm [E] để thu hoạch)", 13, UIKit.COLOR_TEXT_MUTED)
+		var l := UIKit.label(p, "(Chưa có sản phẩm nào — hãy nuôi gia súc, gia cầm rồi ra chuồng chăm sóc hoặc chém lấy thịt)", 13, UIKit.COLOR_TEXT_MUTED)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		rows.add_child(p)
 
@@ -162,25 +162,25 @@ func _section_title(text: String, color: Color) -> PanelContainer:
 
 func _total_product_value() -> int:
 	var total := 0
-	for a in PoultryDB.ANIMALS:
-		var pid := str(a.product)
+	for p in PoultryDB.PRODUCTS:
+		var pid := str(p.id)
 		var n := Inventory.produce_count(pid)
-		total += n * int(a.product_price)
+		total += n * int(p.price)
 	return total
 
 
 func _sell_all_products() -> void:
 	var total := 0
 	var count := 0
-	for a in PoultryDB.ANIMALS:
-		var pid := str(a.product)
+	for p in PoultryDB.PRODUCTS:
+		var pid := str(p.id)
 		var n := Inventory.produce_count(pid)
 		if n > 0 and Inventory.take_produce(pid, n):
-			total += n * int(a.product_price)
+			total += n * int(p.price)
 			count += n
 	if total > 0:
 		GameState.add_money(total)
-		feedback.emit("Đã bán %d sản phẩm chăn nuôi (+%d xu)!" % [count, total])
+		feedback.emit("Đã bán %d sản phẩm chăn nuôi & thịt (+%d xu)!" % [count, total])
 		refresh()
 
 
@@ -224,20 +224,22 @@ func _build_coop_row(coop: Dictionary) -> Control:
 	if tier == 0:
 		tag_text = "Chưa mua (Khu đất rào gỗ)"
 		tag_col = Color(0.8, 0.7, 0.5)
-	elif tier == 1:
-		tag_text = "Cấp 1 — Sức chứa: 2 con (Đang nuôi: %d)" % count
-		tag_col = Color(0.6, 0.9, 0.6)
+	elif tier < 4:
+		tag_text = "Cấp %d — Sức chứa: %d con (Đang nuôi: %d)" % [tier, Inventory.coop_capacity(cid), count]
+		tag_col = Color(0.6, 0.9, 0.6) if tier == 1 else (Color(0.85, 0.85, 0.45) if tier == 2 else Color(0.95, 0.75, 0.4))
 	else:
-		tag_text = "Cấp 2 (Tối đa) — Sức chứa: 4 con (Đang nuôi: %d)" % count
+		tag_text = "Cấp 4 (Tối đa) — Sức chứa: 16 con (Đang nuôi: %d)" % count
 		tag_col = Color(1.0, 0.85, 0.3)
 	UIKit.label(count_pill, tag_text, 12, tag_col)
 	name_h.add_child(count_pill)
 
-	var desc_text := str(coop.desc_t0)
-	if tier == 1:
-		desc_text = str(coop.desc_t1)
-	elif tier >= 2:
-		desc_text = str(coop.desc_t2)
+	var desc_text := ""
+	match tier:
+		0: desc_text = str(coop.get("desc_t0", ""))
+		1: desc_text = str(coop.get("desc_t1", ""))
+		2: desc_text = str(coop.get("desc_t2", ""))
+		3: desc_text = str(coop.get("desc_t3", ""))
+		_: desc_text = str(coop.get("desc_t4", ""))
 	UIKit.label(info_v, desc_text, 12, UIKit.COLOR_TEXT_MUTED)
 
 	if tier == 0:
@@ -246,14 +248,15 @@ func _build_coop_row(coop: Dictionary) -> Control:
 		buy.custom_minimum_size = Vector2(175, 34)
 		buy.disabled = GameState.money < price
 		buy.pressed.connect(_buy_coop.bind(cid))
-	elif tier == 1:
-		var price := int(coop.tier2_price)
-		var up := UIKit.styled_button(h, "▲ Nâng cấp Cấp 2 (%d xu)" % price, 13, "upgrade")
+	elif tier < 4:
+		var next_tier := tier + 1
+		var price := PoultryDB.get_coop_upgrade_price(cid, next_tier)
+		var up := UIKit.styled_button(h, "▲ Nâng cấp Cấp %d (%d xu)" % [next_tier, price], 13, "upgrade")
 		up.custom_minimum_size = Vector2(175, 34)
 		up.disabled = GameState.money < price
 		up.pressed.connect(_upgrade_coop.bind(cid))
 	else:
-		var max_btn := UIKit.styled_button(h, "✔ Đã đạt tối đa", 13, "secondary")
+		var max_btn := UIKit.styled_button(h, "✔ Đã đạt tối đa (Cấp 4)", 13, "secondary")
 		max_btn.custom_minimum_size = Vector2(175, 34)
 		max_btn.disabled = true
 	return p
@@ -369,7 +372,10 @@ func _build_animal_row(a: Dictionary) -> Control:
 		UIKit.label(owned_pill, otxt, 11, Color(0.6, 1.0, 0.5))
 		name_h.add_child(owned_pill)
 
-	UIKit.label(info_v, "Cho %s (%d xu) mỗi %ds · Nuôi 2 con sẽ đẻ ra baby" % [a.product_name, int(a.product_price), int(a.interval)], 12, UIKit.COLOR_TEXT_GOLD)
+	if aid == "pig":
+		UIKit.label(info_v, "Chỉ lấy thịt khi chém sau 5 lần cho ăn · Nuôi 2 con sẽ đẻ ra baby", 12, UIKit.COLOR_TEXT_GOLD)
+	else:
+		UIKit.label(info_v, "50%% tỉ lệ cho %s (%d xu) mỗi %ds · Đủ 5 lần ăn có thể chém lấy thịt" % [a.product_name, int(a.product_price), int(a.interval)], 12, UIKit.COLOR_TEXT_GOLD)
 
 	var slot_color := Color(0.6, 0.95, 0.6) if (tier > 0 and slots > 0) else Color(0.9, 0.45, 0.4)
 	var slot_txt := ""
@@ -392,13 +398,17 @@ func _build_animal_row(a: Dictionary) -> Control:
 	if tier == 0:
 		buy.tooltip_text = "Cần mua %s Cấp 1 trước!" % cname
 	elif slots < 1:
-		buy.tooltip_text = "%s đã kín chỗ! Hãy nâng cấp lên Cấp 2." % cname
+		if tier < 4:
+			buy.tooltip_text = "%s đã kín chỗ (%d con)! Hãy nâng cấp lên Cấp %d." % [cname, Inventory.coop_capacity(aid), tier + 1]
+		else:
+			buy.tooltip_text = "%s đã đạt giới hạn tối đa (16 con)!" % cname
 	return p
 
 
-func _build_product_row(a: Dictionary, n: int) -> Control:
-	var pid := str(a.product)
-	var price := int(a.product_price)
+func _build_product_row(pinfo: Dictionary, n: int) -> Control:
+	var pid := str(pinfo.id)
+	var price := int(pinfo.price)
+	var pname := str(pinfo.name)
 
 	var p := PanelContainer.new()
 	p.add_theme_stylebox_override("panel", UIKit.row_box())
@@ -420,8 +430,9 @@ func _build_product_row(a: Dictionary, n: int) -> Control:
 	info_v.add_theme_constant_override("separation", 2)
 	h.add_child(info_v)
 
-	UIKit.label(info_v, a.product_name, 15, Color(1.0, 0.95, 0.85))
-	UIKit.label(info_v, "Thu hoạch từ %s · Giá bán: %d xu/cái" % [a.name, price], 12, UIKit.COLOR_TEXT_MUTED)
+	UIKit.label(info_v, pname, 15, Color(1.0, 0.95, 0.85))
+	var desc_txt := str(pinfo.get("desc", "Sản phẩm chăn nuôi")) + (" · Giá bán: %d xu/cái" % price)
+	UIKit.label(info_v, desc_txt, 12, UIKit.COLOR_TEXT_MUTED)
 
 	var count_pill := PanelContainer.new()
 	count_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.07), UIKit.COLOR_BORDER_WOOD, 6))
@@ -430,11 +441,11 @@ func _build_product_row(a: Dictionary, n: int) -> Control:
 
 	var sell1 := UIKit.styled_button(h, "Bán 1", 13, "sell")
 	sell1.custom_minimum_size = Vector2(65, 32)
-	sell1.pressed.connect(_sell_product.bind(pid, price, a.product_name, false))
+	sell1.pressed.connect(_sell_product.bind(pid, price, pname, false))
 
 	var sellall := UIKit.styled_button(h, "Bán hết", 13, "sell")
 	sellall.custom_minimum_size = Vector2(75, 32)
-	sellall.pressed.connect(_sell_product.bind(pid, price, a.product_name, true))
+	sellall.pressed.connect(_sell_product.bind(pid, price, pname, true))
 	return p
 
 
@@ -449,10 +460,16 @@ func _buy_coop(id: String) -> void:
 
 
 func _upgrade_coop(id: String) -> void:
+	var old_tier := Inventory.get_coop_tier(id)
 	var err := Inventory.upgrade_coop(id)
 	if err == "":
 		var c := PoultryDB.get_coop_data(id)
-		feedback.emit("Đã nâng cấp %s lên Cấp 2! Sức chứa 4 con & đủ chỗ cho baby." % str(c.name))
+		var new_tier := Inventory.get_coop_tier(id)
+		var cap := Inventory.coop_capacity(id)
+		if new_tier >= 4:
+			feedback.emit("Đã nâng cấp %s lên Cấp 4 (Tối đa)! Sức chứa 16 con." % str(c.name))
+		else:
+			feedback.emit("Đã nâng cấp %s lên Cấp %d! Sức chứa %d con." % [str(c.name), new_tier, cap])
 		refresh()
 	else:
 		feedback.emit(err)

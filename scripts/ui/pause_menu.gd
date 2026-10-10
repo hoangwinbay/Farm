@@ -7,6 +7,7 @@ const UIKit := preload("res://scripts/ui/ui_kit.gd")
 signal resumed
 signal saved
 signal menu_requested
+signal settings_requested
 
 var summary_label: Label
 
@@ -58,6 +59,10 @@ func _ready() -> void:
 	var save := UIKit.styled_button(v, "💾 Lưu trò chơi", 16, "primary")
 	save.custom_minimum_size = Vector2(280, 42)
 	save.pressed.connect(func(): saved.emit())
+
+	var settings_btn := UIKit.styled_button(v, "⚙️ Cài đặt (Âm thanh & Tốc độ)", 15, "default")
+	settings_btn.custom_minimum_size = Vector2(280, 40)
+	settings_btn.pressed.connect(func(): settings_requested.emit())
 
 	var menu := UIKit.styled_button(v, "🏠 Lưu & về màn hình chính", 15, "default")
 	menu.custom_minimum_size = Vector2(280, 40)

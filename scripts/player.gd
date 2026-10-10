@@ -29,7 +29,6 @@ var _sweat_spr: Sprite2D
 var _sweat_timer: float = 0.0
 var _dir := "down"
 var _anim_t := 0.0
-var _walk_stamina_timer: float = 0.0
 
 var _is_fishing := false
 
@@ -104,17 +103,9 @@ func _physics_process(delta: float) -> void:
 			_sprite.flip_h = false
 		_anim_t += delta * (0.7 if exhausted else 1.0)
 		_update_tex(int(_anim_t * 8.0) % 4)
-
-		# Đi lại cũng tiêu hao năng lượng, nhưng rất ít (không đáng kể: 0.1 điểm mỗi giây di chuyển)
-		if not exhausted:
-			_walk_stamina_timer += delta
-			if _walk_stamina_timer >= 1.0:
-				_walk_stamina_timer -= 1.0
-				GameState.use_stamina(0.1)
 	else:
 		_anim_t = 0.0
 		_update_tex(0)
-		_walk_stamina_timer = 0.0
 
 
 func get_facing_point() -> Vector2:

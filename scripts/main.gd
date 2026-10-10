@@ -314,6 +314,10 @@ var pause_menu: CanvasLayer:
 	get: return ui_coordinator.pause_menu if ui_coordinator != null else null
 	set(v): if ui_coordinator != null: ui_coordinator.pause_menu = v
 
+var settings_panel: CanvasLayer:
+	get: return ui_coordinator.settings_panel if ui_coordinator != null else null
+	set(v): if ui_coordinator != null: ui_coordinator.settings_panel = v
+
 var minimap: CanvasLayer:
 	get: return ui_coordinator.minimap if ui_coordinator != null else null
 	set(v): if ui_coordinator != null: ui_coordinator.minimap = v
@@ -488,6 +492,9 @@ func _on_dialog_finished() -> void:
 
 func _update_npc_mayor_indicator() -> void:
 	interaction_manager.update_npc_mayor_indicator()
+
+func _build_fixed_foliage() -> void:
+	world_builder.build_fixed_foliage()
 
 func _populate_random_foliage(target_count: int = 75, seed_val: int = 0) -> void:
 	world_builder.populate_random_foliage(target_count, seed_val)

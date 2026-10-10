@@ -121,9 +121,6 @@ func do_sleep(forced: bool) -> void:
 		main.quest_mgr.check_real_time_refresh()
 		main._update_npc_mayor_indicator()
 
-	if main.foliage_nodes.size() < 95 and randf() < 0.60:
-		main._sprout_random_plant()
-
 	var new_pests := 0
 	if not (next_w in [WeatherManagerScript.RAIN, WeatherManagerScript.STORM]):
 		for t in main.farm.tiles.values():

@@ -17,6 +17,7 @@ const StoragePanelScript := preload("res://scripts/ui/storage_panel.gd")
 const CatPanelScript := preload("res://scripts/ui/cat_panel.gd")
 const QuestPanelScript := preload("res://scripts/ui/quest_panel.gd")
 const ToolUpgradePanelScript := preload("res://scripts/ui/tool_upgrade_panel.gd")
+const SettingsPanelScript := preload("res://scripts/ui/settings_panel.gd")
 
 var main: Node2D
 
@@ -36,6 +37,7 @@ var minimap: CanvasLayer
 var touch_ui: CanvasLayer
 var tool_upgrade_panel: CanvasLayer
 var quest_panel: CanvasLayer
+var settings_panel: CanvasLayer
 var fade_rect: ColorRect
 
 
@@ -99,6 +101,10 @@ func build_ui() -> void:
 	pause_menu = PauseMenuScript.new()
 	main.add_child(pause_menu)
 
+	settings_panel = SettingsPanelScript.new()
+	main.add_child(settings_panel)
+	settings_panel.closed.connect(close_panels)
+
 	dialog_box = DialogueBoxScript.new()
 	main.add_child(dialog_box)
 
@@ -157,9 +163,19 @@ func connect_ui_signals() -> void:
 	pause_menu.resumed.connect(resume_from_pause)
 	pause_menu.saved.connect(main._save_now)
 	pause_menu.menu_requested.connect(main._back_to_title)
+	pause_menu.settings_requested.connect(open_settings)
+
+	hud.open_settings_requested.connect(open_settings)
+	title_screen.settings_requested.connect(open_settings)
 
 
 # Mở các Panels
+func open_settings() -> void:
+	if main.mode != main.Mode.TITLE:
+		main.mode = main.Mode.PANEL
+	settings_panel.open()
+
+
 func open_shop() -> void:
 	main.mode = main.Mode.PANEL
 	main.get_tree().paused = true
@@ -187,6 +203,8 @@ func open_tool_upgrade_panel() -> void:
 func open_inventory() -> void:
 	main.mode = main.Mode.PANEL
 	main.get_tree().paused = true
+	if hud != null:
+		hud.visible = false
 	inv_panel.open()
 
 
@@ -233,6 +251,10 @@ func close_panels() -> void:
 	if quest_panel != null: quest_panel.visible = false
 	if tool_upgrade_panel != null: tool_upgrade_panel.visible = false
 	if pause_menu != null: pause_menu.visible = false
+	if settings_panel != null: settings_panel.visible = false
+	if hud != null:
+		hud.visible = true
+		hud.rebuild_hotbar()
 	main.get_tree().paused = false
 	if main.mode != main.Mode.TITLE:
 		main.mode = main.Mode.PLAY
@@ -241,6 +263,8 @@ func close_panels() -> void:
 func resume_from_pause() -> void:
 	if pause_menu != null:
 		pause_menu.close()
+	if settings_panel != null:
+		settings_panel.close()
 	main.get_tree().paused = false
 	if main.mode != main.Mode.TITLE:
 		main.mode = main.Mode.PLAY
@@ -264,4 +288,5 @@ func is_any_panel_open() -> bool:
 		or (cat_panel != null and cat_panel.visible) \
 		or (quest_panel != null and quest_panel.visible) \
 		or (tool_upgrade_panel != null and tool_upgrade_panel.visible) \
-		or (pause_menu != null and pause_menu.visible)
+		or (pause_menu != null and pause_menu.visible) \
+		or (settings_panel != null and settings_panel.visible)

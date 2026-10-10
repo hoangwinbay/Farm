@@ -5,6 +5,8 @@ signal money_changed(value: int)
 signal crops_changed
 signal stamina_changed(value: float, max_value: float)
 signal weather_changed(weather_id: String)
+signal game_speed_changed(speed: float)
+signal sound_toggled(enabled: bool)
 
 const CropDB := preload("res://scripts/crop_db.gd")
 const FishDB := preload("res://scripts/fish_db.gd")
@@ -23,6 +25,27 @@ var clock: float = DAY_START  # phải là float — kiểu int sẽ làm đồn
 var stamina: float = 100.0
 var max_stamina: float = 100.0
 var weather: String = "sunny"
+var sound_enabled: bool = true
+var game_speed: float = 1.0
+
+
+func set_game_speed(spd: float) -> void:
+	game_speed = clampf(spd, 1.0, 5.0)
+	Engine.time_scale = game_speed
+	game_speed_changed.emit(game_speed)
+
+
+func cycle_game_speed() -> float:
+	var next_spd: float = game_speed + 1.0
+	if next_spd > 5.0:
+		next_spd = 1.0
+	set_game_speed(next_spd)
+	return game_speed
+
+
+func set_sound_enabled(enabled: bool) -> void:
+	sound_enabled = enabled
+	sound_toggled.emit(sound_enabled)
 
 
 func reset_new_game() -> void:
@@ -71,11 +94,24 @@ func get_food_stamina(category: String, id: String) -> int:
 					"rubber", "sau_bo": return 0
 					_: return 15
 			# Kiểm tra nếu là sản phẩm gia cầm / gia súc trong túi produce
+			var pinfo := PoultryDB.get_product_info(id)
+			if not pinfo.is_empty():
+				match id:
+					"thit_bo": return 75
+					"thit_lon": return 65
+					"thit_cuu": return 70
+					"thit_ga": return 50
+					"sua_bo": return 40
+					"trung_ga": return 25
+					"long_cuu": return 0
+					_: return 30
 			match id:
-				"thit_lon": return 55
+				"thit_bo": return 75
+				"thit_lon": return 65
+				"thit_cuu": return 70
+				"thit_ga": return 50
 				"sua_bo": return 40
 				"trung_ga": return 25
-				"thit_ga": return 45
 				"thit_ngan": return 60
 				"thit_bocau": return 55
 				"thit_vit": return 50
@@ -86,10 +122,12 @@ func get_food_stamina(category: String, id: String) -> int:
 				_: return 0
 		"poultry", "meat":
 			match id:
-				"thit_lon": return 55
+				"thit_bo": return 75
+				"thit_lon": return 65
+				"thit_cuu": return 70
+				"thit_ga": return 50
 				"sua_bo": return 40
 				"trung_ga": return 25
-				"thit_ga": return 45
 				"thit_ngan": return 60
 				"thit_bocau": return 55
 				"thit_vit": return 50
@@ -107,14 +145,13 @@ func get_food_stamina(category: String, id: String) -> int:
 
 func get_food_name(category: String, id: String) -> String:
 	match category:
-		"crop", "produce":
+		"crop", "produce", "poultry", "meat":
 			var c := CropDB.get_crop(id)
 			if not c.is_empty():
 				return str(c.get("name", id))
-			for a in PoultryDB.ANIMALS:
-				if str(a.product) == id:
-					return str(a.product_name)
-		"poultry", "meat":
+			var p := PoultryDB.get_product_info(id)
+			if not p.is_empty():
+				return str(p.get("name", id))
 			for a in PoultryDB.ANIMALS:
 				if str(a.product) == id:
 					return str(a.product_name)

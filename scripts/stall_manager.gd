@@ -39,8 +39,11 @@ const STALL_WISHLIST_ITEMS := [
 	{"id": "chep", "type": "fish", "name": "Cá chép", "base_price": 40},
 	{"id": "trung_ga", "type": "poultry", "name": "Trứng gà", "base_price": 35},
 	{"id": "sua_bo", "type": "poultry", "name": "Sữa bò", "base_price": 70},
-	{"id": "thit_lon", "type": "poultry", "name": "Thịt lợn", "base_price": 55},
 	{"id": "long_cuu", "type": "poultry", "name": "Lông cừu", "base_price": 65},
+	{"id": "thit_ga", "type": "poultry", "name": "Thịt gà", "base_price": 35},
+	{"id": "thit_bo", "type": "poultry", "name": "Thịt bò", "base_price": 65},
+	{"id": "thit_lon", "type": "poultry", "name": "Thịt lợn", "base_price": 60},
+	{"id": "thit_cuu", "type": "poultry", "name": "Thịt cừu", "base_price": 45},
 ]
 
 var main: Node2D

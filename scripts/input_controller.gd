@@ -60,11 +60,34 @@ func handle_unhandled_input(event: InputEvent) -> void:
 					main._open_quest_panel()
 				main.get_viewport().set_input_as_handled()
 				return
+			elif event.keycode == KEY_F2:
+				main.ui_coordinator.open_settings()
+				main.get_viewport().set_input_as_handled()
+				return
+			elif event.keycode == KEY_F3:
+				var spd := GameState.cycle_game_speed()
+				if main.hud != null:
+					main.hud.toast("⚡ Tốc độ trò chơi: x%d" % int(spd), Color(1.0, 0.9, 0.4))
+				main.get_viewport().set_input_as_handled()
+				return
+			elif event.keycode == KEY_F5:
+				main._save_now()
+				if main.hud != null:
+					main.hud.toast("💾 Đã lưu game thành công! (F5)", Color(0.4, 1.0, 0.5))
+				main.get_viewport().set_input_as_handled()
+				return
+			elif event.keycode == KEY_F7:
+				main.world_builder.build_fixed_foliage()
+				if main.hud != null:
+					main.hud.toast("🌲 Đã nạp lại vị trí cây cố định! (F7)", Color(0.4, 1.0, 0.5))
+				main.get_viewport().set_input_as_handled()
+				return
 			elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
 				main.hud.select_slot_by_index(event.keycode - KEY_1)
 		elif (main.storage_panel != null and main.storage_panel.visible and event.keycode == KEY_K) \
 			or (main.cat_panel != null and main.cat_panel.visible and event.keycode == KEY_M) \
-			or (main.quest_panel != null and main.quest_panel.visible and event.keycode == KEY_Q):
+			or (main.quest_panel != null and main.quest_panel.visible and event.keycode == KEY_Q) \
+			or (main.settings_panel != null and main.settings_panel.visible and event.keycode == KEY_F2):
 			main._close_panels()
 			main.get_viewport().set_input_as_handled()
 			return

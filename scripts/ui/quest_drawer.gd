@@ -53,6 +53,8 @@ func _ready() -> void:
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(280, 260)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	UIKit.style_scroll_container(scroll)
 	vb.add_child(scroll)
 
 	_items_vbox = VBoxContainer.new()

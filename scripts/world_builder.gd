@@ -4,12 +4,13 @@ extends RefCounted
 const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 const CatHelperScript := preload("res://scripts/cat_helper.gd")
+const FixedFoliageData := preload("res://scripts/fixed_foliage_data.gd")
 
 const WORLD_SIZE := Vector2(1900, 1000)
 const HOUSE_POS := Vector2(641, 248)
 const SHED_POS := Vector2(505, 248)
 const TENT_POS := Vector2(766, 248)
-const MAILBOX_POS := Vector2(720, 246)
+const MAILBOX_POS := Vector2(704, 440)
 const MAYOR_POS := Vector2(705, 270)
 const MARKET_STALL_POS := Vector2(584, 440)
 const MINE_ENTRANCE_POS := Vector2(96, 64)
@@ -26,8 +27,8 @@ const PLAYER_START := Vector2(650, 470)
 const POND_RECT := Rect2(1232, 720, 416, 368)
 const FISH_SPOT_POS := Vector2(1440, 880)
 
-const PATH_COBBLE_V := Rect2(480, 480, 48, 384)
-const PATH_COBBLE_H := Rect2(240, 672, 528, 48)
+const PATH_COBBLE_V := Rect2(432, 480, 48, 440)
+const PATH_COBBLE_H := Rect2(144, 688, 624, 48)
 
 const PATHS := [
 	Rect2(640, 240, 32, 224),    # từ cửa nhà xuống đại lộ (x: 640..672, y: 240..464)
@@ -152,28 +153,8 @@ func build_mailbox() -> void:
 	col.position = Vector2(0, -5)
 	body.add_child(col)
 
-	mailbox_badge = PanelContainer.new()
-	mailbox_badge.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.24, 0.16, 0.08, 0.95), UIKit.COLOR_BORDER_GOLD, 6))
-	var bh := HBoxContainer.new()
-	bh.add_theme_constant_override("separation", 4)
-	mailbox_badge.add_child(bh)
-
-	var star_ic := TextureRect.new()
-	star_ic.texture = TextureGen.star_icon()
-	star_ic.custom_minimum_size = Vector2(12, 12)
-	star_ic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-	bh.add_child(star_ic)
-
-	UIKit.label(bh, "Thư mới [E]", 11, UIKit.COLOR_TEXT_TITLE)
-	mailbox_badge.position = Vector2(-36, -46)
-	body.add_child(mailbox_badge)
-
-	var tw := main.create_tween().set_loops()
-	tw.tween_property(mailbox_badge, "position:y", -49.0, 0.7).set_trans(Tween.TRANS_SINE)
-	tw.tween_property(mailbox_badge, "position:y", -43.0, 0.7).set_trans(Tween.TRANS_SINE)
-
+	mailbox_badge = null
 	world.add_child(body)
-	update_mailbox_badge()
 
 
 func default_mailbox_data() -> Dictionary:
@@ -470,7 +451,7 @@ func is_grass_surface(pos: Vector2) -> bool:
 	if pos.distance_to(PLAYER_START) < 40.0:
 		return false
 
-	var pen_box := Rect2(230.0, 520.0, 550.0, 360.0)
+	var pen_box := Rect2(130.0, 510.0, 650.0, 400.0)
 	if pen_box.has_point(pos):
 		return false
 
@@ -526,38 +507,13 @@ func spawn_foliage_item(f_name: String, pos: Vector2) -> StaticBody2D:
 	return body
 
 
-func populate_random_foliage(target_count: int = 75, seed_val: int = 0) -> void:
-	clear_foliage()
-	var rng := RandomNumberGenerator.new()
-	if seed_val != 0:
-		rng.seed = seed_val
-	else:
-		rng.randomize()
+func build_fixed_foliage() -> void:
+	load_foliage(FixedFoliageData.FIXED_FOLIAGE)
 
-	var attempts := 0
-	var max_attempts := 3500
-	var min_dist := 48.0
 
-	while foliage_data.size() < target_count and attempts < max_attempts:
-		attempts += 1
-		var x := rng.randf_range(50.0, WORLD_SIZE.x - 50.0)
-		var y := rng.randf_range(55.0, WORLD_SIZE.y - 55.0)
-		var pt := Vector2(x, y)
-
-		if not is_grass_surface(pt):
-			continue
-
-		var too_close := false
-		for d in foliage_data:
-			var ex_pt := Vector2(float(d.x), float(d.y))
-			if pt.distance_to(ex_pt) < min_dist:
-				too_close = true
-				break
-		if too_close:
-			continue
-
-		var f_type := random_foliage_type(rng)
-		spawn_foliage_item(f_type, pt)
+func populate_random_foliage(_target_count: int = 75, _seed_val: int = 0) -> void:
+	# Cố định vị trí cây cho mọi màn chơi theo lựa chọn đã lưu của người dùng
+	build_fixed_foliage()
 
 
 func load_foliage(saved_items: Array) -> void:
@@ -575,25 +531,5 @@ func load_foliage(saved_items: Array) -> void:
 
 
 func sprout_random_plant() -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
-	for _i in 100:
-		var x := rng.randf_range(50.0, WORLD_SIZE.x - 50.0)
-		var y := rng.randf_range(55.0, WORLD_SIZE.y - 55.0)
-		var pt := Vector2(x, y)
-		if not is_grass_surface(pt):
-			continue
-		var too_close := false
-		for d in foliage_data:
-			var ex_pt := Vector2(float(d.x), float(d.y))
-			if pt.distance_to(ex_pt) < 48.0:
-				too_close = true
-				break
-		if too_close:
-			continue
-		var plant_pool := ["bush_small", "bush_berry", "bush_med", "tree_oak", "tree_maple", "tree_pine"]
-		var plant_type: String = plant_pool[rng.randi_range(0, plant_pool.size() - 1)]
-		spawn_foliage_item(plant_type, pt)
-		if is_instance_valid(main.hud):
-			main.hud.toast("Một cây xanh vừa mọc tự nhiên trên bãi cỏ qua đêm! 🌱", Color(0.65, 0.95, 0.6))
-		break
+	# Đã bỏ cơ chế mọc thêm cây ngẫu nhiên để cố định bản đồ cho mọi màn chơi
+	pass

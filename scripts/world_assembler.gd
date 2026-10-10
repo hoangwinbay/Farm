@@ -37,7 +37,7 @@ func build_world(main: Node2D) -> void:
 	main.stall_manager.build_market_stall()
 
 	main.world_builder.build_mine_entrance()
-	main.world_builder.populate_random_foliage(75)
+	main.world_builder.build_fixed_foliage()
 	main.world_builder.build_fences()
 	main.world_builder.build_walls()
 

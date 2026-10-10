@@ -17,6 +17,8 @@ func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: D
 		"stamina": GameState.stamina,
 		"max_stamina": GameState.max_stamina,
 		"weather": GameState.weather,
+		"sound_enabled": GameState.sound_enabled,
+		"game_speed": GameState.game_speed,
 		"unlocked": GameState.unlocked.duplicate(),
 		"seeds": Inventory.seeds.duplicate(),
 		"produce": Inventory.produce.duplicate(),

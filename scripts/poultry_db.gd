@@ -12,7 +12,7 @@ const ANIMALS := [
 		"product": "trung_ga",
 		"product_name": "Trứng gà",
 		"product_color": "f2e3b6",
-		"interval": 25.0,
+		"interval": 90.0,
 		"product_price": 35,
 		"texture_adult": "res://picture/animals/White Chicken.png",
 		"texture_baby": "res://picture/animals/BabyWhite Chicken.png",
@@ -32,7 +32,7 @@ const ANIMALS := [
 		"product": "sua_bo",
 		"product_name": "Sữa bò",
 		"product_color": "f5f5f5",
-		"interval": 45.0,
+		"interval": 90.0,
 		"product_price": 70,
 		"texture_adult": "res://picture/animals/White Cow.png",
 		"texture_baby": "res://picture/animals/BabyWhite Cow.png",
@@ -49,11 +49,11 @@ const ANIMALS := [
 		"price": 450,
 		"color": "f5a0a0",
 		"shape": "pig",
-		"product": "thit_lon",
-		"product_name": "Thịt lợn",
+		"product": "", # không có sản phẩm định kỳ khi ăn
+		"product_name": "",
 		"product_color": "e06d6d",
-		"interval": 35.0,
-		"product_price": 55,
+		"interval": 90.0,
+		"product_price": 0,
 		"texture_adult": "res://picture/animals/Pig.png",
 		"texture_baby": "res://picture/animals/BabyPig.png",
 		"frame_size": Vector2i(32, 32),
@@ -72,7 +72,7 @@ const ANIMALS := [
 		"product": "long_cuu",
 		"product_name": "Lông cừu",
 		"product_color": "e8e8f0",
-		"interval": 50.0,
+		"interval": 90.0,
 		"product_price": 65,
 		"texture_adult": "res://picture/animals/Sheep.png",
 		"texture_sheared": "res://picture/animals/ShearedSheep.png",
@@ -101,11 +101,17 @@ const COOP_DATA := {
 		"animal_name": "Gà trắng",
 		"tier1_price": 200,
 		"tier2_price": 350,
+		"tier3_price": 600,
+		"tier4_price": 1000,
 		"tier1_cap": 2,
 		"tier2_cap": 4,
+		"tier3_cap": 8,
+		"tier4_cap": 16,
 		"desc_t0": "Khu đất rào gỗ với nền đất. Mua chuồng Cấp 1 để nuôi được 2 con gà!",
 		"desc_t1": "Chuồng Cấp 1 (sức chứa 2 con). Nâng cấp Cấp 2 để mở rộng 4 con và đủ chỗ cho gà con sinh sản!",
-		"desc_t2": "Chuồng Cấp 2 (Tối đa, sức chứa 4 con). Đủ chỗ cho cặp gà lớn và đàn gà con!",
+		"desc_t2": "Chuồng Cấp 2 (sức chứa 4 con). Nâng cấp Cấp 3 để mở rộng 8 con!",
+		"desc_t3": "Chuồng Cấp 3 (sức chứa 8 con). Nâng cấp Cấp 4 (Max) để mở rộng 16 con!",
+		"desc_t4": "Chuồng Cấp 4 (Tối đa, sức chứa 16 con). Trang trại nuôi gà quy mô lớn nhất!",
 	},
 	"cow": {
 		"id": "cow",
@@ -113,12 +119,18 @@ const COOP_DATA := {
 		"animal_id": "cow",
 		"animal_name": "Bò trắng",
 		"tier1_price": 500,
-		"tier2_price": 700,
+		"tier2_price": 750,
+		"tier3_price": 1200,
+		"tier4_price": 2000,
 		"tier1_cap": 2,
 		"tier2_cap": 4,
+		"tier3_cap": 8,
+		"tier4_cap": 16,
 		"desc_t0": "Khu đất rào gỗ với nền đất. Mua chuồng Cấp 1 để nuôi được 2 con bò sữa!",
 		"desc_t1": "Chuồng Cấp 1 (sức chứa 2 con). Nâng cấp Cấp 2 để mở rộng 4 con và đủ chỗ cho bê con sinh sản!",
-		"desc_t2": "Chuồng Cấp 2 (Tối đa, sức chứa 4 con). Đủ chỗ cho cặp bò sữa và đàn bê con!",
+		"desc_t2": "Chuồng Cấp 2 (sức chứa 4 con). Nâng cấp Cấp 3 để mở rộng 8 con!",
+		"desc_t3": "Chuồng Cấp 3 (sức chứa 8 con). Nâng cấp Cấp 4 (Max) để mở rộng 16 con!",
+		"desc_t4": "Chuồng Cấp 4 (Tối đa, sức chứa 16 con). Trang trại nuôi bò quy mô lớn nhất!",
 	},
 	"pig": {
 		"id": "pig",
@@ -126,12 +138,18 @@ const COOP_DATA := {
 		"animal_id": "pig",
 		"animal_name": "Lợn",
 		"tier1_price": 400,
-		"tier2_price": 600,
+		"tier2_price": 650,
+		"tier3_price": 1000,
+		"tier4_price": 1600,
 		"tier1_cap": 2,
 		"tier2_cap": 4,
+		"tier3_cap": 8,
+		"tier4_cap": 16,
 		"desc_t0": "Khu đất rào gỗ với nền đất. Mua chuồng Cấp 1 để nuôi được 2 con lợn!",
 		"desc_t1": "Chuồng Cấp 1 (sức chứa 2 con). Nâng cấp Cấp 2 để mở rộng 4 con và đủ chỗ cho lợn con sinh sản!",
-		"desc_t2": "Chuồng Cấp 2 (Tối đa, sức chứa 4 con). Đủ chỗ cho cặp lợn và đàn lợn con!",
+		"desc_t2": "Chuồng Cấp 2 (sức chứa 4 con). Nâng cấp Cấp 3 để mở rộng 8 con!",
+		"desc_t3": "Chuồng Cấp 3 (sức chứa 8 con). Nâng cấp Cấp 4 (Max) để mở rộng 16 con!",
+		"desc_t4": "Chuồng Cấp 4 (Tối đa, sức chứa 16 con). Trang trại nuôi lợn quy mô lớn nhất!",
 	},
 	"sheep": {
 		"id": "sheep",
@@ -139,12 +157,18 @@ const COOP_DATA := {
 		"animal_id": "sheep",
 		"animal_name": "Cừu",
 		"tier1_price": 450,
-		"tier2_price": 650,
+		"tier2_price": 700,
+		"tier3_price": 1100,
+		"tier4_price": 1800,
 		"tier1_cap": 2,
 		"tier2_cap": 4,
+		"tier3_cap": 8,
+		"tier4_cap": 16,
 		"desc_t0": "Khu đất rào gỗ với nền đất. Mua chuồng Cấp 1 để nuôi được 2 con cừu lấy lông!",
 		"desc_t1": "Chuồng Cấp 1 (sức chứa 2 con). Nâng cấp Cấp 2 để mở rộng 4 con và đủ chỗ cho cừu con sinh sản!",
-		"desc_t2": "Chuồng Cấp 2 (Tối đa, sức chứa 4 con). Đủ chỗ cho cặp cừu và đàn cừu non!",
+		"desc_t2": "Chuồng Cấp 2 (sức chứa 4 con). Nâng cấp Cấp 3 để mở rộng 8 con!",
+		"desc_t3": "Chuồng Cấp 3 (sức chứa 8 con). Nâng cấp Cấp 4 (Max) để mở rộng 16 con!",
+		"desc_t4": "Chuồng Cấp 4 (Tối đa, sức chứa 16 con). Trang trại nuôi cừu quy mô lớn nhất!",
 	},
 }
 
@@ -233,6 +257,27 @@ static func get_coop_data(species_id: String) -> Dictionary:
 	return {}
 
 
+static func get_coop_capacity(species_id: String, tier: int) -> int:
+	match tier:
+		1: return 2
+		2: return 4
+		3: return 8
+		4: return 16
+		_: return 16 if tier > 4 else 0
+
+
+static func get_coop_upgrade_price(species_id: String, target_tier: int) -> int:
+	var c := get_coop_data(species_id)
+	if c.is_empty():
+		return 0
+	match target_tier:
+		1: return int(c.get("tier1_price", 200))
+		2: return int(c.get("tier2_price", 350))
+		3: return int(c.get("tier3_price", 600))
+		4: return int(c.get("tier4_price", 1000))
+		_: return 0
+
+
 static func get_coop(id: String) -> Dictionary:
 	var canon := get_canonical_id(id)
 	for c in COOPS:
@@ -250,9 +295,113 @@ static func get_coop(id: String) -> Dictionary:
 	return {}
 
 
+const PRODUCTS := [
+	{
+		"id": "trung_ga",
+		"name": "Trứng gà",
+		"color": "f2e3b6",
+		"price": 35,
+		"animal_id": "chicken",
+		"animal_name": "Gà trắng",
+		"is_meat": false,
+		"is_edible": true,
+		"desc": "Trứng gà tươi thu hoạch từ chuồng gà.",
+	},
+	{
+		"id": "sua_bo",
+		"name": "Sữa bò",
+		"color": "f5f5f5",
+		"price": 70,
+		"animal_id": "cow",
+		"animal_name": "Bò trắng",
+		"is_meat": false,
+		"is_edible": true,
+		"desc": "Bình sữa tươi thơm ngon từ bò trắng.",
+	},
+	{
+		"id": "long_cuu",
+		"name": "Lông cừu",
+		"color": "e8e8f0",
+		"price": 65,
+		"animal_id": "sheep",
+		"animal_name": "Cừu",
+		"is_meat": false,
+		"is_edible": false,
+		"desc": "Lông cừu mềm mại dùng làm len dệt vải.",
+	},
+	{
+		"id": "thit_ga",
+		"name": "Thịt gà",
+		"color": "d98a4a",
+		"price": 35,
+		"animal_id": "chicken",
+		"animal_name": "Gà trắng",
+		"is_meat": true,
+		"is_edible": true,
+		"desc": "Thịt gà tươi ngon thu được khi chém gà đủ 5 lần ăn.",
+	},
+	{
+		"id": "thit_bo",
+		"name": "Thịt bò",
+		"color": "b83a3a",
+		"price": 65,
+		"animal_id": "cow",
+		"animal_name": "Bò trắng",
+		"is_meat": true,
+		"is_edible": true,
+		"desc": "Thịt bò hảo hạng thu được khi chém bò đủ 5 lần ăn.",
+	},
+	{
+		"id": "thit_lon",
+		"name": "Thịt lợn",
+		"color": "e06d6d",
+		"price": 60,
+		"animal_id": "pig",
+		"animal_name": "Lợn",
+		"is_meat": true,
+		"is_edible": true,
+		"desc": "Thịt lợn tươi ngon thu được khi chém lợn đủ 5 lần ăn.",
+	},
+	{
+		"id": "thit_cuu",
+		"name": "Thịt cừu",
+		"color": "d46666",
+		"price": 45,
+		"animal_id": "sheep",
+		"animal_name": "Cừu",
+		"is_meat": true,
+		"is_edible": true,
+		"desc": "Thịt cừu mềm thơm thu được khi chém cừu đủ 5 lần ăn.",
+	},
+]
+
+
+static func get_animal_meat_id(species_id: String) -> String:
+	var sid := get_canonical_id(species_id)
+	match sid:
+		"chicken": return "thit_ga"
+		"cow": return "thit_bo"
+		"pig": return "thit_lon"
+		"sheep": return "thit_cuu"
+		_: return "thit_ga"
+
+
+static func get_animal_meat_qty(species_id: String) -> int:
+	var sid := get_canonical_id(species_id)
+	match sid:
+		"chicken": return 6
+		"cow": return 12
+		"pig": return 10
+		"sheep": return 8
+		_: return 6
+
+
 static func get_product_info(prod_id: String) -> Dictionary:
+	for p in PRODUCTS:
+		if str(p.id) == prod_id:
+			return p
 	for a in ANIMALS:
-		if str(a.product) == prod_id:
+		if str(a.product) == prod_id and prod_id != "":
 			return {
 				"id": prod_id,
 				"name": str(a.product_name),
@@ -263,17 +412,6 @@ static func get_product_info(prod_id: String) -> Dictionary:
 				"is_meat": is_meat(prod_id),
 				"is_edible": is_edible(prod_id),
 			}
-	if prod_id == "thit_ga":
-		return {
-			"id": "thit_ga",
-			"name": "Thịt gà",
-			"color": "d98a4a",
-			"price": 45,
-			"animal_id": "chicken",
-			"animal_name": "Gà trắng",
-			"is_meat": true,
-			"is_edible": true,
-		}
 	return {}
 
 

@@ -316,6 +316,8 @@ func _build_manage_view() -> void:
 	var left_scroll := ScrollContainer.new()
 	left_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left_scroll.custom_minimum_size = Vector2(0, 180)
+	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	UIKit.style_scroll_container(left_scroll)
 	_seeds_in_cat_box = VBoxContainer.new()
 	_seeds_in_cat_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left_scroll.add_child(_seeds_in_cat_box)
@@ -332,6 +334,8 @@ func _build_manage_view() -> void:
 	var right_scroll := ScrollContainer.new()
 	right_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	right_scroll.custom_minimum_size = Vector2(0, 180)
+	right_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	UIKit.style_scroll_container(right_scroll)
 	_seeds_in_bag_box = VBoxContainer.new()
 	_seeds_in_bag_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_scroll.add_child(_seeds_in_bag_box)

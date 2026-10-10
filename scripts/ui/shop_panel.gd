@@ -15,6 +15,8 @@ var rows: VBoxContainer
 var scroll: ScrollContainer
 var _buy_mode := "x1" # "x1", "x5", "x10", "x100", "max"
 var _qty_buttons: Dictionary = {}
+var _current_cat := "all" # "all", "tools", "seeds", "unlocks"
+var _cat_buttons: Dictionary = {}
 
 
 func _ready() -> void:
@@ -110,6 +112,31 @@ func _ready() -> void:
 
 	_update_qty_buttons_style()
 
+	# --- Thanh tab chọn danh mục (Chạm 1-chạm tiện lợi cho Android) ---
+	var cat_h := HBoxContainer.new()
+	cat_h.add_theme_constant_override("separation", 6)
+	v.add_child(cat_h)
+
+	var cats := [
+		{"key": "all", "label": "Tất cả"},
+		{"key": "tools", "label": "🛠️ Nông cụ & Cám"},
+		{"key": "seeds", "label": "🌱 Hạt giống"},
+		{"key": "unlocks", "label": "🔒 Cây mở khóa"},
+	]
+
+	for c_info in cats:
+		var ck: String = str(c_info.key)
+		var cbtn := Button.new()
+		cbtn.text = str(c_info.label)
+		cbtn.add_theme_font_size_override("font_size", 12)
+		cbtn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		cbtn.custom_minimum_size = Vector2(80, 28)
+		cbtn.pressed.connect(_set_category.bind(ck))
+		cat_h.add_child(cbtn)
+		_cat_buttons[ck] = cbtn
+
+	_update_cat_buttons_style()
+
 	UIKit.divider(v)
 
 	# Danh sách thẻ hàng hóa
@@ -123,6 +150,28 @@ func _ready() -> void:
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rows.add_theme_constant_override("separation", 8)
 	scroll.add_child(rows)
+
+
+func _set_category(cat: String) -> void:
+	_current_cat = cat
+	_update_cat_buttons_style()
+	if scroll != null:
+		scroll.scroll_vertical = 0
+	refresh()
+
+
+func _update_cat_buttons_style() -> void:
+	for k in _cat_buttons:
+		var btn: Button = _cat_buttons[k]
+		var is_active: bool = (str(k) == _current_cat)
+		if is_active:
+			btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.48, 0.32, 0.15), UIKit.COLOR_BORDER_BRIGHT, 6, 2))
+			btn.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.55, 0.38, 0.18), UIKit.COLOR_BORDER_BRIGHT, 6, 2))
+			btn.add_theme_color_override("font_color", UIKit.COLOR_TEXT_TITLE)
+		else:
+			btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.20, 0.14, 0.09), UIKit.COLOR_BORDER_WOOD, 6, 1))
+			btn.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.28, 0.20, 0.13), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
+			btn.add_theme_color_override("font_color", UIKit.COLOR_TEXT_MUTED)
 
 
 func _set_buy_mode(mode: String) -> void:
@@ -176,28 +225,33 @@ func close() -> void:
 func refresh() -> void:
 	money_label.text = "%d xu" % GameState.money
 	for c in rows.get_children():
+		rows.remove_child(c)
 		c.queue_free()
 
-	# 1. Nông cụ cuốc đất & Túi cám
-	rows.add_child(_section_title("🛠️ NÔNG CỤ & VẬT TƯ THIẾT YẾU", Color(0.9, 0.8, 0.6)))
-	rows.add_child(_build_hoe_row())
-	rows.add_child(_build_feed_row())
+	# 1. Nông cụ cuốc đất & Túi cám & Mở rộng balo
+	if _current_cat == "all" or _current_cat == "tools":
+		rows.add_child(_section_title("🛠️ NÔNG CỤ & VẬT TƯ THIẾT YẾU", Color(0.9, 0.8, 0.6)))
+		rows.add_child(_build_hoe_row())
+		rows.add_child(_build_feed_row())
+		rows.add_child(_build_backpack_upgrade_row())
 
 	# 2. Hạt giống & nông sản đã mở khóa
-	rows.add_child(_section_title("🌱 HẠT GIỐNG & NÔNG SẢN ĐANG CÓ", UIKit.COLOR_TEXT_GREEN))
-	var unlocked_next := GameState.next_locked()
-	for crop in CropDB.CROPS:
-		if GameState.has_crop(str(crop.id)):
-			rows.add_child(_build_owned_row(crop))
+	if _current_cat == "all" or _current_cat == "seeds":
+		rows.add_child(_section_title("🌱 HẠT GIỐNG & NÔNG SẢN ĐANG CÓ", UIKit.COLOR_TEXT_GREEN))
+		for crop in CropDB.CROPS:
+			if GameState.has_crop(str(crop.id)):
+				rows.add_child(_build_owned_row(crop))
 
 	# 3. Cây kế tiếp & bí ẩn
-	if not unlocked_next.is_empty():
-		rows.add_child(_section_title("🔒 GIỐNG CÂY KẾ TIẾP CẦN MỞ KHÓA", UIKit.COLOR_TEXT_TITLE))
-		for crop in CropDB.CROPS:
-			if str(crop.id) == str(unlocked_next.get("id", "")):
-				rows.add_child(_build_unlock_row(crop))
-			elif not GameState.has_crop(str(crop.id)):
-				rows.add_child(_build_mystery_row())
+	if _current_cat == "all" or _current_cat == "unlocks":
+		var unlocked_next := GameState.next_locked()
+		if not unlocked_next.is_empty():
+			rows.add_child(_section_title("🔒 GIỐNG CÂY KẾ TIẾP CẦN MỞ KHÓA", UIKit.COLOR_TEXT_TITLE))
+			for crop in CropDB.CROPS:
+				if str(crop.id) == str(unlocked_next.get("id", "")):
+					rows.add_child(_build_unlock_row(crop))
+				elif not GameState.has_crop(str(crop.id)):
+					rows.add_child(_build_mystery_row())
 
 
 func _section_title(text: String, color: Color) -> PanelContainer:
@@ -336,6 +390,69 @@ func _buy_feed() -> void:
 		refresh()
 	else:
 		feedback.emit("Không đủ xu để mua Túi Cám!")
+
+
+func _build_backpack_upgrade_row() -> Control:
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UIKit.row_box())
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 12)
+	p.add_child(h)
+
+	var slot := PanelContainer.new()
+	slot.add_theme_stylebox_override("panel", UIKit.slot_box(false))
+	var icon := TextureRect.new()
+	icon.texture = TextureGen.backpack_icon()
+	icon.custom_minimum_size = Vector2(30, 30)
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	slot.add_child(icon)
+	h.add_child(slot)
+
+	var info_v := VBoxContainer.new()
+	info_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_v.add_theme_constant_override("separation", 2)
+	h.add_child(info_v)
+
+	var title_h := HBoxContainer.new()
+	title_h.add_theme_constant_override("separation", 8)
+	info_v.add_child(title_h)
+	UIKit.label(title_h, "Mở Rộng Túi Đồ (Balo)", 16, UIKit.COLOR_TEXT_BODY)
+
+	var owned_pill := PanelContainer.new()
+	owned_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.18, 0.14, 0.10), UIKit.COLOR_BORDER_WOOD, 4))
+	UIKit.label(owned_pill, "Sức chứa: %d/64 ô" % Inventory.backpack_max, 12, Color(0.9, 0.85, 0.75))
+	title_h.add_child(owned_pill)
+
+	UIKit.label(info_v, "Mở thêm slot chứa đồ cho balo (tối đa giới hạn 64 ô)", 12, UIKit.COLOR_TEXT_MUTED)
+
+	var cost := Inventory.get_backpack_upgrade_cost()
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(170, 34)
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+	if Inventory.backpack_max >= Inventory.BACKPACK_MAX_LIMIT:
+		btn.text = "Đã tối đa (64 ô)"
+		btn.disabled = true
+		btn.add_theme_stylebox_override("normal", UIKit.slot_box(false))
+	else:
+		btn.text = "+ Mở ô (%d xu)" % cost
+		var can_afford := (GameState.money >= cost)
+		if can_afford:
+			btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.24, 0.38, 0.18), Color(0.6, 0.95, 0.5), 6, 1))
+			btn.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.30, 0.46, 0.22), Color(0.8, 1.0, 0.7), 6, 1))
+		else:
+			btn.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.25, 0.20, 0.15), Color(0.5, 0.4, 0.3), 6, 1))
+
+		btn.pressed.connect(func():
+			var res := Inventory.upgrade_backpack()
+			if res.get("ok", false):
+				feedback.emit(str(res.get("msg", "")))
+				refresh()
+			else:
+				feedback.emit(str(res.get("msg", "")))
+		)
+	h.add_child(btn)
+	return p
 
 
 func _build_owned_row(crop: Dictionary) -> Control:

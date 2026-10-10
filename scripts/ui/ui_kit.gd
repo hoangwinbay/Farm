@@ -2,6 +2,7 @@ extends RefCounted
 # Hệ thống giao diện Phong cách Nông trại ấm cúng & Mộc mạc (Rustic Wood & Cozy Farm).
 
 const TextureGen := preload("res://scripts/texture_gen.gd")
+const TouchScrollHelperClass := preload("res://scripts/ui/touch_scroll_helper.gd")
 
 # Bảng màu chủ đạo - Gỗ ấm, vàng lúa chín, giấy da cổ
 const COLOR_WOOD_DARK := Color(0.12, 0.08, 0.05, 0.98)       # Khung gỗ sẫm / viền dày
@@ -269,27 +270,30 @@ static func title_label(parent: Control, text: String, size: int = 24, color := 
 # ---------------- Thanh Cuộn Gỗ Đẹp Mắt ----------------
 
 static func style_scroll_container(sc: ScrollContainer) -> void:
+	if sc == null:
+		return
+
 	var vsb := sc.get_v_scroll_bar()
 	if vsb:
 		var grabber := StyleBoxFlat.new()
-		grabber.bg_color = Color(0.55, 0.38, 0.22)
-		grabber.set_corner_radius_all(4)
-		grabber.set_border_width_all(1)
+		grabber.bg_color = Color(0.58, 0.40, 0.24)
+		grabber.set_corner_radius_all(6)
+		grabber.set_border_width_all(2)
 		grabber.border_color = COLOR_BORDER_GOLD
 		grabber.content_margin_left = 3
 		grabber.content_margin_right = 3
 
 		var grabber_h := StyleBoxFlat.new()
-		grabber_h.bg_color = Color(0.72, 0.50, 0.28)
-		grabber_h.set_corner_radius_all(4)
-		grabber_h.set_border_width_all(1)
+		grabber_h.bg_color = Color(0.75, 0.54, 0.32)
+		grabber_h.set_corner_radius_all(6)
+		grabber_h.set_border_width_all(2)
 		grabber_h.border_color = COLOR_BORDER_BRIGHT
 		grabber_h.content_margin_left = 3
 		grabber_h.content_margin_right = 3
 
 		var track := StyleBoxFlat.new()
-		track.bg_color = Color(0.10, 0.07, 0.04, 0.75)
-		track.set_corner_radius_all(4)
+		track.bg_color = Color(0.12, 0.08, 0.05, 0.85)
+		track.set_corner_radius_all(6)
 		track.content_margin_left = 3
 		track.content_margin_right = 3
 
@@ -297,7 +301,35 @@ static func style_scroll_container(sc: ScrollContainer) -> void:
 		vsb.add_theme_stylebox_override("grabber_highlight", grabber_h)
 		vsb.add_theme_stylebox_override("grabber_pressed", grabber_h)
 		vsb.add_theme_stylebox_override("scroll", track)
-		vsb.custom_minimum_size = Vector2(8, 0)
+		vsb.custom_minimum_size = Vector2(18, 0)
+
+	var hsb := sc.get_h_scroll_bar()
+	if hsb and sc.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+		var h_grabber := StyleBoxFlat.new()
+		h_grabber.bg_color = Color(0.58, 0.40, 0.24)
+		h_grabber.set_corner_radius_all(6)
+		h_grabber.set_border_width_all(2)
+		h_grabber.border_color = COLOR_BORDER_GOLD
+
+		var h_track := StyleBoxFlat.new()
+		h_track.bg_color = Color(0.12, 0.08, 0.05, 0.85)
+		h_track.set_corner_radius_all(6)
+
+		hsb.add_theme_stylebox_override("grabber", h_grabber)
+		hsb.add_theme_stylebox_override("scroll", h_track)
+		hsb.custom_minimum_size = Vector2(0, 18)
+
+	attach_touch_scroll(sc)
+
+
+static func attach_touch_scroll(sc: ScrollContainer) -> void:
+	if sc == null:
+		return
+	for c in sc.get_children():
+		if c is TouchScrollHelperClass:
+			return
+	var helper := TouchScrollHelperClass.new(sc)
+	sc.add_child(helper)
 
 
 # ---------------- Huy Hiệu & Phím Tắt Trực Quan ----------------

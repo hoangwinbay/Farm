@@ -131,6 +131,7 @@ func _ready() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.custom_minimum_size = Vector2(0, 200)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	UIKit.style_scroll_container(scroll)
 	v.add_child(scroll)
 
 	inventory_rows = VBoxContainer.new()
@@ -305,14 +306,14 @@ func _build_inventory_list() -> void:
 				var card := _build_inventory_item_card(fid, "fish", f.name, count, int(f.price))
 				inventory_rows.add_child(card)
 
-	# 3. Sản phẩm chăn nuôi (poultry products)
+	# 3. Sản phẩm chăn nuôi (poultry products & meats)
 	if _active_filter == "all" or _active_filter == "poultry":
-		for a in PoultryDB.ANIMALS:
-			var pid: String = str(a.product)
+		for p in PoultryDB.PRODUCTS:
+			var pid: String = str(p.id)
 			var count := Inventory.produce_count(pid)
 			if count > 0:
 				has_items = true
-				var card := _build_inventory_item_card(pid, "poultry", a.product_name, count, int(a.product_price))
+				var card := _build_inventory_item_card(pid, "poultry", str(p.name), count, int(p.price))
 				inventory_rows.add_child(card)
 
 	# 4. Khoáng sản & Quặng (ores)
