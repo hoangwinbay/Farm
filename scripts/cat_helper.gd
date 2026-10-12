@@ -526,6 +526,8 @@ func _complete_job() -> void:
 			if _target_tile.has_pest:
 				_target_tile.clear_pest()
 				harvest_bag["sau_bo"] = int(harvest_bag.get("sau_bo", 0)) + 1
+				if has_node("/root/AudioManager"):
+					get_node("/root/AudioManager").play_sfx("bush_rustle")
 				toast_requested.emit("Mèo đã bắt được 1 con sâu bọ! 🐛", Color(0.6, 0.9, 0.4))
 				action_performed.emit("catch_pest", "sau_bo")
 
@@ -536,6 +538,8 @@ func _complete_job() -> void:
 					harvest_bag[cid] = int(harvest_bag.get(cid, 0)) + 1
 					var cdata := CropDB.get_crop(cid)
 					var cname := str(cdata.get("name", "nông sản"))
+					if has_node("/root/AudioManager"):
+						get_node("/root/AudioManager").play_sfx("harvest")
 					toast_requested.emit("Mèo đã thu hoạch %s! 🌾" % cname, Color(0.65, 1.0, 0.6))
 					action_performed.emit("harvest", cid)
 
@@ -611,6 +615,8 @@ func _deposit_items_to_shed() -> void:
 func hire() -> void:
 	is_hired = true
 	state = State.IDLE
+	if has_node("/root/AudioManager"):
+		get_node("/root/AudioManager").play_sfx("meow")
 	_show_bubble_text("Meo! 🐱❤️")
 	hired.emit()
 	var tw := create_tween()

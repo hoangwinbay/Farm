@@ -26,6 +26,8 @@ func process_frame(delta: float) -> void:
 
 	if is_instance_valid(main.player):
 		var ppos: Vector2 = main.player.position
+		if not main.in_mine and main.pen_manager != null:
+			main.pen_manager.process_pen_proximity(delta, ppos)
 		if is_instance_valid(main._shed_decor):
 			var behind_shed: bool = ppos.x >= 435.0 and ppos.x <= 565.0 and ppos.y < 230.0 and ppos.y > 60.0
 			var target_shed_a: float = 0.6 if behind_shed else 1.0

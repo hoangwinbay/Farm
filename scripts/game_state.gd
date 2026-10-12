@@ -46,6 +46,10 @@ func cycle_game_speed() -> float:
 func set_sound_enabled(enabled: bool) -> void:
 	sound_enabled = enabled
 	sound_toggled.emit(sound_enabled)
+	if has_node("/root/AudioManager"):
+		var am: Node = get_node("/root/AudioManager")
+		if am.get("sound_enabled") != null and am.sound_enabled != enabled:
+			am.set_sound_enabled(enabled)
 
 
 func reset_new_game() -> void:

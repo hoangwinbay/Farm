@@ -73,6 +73,8 @@ func refill_water_can() -> void:
 	GameState.use_stamina(2.0)
 	var _added: int = Inventory.refill_water()
 	player.facing = (POND_RECT.get_center() - player.position).normalized()
+	if main.has_node("/root/AudioManager"):
+		main.get_node("/root/AudioManager").play_sfx("scoop_water")
 	if main.has_method("_spawn_effect"):
 		main._spawn_effect("fx_water", player.position + player.facing * 18.0)
 	player.play_action_anim("water")
@@ -145,6 +147,8 @@ func start_fishing() -> void:
 	var dir := (POND_RECT.get_center() - player.position).normalized()
 	player.facing = dir
 	player.start_fishing_anim()
+	if main.has_node("/root/AudioManager"):
+		main.get_node("/root/AudioManager").play_sfx("fish_cast")
 
 	var pond_center := POND_RECT.get_center()
 	var dist_to_center := player.position.distance_to(pond_center)
@@ -173,6 +177,8 @@ func start_fishing() -> void:
 	cast_tw.tween_property(_bobber_spr, "position", bobber_target, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	cast_tw.tween_callback(func():
 		if is_instance_valid(_bobber_spr):
+			if main.has_node("/root/AudioManager"):
+				main.get_node("/root/AudioManager").play_sfx("fish_plop")
 			spawn_water_ripple(bobber_target, 1.25, 0.8)
 			if main.has_method("_spawn_effect"):
 				main._spawn_effect("fx_water", bobber_target)
@@ -212,9 +218,13 @@ func finish_fishing() -> void:
 	var night := GameState.clock < GameState.DAY_START or GameState.clock >= 1140
 	var f := FishDB.roll_cast(night)
 	if f.is_empty():
+		if main.has_node("/root/AudioManager"):
+			main.get_node("/root/AudioManager").play_sfx("fish_plop")
 		if is_instance_valid(main.hud):
 			main.hud.toast("Kéo cần lên... không con cá nào cắn!", Color(0.8, 0.8, 0.8))
 		return
+	if main.has_node("/root/AudioManager"):
+		main.get_node("/root/AudioManager").play_sfx("fish_catch")
 	var fid := str(f.id)
 	if not Inventory.can_hold("fish", fid):
 		if is_instance_valid(main.hud):

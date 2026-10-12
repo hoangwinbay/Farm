@@ -319,6 +319,8 @@ func open_market_stall() -> void:
 
 
 func on_stall_revenue_collected(_amt: int) -> void:
+	if main.has_node("/root/AudioManager"):
+		main.get_node("/root/AudioManager").play_sfx("coin")
 	stall_revenue = 0
 	update_stall_coin_badge()
 	main._save_now()

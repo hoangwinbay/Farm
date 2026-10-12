@@ -179,6 +179,8 @@ func _sell_all_products() -> void:
 			total += n * int(p.price)
 			count += n
 	if total > 0:
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").play_sfx("coin")
 		GameState.add_money(total)
 		feedback.emit("Đã bán %d sản phẩm chăn nuôi & thịt (+%d xu)!" % [count, total])
 		refresh()
@@ -307,6 +309,8 @@ func _build_feed_row() -> Control:
 		b.disabled = GameState.money < total_cost
 		b.pressed.connect(func():
 			if GameState.try_spend(total_cost):
+				if has_node("/root/AudioManager"):
+					get_node("/root/AudioManager").play_sfx("coin")
 				Inventory.add_feed(q)
 				feedback.emit("Đã mua %d Túi Cám (-%d xu)! Hãy ra chuồng bấm [E] để cho vật nuôi ăn." % [q, total_cost])
 				refresh()
@@ -478,6 +482,9 @@ func _upgrade_coop(id: String) -> void:
 func _buy_animal(id: String) -> void:
 	var err := Inventory.buy_animal(id)
 	if err == "":
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").play_sfx("coin")
+			get_node("/root/AudioManager").play_sfx(id, randf_range(0.96, 1.04))
 		var a := PoultryDB.get_animal(id)
 		feedback.emit("Đã mua giống %s! Thả vào chuồng rồi chờ thu sản phẩm." % a.name)
 		refresh()
@@ -491,6 +498,8 @@ func _sell_product(pid: String, price: int, pname: String, all: bool) -> void:
 		return
 	var n := have if all else 1
 	if Inventory.take_produce(pid, n):
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").play_sfx("coin")
 		GameState.add_money(price * n)
 		refresh()
 		if all:

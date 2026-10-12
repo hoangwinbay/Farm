@@ -53,6 +53,8 @@ var main: Node2D
 var pen_node: Node2D
 var active_pen_animals: Array = []
 var pen_bubbles: Dictionary = {}
+var _pen_sfx_cooldowns: Dictionary = {}
+var _any_pen_sfx_cooldown: float = 0.0
 
 
 func setup(p_main: Node2D) -> void:
@@ -277,6 +279,8 @@ func update_pen_bubbles() -> void:
 func collect_pen_products(species_id: String) -> void:
 	var n: int = Inventory.collect_products_for_species(species_id)
 	if n > 0:
+		if main.has_node("/root/AudioManager"):
+			main.get_node("/root/AudioManager").play_sfx("harvest")
 		var d := PoultryDB.get_animal(species_id)
 		var pname := str(d.get("product_name", "sản phẩm"))
 		if is_instance_valid(main.hud):
@@ -287,6 +291,8 @@ func collect_pen_products(species_id: String) -> void:
 		return
 	var all_n: int = Inventory.collect_products()
 	if all_n > 0:
+		if main.has_node("/root/AudioManager"):
+			main.get_node("/root/AudioManager").play_sfx("harvest")
 		if is_instance_valid(main.hud):
 			main.hud.toast("Đã thu %d sản phẩm chăn nuôi! 🧺" % all_n, Color(1.0, 0.75, 0.5))
 		if main.quest_mgr != null:
@@ -336,6 +342,9 @@ func interact_pen(species_id: String) -> void:
 		if Inventory.feed_count() > 0:
 			var fed := Inventory.feed_all_hungry_for_species(species_id)
 			if fed > 0:
+				if main.has_node("/root/AudioManager"):
+					main.get_node("/root/AudioManager").play_sfx("feed")
+					main.get_node("/root/AudioManager").play_sfx(species_id, randf_range(0.96, 1.04))
 				var c := PoultryDB.get_coop_data(species_id)
 				if is_instance_valid(main.hud):
 					main.hud.toast("Đã cho %d con ở %s ăn 🌾! Chúng đang tiến tới máng ăn." % [fed, c.get("name", "Chuồng")], Color(1.0, 0.9, 0.4))
@@ -357,6 +366,8 @@ func harvest_single_animal(anim: PenAnimal) -> void:
 	var was_ready: bool = anim.is_ready()
 	var prod_id := anim.harvest()
 	if prod_id != "":
+		if main.has_node("/root/AudioManager"):
+			main.get_node("/root/AudioManager").play_sfx("harvest")
 		var d := PoultryDB.get_animal(anim.species_id)
 		var pname := str(d.get("product_name", "sản phẩm"))
 		if is_instance_valid(main.hud):
@@ -377,6 +388,9 @@ func feed_single_animal(anim: PenAnimal) -> void:
 			main.hud.toast("Bạn cần mua Túi Cám ở Cửa Hàng để cho ăn!", Color(1.0, 0.65, 0.4))
 		return
 	if anim.feed():
+		if main.has_node("/root/AudioManager"):
+			main.get_node("/root/AudioManager").play_sfx("feed")
+			main.get_node("/root/AudioManager").play_sfx(anim.species_id, randf_range(0.96, 1.04))
 		if is_instance_valid(main.hud):
 			main.hud.toast("Đã cho %s ăn 1 Túi Cám! Đang đi tới máng ăn 🌾 (Cám còn: ×%d · Lần %d/5)" % [anim.get_animal_name(), Inventory.feed_count(), anim.get_times_fed()], Color(1.0, 0.92, 0.45))
 
@@ -543,3 +557,35 @@ func _wall(center: Vector2, size: Vector2, parent: Node = null) -> void:
 	col.shape = shape
 	body.add_child(col)
 	(parent if parent != null else pen_node).add_child(body)
+
+
+# Tính khoảng cách Euclid ngắn nhất từ một điểm tới hình chữ nhật rect
+func _dist_to_rect(pos: Vector2, rect: Rect2) -> float:
+	var dx: float = maxf(0.0, maxf(rect.position.x - pos.x, pos.x - (rect.position.x + rect.size.x)))
+	var dy: float = maxf(0.0, maxf(rect.position.y - pos.y, pos.y - (rect.position.y + rect.size.y)))
+	return Vector2(dx, dy).length()
+
+
+# Kiểm tra cự ly của người chơi tới 4 chuồng động vật:
+# Khi lại gần trong phạm vi 1 mét (~36 pixel) của chuồng có vật nuôi, phát âm thanh đặc trưng của loài đó.
+func process_pen_proximity(delta: float, player_pos: Vector2) -> void:
+	if _any_pen_sfx_cooldown > 0.0:
+		_any_pen_sfx_cooldown = maxf(0.0, _any_pen_sfx_cooldown - delta)
+
+	for sid in _pen_sfx_cooldowns:
+		if _pen_sfx_cooldowns[sid] > 0.0:
+			_pen_sfx_cooldowns[sid] = maxf(0.0, _pen_sfx_cooldowns[sid] - delta)
+
+	for pcfg in PENS_CONFIG:
+		var sid: String = str(pcfg.id)
+		var r: Rect2 = pcfg.rect
+		var dist: float = _dist_to_rect(player_pos, r)
+
+		# Khoảng cách 1 mét (~36 pixel, xấp xỉ 1 ô tile lưới Stardew Valley)
+		if dist <= 36.0:
+			if Inventory.animals_of_species(sid) > 0:
+				if _pen_sfx_cooldowns.get(sid, 0.0) <= 0.0 and _any_pen_sfx_cooldown <= 0.0:
+					if main != null and main.has_node("/root/AudioManager"):
+						main.get_node("/root/AudioManager").play_sfx(sid, randf_range(0.96, 1.04))
+					_pen_sfx_cooldowns[sid] = randf_range(4.5, 7.5)
+					_any_pen_sfx_cooldown = 1.2

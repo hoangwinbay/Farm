@@ -60,7 +60,7 @@ func _ready() -> void:
 	save.custom_minimum_size = Vector2(280, 42)
 	save.pressed.connect(func(): saved.emit())
 
-	var settings_btn := UIKit.styled_button(v, "⚙️ Cài đặt (Âm thanh & Tốc độ)", 15, "default")
+	var settings_btn := UIKit.styled_button(v, "⚙️ Cài đặt", 15, "default")
 	settings_btn.custom_minimum_size = Vector2(280, 40)
 	settings_btn.pressed.connect(func(): settings_requested.emit())
 

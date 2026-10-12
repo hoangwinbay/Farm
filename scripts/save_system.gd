@@ -18,6 +18,7 @@ func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: D
 		"max_stamina": GameState.max_stamina,
 		"weather": GameState.weather,
 		"sound_enabled": GameState.sound_enabled,
+		"sound_volume": get_node("/root/AudioManager").sound_volume if has_node("/root/AudioManager") else 0.8,
 		"game_speed": GameState.game_speed,
 		"unlocked": GameState.unlocked.duplicate(),
 		"seeds": Inventory.seeds.duplicate(),

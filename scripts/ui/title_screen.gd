@@ -48,7 +48,7 @@ func _ready() -> void:
 	gear_btn.offset_bottom = 68
 	gear_btn.focus_mode = Control.FOCUS_NONE
 	gear_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	gear_btn.tooltip_text = "Cài đặt trò chơi (Âm thanh & Tốc độ)"
+	gear_btn.tooltip_text = "Cài đặt (Âm thanh)"
 	gear_btn.add_theme_stylebox_override("normal", UIKit.wood_frame(8, 2, Color(0.18, 0.12, 0.08, 0.92), UIKit.COLOR_BORDER_GOLD))
 	gear_btn.add_theme_stylebox_override("hover", UIKit.wood_frame(8, 2, Color(0.28, 0.18, 0.12, 0.98), UIKit.COLOR_BORDER_BRIGHT))
 	gear_btn.add_theme_stylebox_override("pressed", UIKit.wood_frame(8, 2, Color(0.12, 0.08, 0.05, 0.95), UIKit.COLOR_BORDER_GOLD))

@@ -22,6 +22,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 Boot="*res://scripts/boot.gd"
+AudioManager="*res://scripts/audio_manager.gd"
 GameState="*res://scripts/game_state.gd"
 Inventory="*res://scripts/inventory.gd"
 SaveSystem="*res://scripts/save_system.gd"

@@ -74,6 +74,8 @@ func open(cat_node: Node2D) -> void:
 	cat = cat_node
 	visible = true
 	_refresh_view()
+	if has_node("/root/AudioManager"):
+		get_node("/root/AudioManager").play_sfx("meow")
 
 
 func close() -> void:

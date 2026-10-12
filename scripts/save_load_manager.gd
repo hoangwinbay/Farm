@@ -127,6 +127,10 @@ func continue_game() -> void:
 	GameState.stamina_changed.emit(GameState.stamina, GameState.max_stamina)
 	if d.has("sound_enabled"):
 		GameState.set_sound_enabled(bool(d["sound_enabled"]))
+	if d.has("sound_volume") and main.has_node("/root/AudioManager"):
+		var am: Node = main.get_node("/root/AudioManager")
+		if am.has_method("set_volume"):
+			am.set_volume(float(d["sound_volume"]))
 	if d.has("game_speed"):
 		GameState.set_game_speed(float(d["game_speed"]))
 

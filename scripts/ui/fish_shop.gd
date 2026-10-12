@@ -235,6 +235,8 @@ func _sell_all_fish() -> void:
 			total += n * int(f.price)
 			count += n
 	if total > 0:
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").play_sfx("coin")
 		GameState.add_money(total)
 		feedback.emit("Đã bán toàn bộ %d con cá (+%d xu)!" % [count, total])
 		refresh()
@@ -359,6 +361,8 @@ func _buy_rod(tier: String) -> void:
 	var total_price := qty * price
 	var total_casts := qty * int(rod.casts)
 	if GameState.try_spend(total_price):
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").play_sfx("coin")
 		Inventory.add_rod(tier, total_casts)
 		feedback.emit("Đã mua %d %s (+%d lượt câu, -%d xu)!" % [qty, rod.name, total_casts, total_price])
 		refresh()
@@ -373,6 +377,8 @@ func _sell_fish(id: String, all: bool) -> void:
 		return
 	var n := have if all else 1
 	if Inventory.take_fish(id, n):
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").play_sfx("coin")
 		GameState.add_money(int(f.price) * n)
 		refresh()
 		if all:

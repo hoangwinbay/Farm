@@ -29,6 +29,7 @@ var _sweat_spr: Sprite2D
 var _sweat_timer: float = 0.0
 var _dir := "down"
 var _anim_t := 0.0
+var _step_timer: float = 0.0
 
 var _is_fishing := false
 
@@ -103,8 +104,16 @@ func _physics_process(delta: float) -> void:
 			_sprite.flip_h = false
 		_anim_t += delta * (0.7 if exhausted else 1.0)
 		_update_tex(int(_anim_t * 8.0) % 4)
+
+		_step_timer -= delta * (0.7 if exhausted else 1.0)
+		if _step_timer <= 0.0:
+			_step_timer = 0.32
+			if has_node("/root/AudioManager"):
+				var am: Node = get_node("/root/AudioManager")
+				am.play_sfx("step", randf_range(0.92, 1.08), -7.0)
 	else:
 		_anim_t = 0.0
+		_step_timer = 0.08
 		_update_tex(0)
 
 

@@ -118,6 +118,8 @@ func quick_eat() -> void:
 
 	var res := GameState.eat_food(best_cat, best_id)
 	if res.get("ok", false):
+		if main.has_node("/root/AudioManager"):
+			main.get_node("/root/AudioManager").play_sfx("eat")
 		if is_instance_valid(main.hud):
 			main.hud.toast(str(res.get("msg", "")), Color(0.4, 1.0, 0.5))
 		spawn_effect("fx_harvest", main.player.position)
@@ -161,6 +163,14 @@ func do_farm_action(tile: Node) -> bool:
 		main.hud.toast(msg)
 	if act != "none":
 		spawn_effect("fx_" + act, farm.tile_center(tile.coord))
+		if main.has_node("/root/AudioManager"):
+			var am: Node = main.get_node("/root/AudioManager")
+			match act:
+				"till": am.play_sfx("hoe")
+				"water": am.play_sfx("water")
+				"catch_pest": am.play_sfx("bush_rustle")
+				"harvest": am.play_sfx("harvest")
+				"plant": am.play_sfx("plant")
 
 	if main.quest_mgr != null:
 		match act:

@@ -479,6 +479,8 @@ func _hit_rock(rock_data: Dictionary) -> void:
 
 	if player != null:
 		player.play_action_anim("till")
+	if has_node("/root/AudioManager"):
+		get_node("/root/AudioManager").play_sfx("pickaxe")
 
 	var spr: Sprite2D = rock_data.get("spr")
 	if is_instance_valid(spr):
@@ -498,6 +500,8 @@ func _break_rock(rock_data: Dictionary) -> void:
 	var ore_name: String = str(ore_info.get("name", "Đá"))
 
 	_rocks_data.erase(rock_data)
+	if has_node("/root/AudioManager"):
+		get_node("/root/AudioManager").play_sfx("rock_break")
 	if is_instance_valid(body):
 		var tw := body.create_tween()
 		tw.tween_property(body, "scale", Vector2.ZERO, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)

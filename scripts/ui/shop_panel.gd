@@ -320,6 +320,8 @@ func _buy_hoe() -> void:
 		return
 	var total_cost := qty * HOE_PRICE
 	if GameState.try_spend(total_cost):
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").play_sfx("coin")
 		Inventory.add_hoes(qty)
 		feedback.emit("Đã mua %d cuốc cày đất (-%d xu) 🛠️" % [qty, total_cost])
 		refresh()
@@ -385,6 +387,8 @@ func _buy_feed() -> void:
 		return
 	var total_cost := qty * feed_price
 	if GameState.try_spend(total_cost):
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").play_sfx("coin")
 		Inventory.add_feed(qty)
 		feedback.emit("Đã mua %d Túi Cám (-%d xu)! Mang ra chuồng cho động vật ăn [E]." % [qty, total_cost])
 		refresh()
@@ -616,6 +620,8 @@ func _buy(id: String) -> void:
 		return
 	var total_cost := qty * price
 	if GameState.try_spend(total_cost):
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").play_sfx("coin")
 		Inventory.add_seed(id, qty)
 		feedback.emit("Đã mua %d hạt giống %s (-%d xu) 🌱" % [qty, c.name, total_cost])
 		refresh()
@@ -630,6 +636,8 @@ func _sell(id: String, all: bool) -> void:
 		return
 	var n := have if all else 1
 	if Inventory.take_produce(id, n):
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").play_sfx("coin")
 		GameState.add_money(int(c.sell_price) * n)
 		refresh()
 		if all:
