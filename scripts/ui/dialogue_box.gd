@@ -2,10 +2,13 @@ extends CanvasLayer
 # Hộp thoại NPC & Hỏi đáp: Phong cách RPG Làng quê mộc mạc với thẻ tên nổi bật.
 
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
+const TextureGen := preload("res://scripts/texture_gen.gd")
 
 signal finished
 signal answered(yes: bool)
 
+var avatar_container: PanelContainer
+var avatar_rect: TextureRect
 var name_container: PanelContainer
 var name_label: Label
 var text_label: Label
@@ -40,9 +43,27 @@ func _ready() -> void:
 	panel.custom_minimum_size = Vector2(720, 130)
 	strip.add_child(panel)
 
+	var main_h := HBoxContainer.new()
+	main_h.add_theme_constant_override("separation", 14)
+	panel.add_child(main_h)
+
+	# Khung hình đại diện nhân vật (Avatar portrait)
+	avatar_container = PanelContainer.new()
+	avatar_container.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.20, 0.14, 0.08), UIKit.COLOR_BORDER_GOLD, 8))
+	avatar_container.custom_minimum_size = Vector2(86, 108)
+	main_h.add_child(avatar_container)
+
+	avatar_rect = TextureRect.new()
+	avatar_rect.custom_minimum_size = Vector2(80, 102)
+	avatar_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	avatar_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	avatar_container.add_child(avatar_rect)
+	avatar_container.visible = false
+
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)
-	panel.add_child(v)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_h.add_child(v)
 
 	# Hàng Thẻ Tên Nhân Vật
 	var top_h := HBoxContainer.new()
@@ -100,12 +121,37 @@ func start(who: String, lines: Array) -> void:
 	var prefix := ""
 	if who.contains("Bác Tư"):
 		prefix = "🌾 "
+		if avatar_container and avatar_rect:
+			avatar_rect.texture = TextureGen.bac_tu_avatar()
+			avatar_container.visible = true
+		text_label.custom_minimum_size = Vector2(580, 52)
 	elif who.contains("Chú Hai"):
 		prefix = "🎣 "
+		if avatar_container and avatar_rect:
+			avatar_rect.texture = TextureGen.chu_hai_avatar()
+			avatar_container.visible = true
+		text_label.custom_minimum_size = Vector2(580, 52)
 	elif who.contains("Cô Tư"):
 		prefix = "🐔 "
+		if avatar_container and avatar_rect:
+			avatar_rect.texture = TextureGen.co_tu_avatar()
+			avatar_container.visible = true
+		text_label.custom_minimum_size = Vector2(580, 52)
+	elif who.contains("Trưởng Thôn") or who.contains("Trưởng Làng"):
+		prefix = "📜 "
+		if avatar_container and avatar_rect:
+			avatar_rect.texture = TextureGen.truong_thon_avatar()
+			avatar_container.visible = true
+		text_label.custom_minimum_size = Vector2(580, 52)
 	elif who != "":
 		prefix = "💬 "
+		if avatar_container:
+			avatar_container.visible = false
+		text_label.custom_minimum_size = Vector2(680, 52)
+	else:
+		if avatar_container:
+			avatar_container.visible = false
+		text_label.custom_minimum_size = Vector2(680, 52)
 
 	name_label.text = "%s%s" % [prefix, who]
 	name_container.visible = (who != "")
@@ -134,6 +180,9 @@ func advance() -> void:
 
 func ask(text: String, yes_text := "Ngủ", no_text := "Chưa") -> void:
 	_ask_mode = true
+	if avatar_container:
+		avatar_container.visible = false
+	text_label.custom_minimum_size = Vector2(680, 52)
 	name_container.visible = false
 	text_label.text = text
 	advance_btn.visible = false

@@ -224,18 +224,24 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _coop_gate()
 		"gate_farm":
 			tex = _farm_gate()
+		"stand_seed":
+			tex = get_stand_tex("seed")
 		"stand_seed_roof":
 			tex = _stand_seed_roof()
 		"stand_seed_back":
 			tex = _stand_seed_back()
 		"stand_seed_front":
 			tex = _stand_seed_front()
+		"stand_poultry":
+			tex = get_stand_tex("poultry")
 		"stand_poultry_roof":
 			tex = _stand_poultry_roof()
 		"stand_poultry_back":
 			tex = _stand_poultry_back()
 		"stand_poultry_front":
 			tex = _stand_poultry_front()
+		"stand_fish":
+			tex = get_stand_tex("fish")
 		"stand_fish_roof":
 			tex = _stand_fish_roof()
 		"stand_fish_back":
@@ -2531,6 +2537,28 @@ static func npc_tex(npc_type: String) -> ImageTexture:
 	var key := "npc_%s" % npc_type
 	if _cache.has(key):
 		return _cache[key]
+
+	if npc_type == "truong_thon":
+		var candidates := [
+			"res://picture/truong_thon_sprite.png",
+			"res://picture/characters/truong_thon_sprite.png",
+			"res://picture/truong_thon.png",
+			"res://picture/characters/truong_thon.png",
+			"res://game_assets/outside_sources/truong_thon.png"
+		]
+		for path in candidates:
+			var loaded := _load_picture(path)
+			if loaded != null:
+				if loaded.get_height() > 60:
+					var w := loaded.get_width()
+					var h := loaded.get_height()
+					var th := 44
+					var tw: int = maxi(1, int(round(float(w) * float(th) / float(h))))
+					loaded.resize(tw, th, Image.INTERPOLATE_LANCZOS)
+				var t := _tex(loaded)
+				_cache[key] = t
+				return t
+
 	var img := _img(18, 22)
 
 	match npc_type:
@@ -2758,6 +2786,124 @@ static func npc_tex(npc_type: String) -> ImageTexture:
 	var tex := _tex(img)
 	_cache[key] = tex
 	return tex
+
+
+static func truong_thon_avatar() -> Texture2D:
+	if _cache.has("truong_thon_avatar"):
+		return _cache["truong_thon_avatar"]
+	var av_paths := [
+		"res://picture/truong_thon_avatar.png",
+		"res://picture/characters/truong_thon_avatar.png",
+		"res://picture/truong_thon.png",
+		"res://picture/characters/truong_thon.png",
+		"res://game_assets/outside_sources/truong_thon_avatar.png"
+	]
+	for p in av_paths:
+		var loaded := _load_picture(p)
+		if loaded != null:
+			var t := _tex(loaded)
+			_cache["truong_thon_avatar"] = t
+			return t
+	return npc_tex("truong_thon")
+
+
+static func get_stand_tex(shop_id: String) -> Texture2D:
+	var key := "stand_stall_%s" % shop_id
+	if _cache.has(key):
+		return _cache[key]
+	var paths := [
+		"res://picture/stand_%s_sprite.png" % shop_id,
+		"res://picture/stand_%s.png" % shop_id,
+		"res://game_assets/outside_sources/stand_%s_sprite.png" % shop_id,
+		"res://game_assets/outside_sources/stand_%s.png" % shop_id
+	]
+	for p in paths:
+		var img := _load_picture(p)
+		if img != null:
+			if img.get_height() > 100:
+				var scale_factor: float = 72.0 / 367.0
+				var tw := maxi(1, int(round(float(img.get_width()) * scale_factor)))
+				var th := maxi(1, int(round(float(img.get_height()) * scale_factor)))
+				img.resize(tw, th, Image.INTERPOLATE_LANCZOS)
+			var t := _tex(img)
+			_cache[key] = t
+			return t
+	return null
+
+
+static func get_stand_layer_tex(shop_id: String, layer_name: String) -> Texture2D:
+	var key := "stand_stall_%s_%s" % [shop_id, layer_name]
+	if _cache.has(key):
+		return _cache[key]
+	var paths := [
+		"res://picture/stand_%s_%s_sprite.png" % [shop_id, layer_name],
+		"res://game_assets/outside_sources/stand_%s_%s_sprite.png" % [shop_id, layer_name],
+		"res://picture/stand_%s_%s.png" % [shop_id, layer_name],
+		"res://game_assets/outside_sources/stand_%s_%s.png" % [shop_id, layer_name]
+	]
+	for p in paths:
+		var img := _load_picture(p)
+		if img != null:
+			if img.get_height() > 100:
+				var scale_factor: float = 72.0 / 367.0
+				var tw := maxi(1, int(round(float(img.get_width()) * scale_factor)))
+				var th := maxi(1, int(round(float(img.get_height()) * scale_factor)))
+				img.resize(tw, th, Image.INTERPOLATE_LANCZOS)
+			var t := _tex(img)
+			_cache[key] = t
+			return t
+	return null
+
+
+static func co_tu_avatar() -> Texture2D:
+	if _cache.has("co_tu_avatar"):
+		return _cache["co_tu_avatar"]
+	var paths := [
+		"res://picture/characters/co_tu_avatar.png",
+		"res://picture/co_tu_avatar.png",
+		"res://game_assets/outside_sources/co_tu_avatar.png"
+	]
+	for p in paths:
+		var img := _load_picture(p)
+		if img != null:
+			var t := _tex(img)
+			_cache["co_tu_avatar"] = t
+			return t
+	return npc_tex("co_tu")
+
+
+static func bac_tu_avatar() -> Texture2D:
+	if _cache.has("bac_tu_avatar"):
+		return _cache["bac_tu_avatar"]
+	var paths := [
+		"res://picture/characters/bac_tu_avatar.png",
+		"res://picture/bac_tu_avatar.png",
+		"res://game_assets/outside_sources/bac_tu_avatar.png"
+	]
+	for p in paths:
+		var img := _load_picture(p)
+		if img != null:
+			var t := _tex(img)
+			_cache["bac_tu_avatar"] = t
+			return t
+	return npc_tex("bac_tu")
+
+
+static func chu_hai_avatar() -> Texture2D:
+	if _cache.has("chu_hai_avatar"):
+		return _cache["chu_hai_avatar"]
+	var paths := [
+		"res://picture/characters/chu_hai_avatar.png",
+		"res://picture/chu_hai_avatar.png",
+		"res://game_assets/outside_sources/chu_hai_avatar.png"
+	]
+	for p in paths:
+		var img := _load_picture(p)
+		if img != null:
+			var t := _tex(img)
+			_cache["chu_hai_avatar"] = t
+			return t
+	return npc_tex("chu_hai")
 
 
 static func quest_mark_tex(type: String) -> ImageTexture:

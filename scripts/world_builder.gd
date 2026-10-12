@@ -243,6 +243,79 @@ func build_mine_entrance() -> void:
 
 
 func add_shop_stall(shop_id: String, pos: Vector2, npc_obj: StaticBody2D) -> void:
+	var bg_tex: Texture2D = TextureGen.get_stand_layer_tex(shop_id, "bg")
+	var mer_tex: Texture2D = TextureGen.get_stand_layer_tex(shop_id, "merchant")
+	var fg_tex: Texture2D = TextureGen.get_stand_layer_tex(shop_id, "front")
+	var stall_tex: Texture2D = TextureGen.get_stand_tex(shop_id)
+
+	if (bg_tex != null and mer_tex != null and fg_tex != null) or stall_tex != null:
+		var shadow := Sprite2D.new()
+		shadow.texture = TextureGen.get_tex("stall_shadow")
+		shadow.position = pos + Vector2(1, 4)
+		shadow.scale = Vector2(0.65, 0.45)
+		world.add_child(shadow)
+
+		var stall_body := StaticBody2D.new()
+		stall_body.position = pos + Vector2(0, 10)
+
+		var stall_w := 64.0
+		if bg_tex != null and mer_tex != null and fg_tex != null:
+			stall_w = float(bg_tex.get_width())
+
+			# Lớp 1: Khung sạp hàng, mái che, phông nền gỗ tĩnh (đứng yên tuyệt đối)
+			var spr_bg := Sprite2D.new()
+			spr_bg.name = "StallBg"
+			spr_bg.texture = bg_tex
+			spr_bg.offset = Vector2(0, -float(bg_tex.get_height()) * 0.5)
+			stall_body.add_child(spr_bg)
+
+			# Lớp 2: Người bán (chỉ người bán có cử động nhịp thở nhẹ nhàng lên xuống sau quầy)
+			var spr_mer := Sprite2D.new()
+			spr_mer.name = "MerchantSprite"
+			spr_mer.texture = mer_tex
+			spr_mer.offset = Vector2(0, -float(mer_tex.get_height()) * 0.5)
+			stall_body.add_child(spr_mer)
+
+			var breathe_period := 1.4
+			match shop_id:
+				"poultry":
+					breathe_period = 1.45
+				"seed":
+					breathe_period = 1.3
+				"fish":
+					breathe_period = 1.4
+
+			var tw := spr_mer.create_tween().set_loops()
+			tw.tween_property(spr_mer, "position:y", -0.8, breathe_period * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			tw.tween_property(spr_mer, "position:y", 0.0, breathe_period * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+			# Lớp 3: Bàn quầy trước và vật phẩm trưng bày (tĩnh - đứng yên tuyệt đối)
+			var spr_fg := Sprite2D.new()
+			spr_fg.name = "StallFg"
+			spr_fg.texture = fg_tex
+			spr_fg.offset = Vector2(0, -float(fg_tex.get_height()) * 0.5)
+			stall_body.add_child(spr_fg)
+		else:
+			stall_w = float(stall_tex.get_width())
+			var spr := Sprite2D.new()
+			spr.texture = stall_tex
+			spr.offset = Vector2(0, -float(stall_tex.get_height()) * 0.5)
+			stall_body.add_child(spr)
+
+		var col := CollisionShape2D.new()
+		var shape := RectangleShape2D.new()
+		var col_w: float = minf(62.0, stall_w * 0.85)
+		shape.size = Vector2(col_w, 18.0)
+		col.shape = shape
+		col.position = Vector2(0, -10.0)
+		stall_body.add_child(col)
+		world.add_child(stall_body)
+
+		npc_obj.position = pos + Vector2(0, -20)
+		npc_obj.visible = false
+		world.add_child(npc_obj)
+		return
+
 	var back := Sprite2D.new()
 	back.texture = TextureGen.get_tex("stand_%s_back" % shop_id)
 	back.position = pos + Vector2(0, -18)
