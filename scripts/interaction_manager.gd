@@ -57,7 +57,7 @@ func build_interactables() -> void:
 	interactables = [
 		{"pos": WorldBuilderScript.HOUSE_POS + Vector2(15, -16), "r": 50.0, "label": "Ngủ 🛏️ (Lưu game)", "cb": main._ask_sleep},
 		{"pos": WorldBuilderScript.SHED_POS + Vector2(0, -6), "r": 50.0, "label": "Nhà kho 🏚️", "cb": main._open_storage},
-		{"pos": WorldBuilderScript.TENT_POS, "r": 50.0, "label": "Lều Mèo ⛺ (Quản lý Mèo)", "cb": main._open_cat_panel},
+		{"pos": WorldBuilderScript.JUNIMO_HUT_POS, "r": 50.0, "label": "Nhà Junimo 🛖 (Quản lý Mèo)", "cb": main._open_cat_panel},
 		{"pos": WorldBuilderScript.MAILBOX_POS, "r": 50.0, "label": "Hòm thư 📬", "cb": main._open_mailbox},
 		{"pos": WorldBuilderScript.MAYOR_POS, "r": 50.0, "label": "Trưởng Thôn 📜", "cb": talk_mayor},
 		{"pos": WorldBuilderScript.MARKET_STALL_POS + Vector2(0, 16), "r": 65.0, "label": "Sạp hàng 🏪", "cb": main._open_market_stall},
@@ -102,24 +102,32 @@ func nearest_interactable() -> Dictionary:
 					best.label = "Bình nước đã đầy (20/20) 💧"
 					best.cb = func(): if is_instance_valid(main.hud): main.hud.toast("Bình nước đã đầy rồi (20/20)!")
 
-	# Kiểm tra chú mèo tam thể
-	if is_instance_valid(main.cat_helper):
-		var d_cat: float = main.player.position.distance_to(main.cat_helper.position)
-		if d_cat <= 50.0 and d_cat < best_d:
-			best_d = d_cat
-			var cat_lbl: String = "Mèo Tam Thể 🐱"
-			if not main.cat_helper.is_hired:
-				cat_lbl = "Mèo Tam Thể 🐱 (Phỏng vấn / Thuê)"
-			elif main.cat_helper.state == CatHelperScript.State.SLEEPING:
-				cat_lbl = "Mèo Tam Thể 🐱 (Đang ngủ Zzz...)"
-			else:
-				cat_lbl = "Mèo Tam Thể 🐱 (Quản lý / Giao việc)"
-			best = {
-				"pos": main.cat_helper.position,
-				"r": 50.0,
-				"label": cat_lbl,
-				"cb": func(): main._open_cat_panel()
-			}
+	# Kiểm tra các chú mèo làm nông
+	var all_cats: Array = []
+	if is_instance_valid(main.cat_helper): all_cats.append(main.cat_helper)
+	if is_instance_valid(main.get("cat_helper_orange")): all_cats.append(main.cat_helper_orange)
+	if is_instance_valid(main.get("cat_helper_white")): all_cats.append(main.cat_helper_white)
+	if is_instance_valid(main.get("cat_helper_tuxedo")): all_cats.append(main.cat_helper_tuxedo)
+	for ch in all_cats:
+		if is_instance_valid(ch) and ch.visible:
+			var d_cat: float = main.player.position.distance_to(ch.position)
+			if d_cat <= 50.0 and d_cat < best_d:
+				best_d = d_cat
+				var cname: String = str(ch.get("cat_name")) if "cat_name" in ch else "Mèo"
+				var cat_lbl: String = "%s 🐱" % cname
+				if not ch.is_hired:
+					cat_lbl = "%s 🐱 (Phỏng vấn / Thuê)" % cname
+				elif ch.state == CatHelperScript.State.SLEEPING:
+					cat_lbl = "%s 🐱 (Đang ngủ Zzz...)" % cname
+				else:
+					cat_lbl = "%s 🐱 (Quản lý / Giao việc)" % cname
+				var captured_cat: Node2D = ch
+				best = {
+					"pos": ch.position,
+					"r": 50.0,
+					"label": cat_lbl,
+					"cb": func(): main._open_cat_panel(captured_cat)
+				}
 
 	# Kiểm tra khách NPC đang đứng chờ quanh sạp
 	for c in main.stall_manager._stall_customers:
@@ -334,16 +342,23 @@ func handle_world_tap(world_tap_pos: Vector2) -> void:
 						break
 				break
 
-	if best_it.is_empty() and is_instance_valid(main.cat_helper):
-		if world_tap_pos.distance_to(main.cat_helper.position) <= 36.0:
-			var d_p: float = main.player.position.distance_to(main.cat_helper.position)
-			if d_p <= 65.0:
-				main.farming_controller.face_towards(main.cat_helper.position)
-				main._open_cat_panel()
-			else:
-				if is_instance_valid(main.hud):
-					main.hud.toast("Hãy lại gần Mèo Tam Thể hơn để tương tác! 🐱", Color(1.0, 0.85, 0.5))
-			return
+	if best_it.is_empty():
+		var all_cats: Array = []
+		if is_instance_valid(main.cat_helper): all_cats.append(main.cat_helper)
+		if is_instance_valid(main.get("cat_helper_orange")): all_cats.append(main.cat_helper_orange)
+		if is_instance_valid(main.get("cat_helper_white")): all_cats.append(main.cat_helper_white)
+		if is_instance_valid(main.get("cat_helper_tuxedo")): all_cats.append(main.cat_helper_tuxedo)
+		for ch in all_cats:
+			if is_instance_valid(ch) and ch.visible and world_tap_pos.distance_to(ch.position) <= 36.0:
+				var d_p: float = main.player.position.distance_to(ch.position)
+				if d_p <= 65.0:
+					main.farming_controller.face_towards(ch.position)
+					main._open_cat_panel(ch)
+				else:
+					if is_instance_valid(main.hud):
+						var cname: String = str(ch.get("cat_name")) if "cat_name" in ch else "Mèo"
+						main.hud.toast("Hãy lại gần %s hơn để tương tác! 🐱" % cname, Color(1.0, 0.85, 0.5))
+				return
 
 	if best_it.is_empty():
 		for anim in main.pen_manager.active_pen_animals:

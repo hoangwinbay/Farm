@@ -83,7 +83,7 @@ func _run() -> void:
 		printerr("FAIL: SettingsPanel failed to open")
 	panel.queue_free()
 
-	# Test 6: TitleScreen gear button
+	# Test 6: TitleScreen has no settings button (settings is only inside the game)
 	total += 1
 	var title = TitleScreenScript.new()
 	root.add_child(title)
@@ -95,11 +95,11 @@ func _run() -> void:
 				if sub is Button and "Cài đặt" in sub.tooltip_text:
 					found_gear = true
 					break
-	if found_gear and title._settings_panel != null:
-		print("PASS: TitleScreen contains gear button and integrated SettingsPanel")
+	if not found_gear and not ("_settings_panel" in title and title._settings_panel != null):
+		print("PASS: TitleScreen correctly has no settings/gear button (settings is in-game only)")
 		passed += 1
 	else:
-		printerr("FAIL: TitleScreen missing gear button or _settings_panel")
+		printerr("FAIL: TitleScreen unexpectedly contains gear button or _settings_panel")
 	title.queue_free()
 
 	# Reset speed back to 1.0 for normal game

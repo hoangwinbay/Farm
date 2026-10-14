@@ -14,9 +14,16 @@ func setup(p_main: Node2D) -> void:
 
 
 func cat_save_data() -> Dictionary:
+	var data := {}
 	if is_instance_valid(main.cat_helper):
-		return main.cat_helper.get_save_dict()
-	return {}
+		data = main.cat_helper.get_save_dict()
+	if is_instance_valid(main.get("cat_helper_orange")):
+		data["orange_cat"] = main.cat_helper_orange.get_save_dict()
+	if is_instance_valid(main.get("cat_helper_white")):
+		data["white_cat"] = main.cat_helper_white.get_save_dict()
+	if is_instance_valid(main.get("cat_helper_tuxedo")):
+		data["tuxedo_cat"] = main.cat_helper_tuxedo.get_save_dict()
+	return data
 
 
 func quest_save_data() -> Dictionary:
@@ -82,6 +89,13 @@ func start_new_game() -> void:
 			CatHelperScript.WAITING_POS
 		]
 		main.cat_helper._show_bubble_text("...")
+
+	if is_instance_valid(main.get("cat_helper_orange")):
+		main.cat_helper_orange.dismiss()
+	if is_instance_valid(main.get("cat_helper_white")):
+		main.cat_helper_white.dismiss()
+	if is_instance_valid(main.get("cat_helper_tuxedo")):
+		main.cat_helper_tuxedo.dismiss()
 
 	if is_instance_valid(main.quest_mgr):
 		var cur_day: int = QuestManagerScript.get_real_day_id()
@@ -179,8 +193,25 @@ func continue_game() -> void:
 	elif main.foliage_data.is_empty():
 		main.world_builder.build_fixed_foliage()
 
-	if d.has("cat") and is_instance_valid(main.cat_helper):
-		main.cat_helper.load_save_dict(d["cat"])
+	if d.has("cat"):
+		var c_data = d["cat"]
+		if typeof(c_data) == TYPE_DICTIONARY:
+			if is_instance_valid(main.cat_helper):
+				main.cat_helper.load_save_dict(c_data)
+			if c_data.has("orange_cat") and is_instance_valid(main.get("cat_helper_orange")):
+				main.cat_helper_orange.load_save_dict(c_data["orange_cat"])
+			elif is_instance_valid(main.get("cat_helper_orange")):
+				main.cat_helper_orange.dismiss()
+
+			if c_data.has("white_cat") and is_instance_valid(main.get("cat_helper_white")):
+				main.cat_helper_white.load_save_dict(c_data["white_cat"])
+			elif is_instance_valid(main.get("cat_helper_white")):
+				main.cat_helper_white.dismiss()
+
+			if c_data.has("tuxedo_cat") and is_instance_valid(main.get("cat_helper_tuxedo")):
+				main.cat_helper_tuxedo.load_save_dict(c_data["tuxedo_cat"])
+			elif is_instance_valid(main.get("cat_helper_tuxedo")):
+				main.cat_helper_tuxedo.dismiss()
 
 	if d.has("quests") and is_instance_valid(main.quest_mgr):
 		main.quest_mgr.load_save_data(d["quests"])

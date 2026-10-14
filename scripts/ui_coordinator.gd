@@ -166,13 +166,12 @@ func connect_ui_signals() -> void:
 	pause_menu.settings_requested.connect(open_settings)
 
 	hud.open_settings_requested.connect(open_settings)
-	title_screen.settings_requested.connect(open_settings)
 
 
 # Mở các Panels
 func open_settings() -> void:
-	if main.mode != main.Mode.TITLE:
-		main.mode = main.Mode.PANEL
+	main.mode = main.Mode.PANEL
+	main.get_tree().paused = true
 	settings_panel.open()
 
 
@@ -220,10 +219,20 @@ func open_storage() -> void:
 	storage_panel.open()
 
 
-func open_cat_panel() -> void:
+func open_cat_panel(target_cat: Node2D = null) -> void:
 	main.mode = main.Mode.PANEL
 	main.get_tree().paused = true
-	cat_panel.open(main.cat_helper)
+	var all_cats: Array = []
+	if main.get("cat_helpers") != null and not main.cat_helpers.is_empty():
+		for c in main.cat_helpers:
+			if is_instance_valid(c):
+				all_cats.append(c)
+	else:
+		if is_instance_valid(main.cat_helper): all_cats.append(main.cat_helper)
+		if is_instance_valid(main.get("cat_helper_orange")): all_cats.append(main.cat_helper_orange)
+		if is_instance_valid(main.get("cat_helper_white")): all_cats.append(main.cat_helper_white)
+		if is_instance_valid(main.get("cat_helper_tuxedo")): all_cats.append(main.cat_helper_tuxedo)
+	cat_panel.open(target_cat, all_cats)
 
 
 func open_quest_panel(tab: String = "daily") -> void:

@@ -54,6 +54,23 @@ func enter_mine() -> void:
 		main.cam.limit_bottom = main.mine_manager.MINE_TILES.y * main.mine_manager.TILE
 		if is_instance_valid(main.hud):
 			main.hud.toast("Đã tiến vào Hầm Mỏ — Tầng 1! ⛏️", Color(0.8, 0.9, 1.0))
+
+		# Đưa Mèo Thợ Mỏ vào trong Hầm Mỏ nếu mèo đang trong ca đào mỏ
+		var ch: Node2D = null
+		if is_instance_valid(main.get("mine_manager")) and main.mine_manager.has_method("get_miner_cat"):
+			ch = main.mine_manager.get_miner_cat()
+		elif is_instance_valid(main.get("cat_helper")) and main.cat_helper.get("cat_role") == "miner":
+			ch = main.cat_helper
+		elif is_instance_valid(main.get("cat_helper_orange")):
+			ch = main.cat_helper_orange
+
+		if is_instance_valid(ch):
+			if ch.is_hired and ch.cat_role == "miner" and ch.has_method("is_mining_shift") and ch.is_mining_shift():
+				if ch.get_parent() == main.mine_manager:
+					ch.visible = true
+				elif ch.state == ch.State.MINING or ch.state == ch.State.WALKING_TO_MINE:
+					ch.reparent(main.mine_manager)
+					ch.enter_underground_mine(main.mine_manager)
 	)
 
 
@@ -65,6 +82,17 @@ func exit_mine() -> void:
 	fade_transition(func():
 		main.in_mine = false
 		main.player.reparent(main.world)
+		var ch: Node2D = null
+		if is_instance_valid(main.get("mine_manager")) and main.mine_manager.has_method("get_miner_cat"):
+			ch = main.mine_manager.get_miner_cat()
+		elif is_instance_valid(main.get("cat_helper")) and main.cat_helper.get("cat_role") == "miner":
+			ch = main.cat_helper
+		elif is_instance_valid(main.get("cat_helper_orange")):
+			ch = main.cat_helper_orange
+
+		if is_instance_valid(ch) and ch.get_parent() == main.mine_manager:
+			ch.visible = false
+
 		main.mine_manager.process_mode = Node.PROCESS_MODE_DISABLED
 		main.mine_manager.visible = false
 		main.world.process_mode = Node.PROCESS_MODE_PAUSABLE

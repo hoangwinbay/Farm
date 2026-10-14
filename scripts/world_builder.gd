@@ -9,7 +9,8 @@ const FixedFoliageData := preload("res://scripts/fixed_foliage_data.gd")
 const WORLD_SIZE := Vector2(1900, 1000)
 const HOUSE_POS := Vector2(641, 248)
 const SHED_POS := Vector2(505, 248)
-const TENT_POS := Vector2(766, 248)
+const JUNIMO_HUT_POS := Vector2(1365, 195)
+const TENT_POS := JUNIMO_HUT_POS
 const MAILBOX_POS := Vector2(704, 440)
 const MAYOR_POS := Vector2(705, 270)
 const MARKET_STALL_POS := Vector2(584, 440)
@@ -61,6 +62,7 @@ var foliage_data: Array = []
 
 var shed_decor: StaticBody2D
 var house_decor: StaticBody2D
+var junimo_hut_decor: StaticBody2D
 var npc_leah: StaticBody2D
 
 
@@ -98,7 +100,6 @@ func build_world() -> Node2D:
 func build_residence_complex() -> void:
 	shed_decor = add_decor(TextureGen.get_tex("shed"), SHED_POS, 1.0, Rect2())
 	house_decor = add_decor(TextureGen.get_tex("house"), HOUSE_POS, 1.0, Rect2())
-	add_decor(TextureGen.get_tex("tent"), TENT_POS, 1.0, Rect2())
 
 	var body := StaticBody2D.new()
 	body.name = "ResidenceCollision"
@@ -124,14 +125,19 @@ func build_residence_complex() -> void:
 	house_col.position = Vector2(641, 209)
 	body.add_child(house_col)
 
-	var tent_col := CollisionShape2D.new()
-	var tent_shape := RectangleShape2D.new()
-	tent_shape.size = Vector2(40, 48)
-	tent_col.shape = tent_shape
-	tent_col.position = Vector2(766, 220)
-	body.add_child(tent_col)
-
 	world.add_child(body)
+
+	build_junimo_hut()
+
+
+func build_junimo_hut() -> StaticBody2D:
+	var tex := TextureGen.get_tex("junimo_hut")
+	if tex == null:
+		tex = TextureGen.get_tex("tent")
+	var col_rect := Rect2(-24, -28, 48, 24)
+	junimo_hut_decor = add_decor(tex, JUNIMO_HUT_POS, 1.0, col_rect)
+	junimo_hut_decor.name = "JunimoHut"
+	return junimo_hut_decor
 
 
 func build_mailbox() -> void:
@@ -505,8 +511,8 @@ func is_grass_surface(pos: Vector2) -> bool:
 	if shed_box.has_point(pos):
 		return false
 
-	var tent_box := Rect2(TENT_POS.x - 30.0, TENT_POS.y - 70.0, 60.0, 80.0)
-	if tent_box.has_point(pos):
+	var hut_box := Rect2(JUNIMO_HUT_POS.x - 36.0, JUNIMO_HUT_POS.y - 70.0, 72.0, 80.0)
+	if hut_box.has_point(pos):
 		return false
 
 	if pos.distance_to(CatHelperScript.WAITING_POS) < 32.0:

@@ -49,22 +49,21 @@ func _run() -> void:
 			break
 	assert(shop_has_helper, "Shop Bác Tư phải được gắn TouchScrollHelper!")
 
-	# Kiểm tra tab phân loại danh mục
-	assert(shop_panel._cat_buttons.has("all"), "Shop phải có tab 'Tất cả'!")
-	assert(shop_panel._cat_buttons.has("tools"), "Shop phải có tab 'Nông cụ'!")
-	assert(shop_panel._cat_buttons.has("seeds"), "Shop phải có tab 'Hạt giống'!")
-	assert(shop_panel._cat_buttons.has("unlocks"), "Shop phải có tab 'Mở khóa'!")
+	# Kiểm tra tab phân loại danh mục (3 tab: Mua hạt, Mua cuốc, Bán nông sản)
+	assert(shop_panel._cat_buttons.has("seeds"), "Shop phải có tab 'Mua hạt'!")
+	assert(shop_panel._cat_buttons.has("tools"), "Shop phải có tab 'Mua cuốc'!")
+	assert(shop_panel._cat_buttons.has("produce"), "Shop phải có tab 'Bán nông sản'!")
 
 	# Chuyển sang tab Nông cụ (tools)
 	shop_panel._set_category("tools")
 	assert(shop_panel._current_cat == "tools", "Đã chọn danh mục 'tools'!")
-	# Tab tools chỉ có tiêu đề nông cụ + 3 món (cuốc, cám, balo) = 4 children
-	assert(shop_panel.rows.get_child_count() == 4, "Tab tools chỉ hiển thị 4 mục nông cụ & vật tư!")
+	assert(shop_panel.rows.get_child_count() > 0, "Tab tools hiển thị lưới vật tư cuốc & cám!")
 
-	# Chuyển về tab Tất cả
-	shop_panel._set_category("all")
-	assert(shop_panel.rows.get_child_count() > 4, "Tab 'Tất cả' hiển thị đầy đủ danh sách!")
-	print("  -> Đạt: Shop Cô Tư có TouchScrollHelper và 4 tab lọc danh mục 1-chạm hoàn hảo.")
+	# Chuyển sang tab Mua hạt (seeds)
+	shop_panel._set_category("seeds")
+	assert(shop_panel._current_cat == "seeds", "Đã chọn danh mục 'seeds'!")
+	assert(shop_panel.rows.get_child_count() > 0, "Tab 'seeds' hiển thị đầy đủ danh sách hạt giống!")
+	print("  -> Đạt: Shop Bác Tư có TouchScrollHelper và 3 tab thẻ lưới 1-chạm hoàn hảo.")
 
 	# 3. Kiểm tra Hòm Thư (mailbox_panel.gd)
 	print("3. Kiểm tra Hòm Thư (mailbox_panel.gd):")

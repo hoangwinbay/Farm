@@ -40,11 +40,32 @@ func _ready() -> void:
 	visible = false
 	_build_mine_environment()
 	_build_mine_hud()
+	ensure_floor_ready(1)
+
+
+func ensure_floor_ready(floor_num: int = 1) -> void:
+	if _rocks_data.is_empty():
+		current_floor = clampi(floor_num, 1, MAX_FLOORS)
+		_generate_floor(current_floor)
 
 
 func setup(main_ref, player_ref: CharacterBody2D) -> void:
 	main_game = main_ref
 	player = player_ref
+
+
+func get_miner_cat() -> Node2D:
+	if main_game == null:
+		return null
+	if "cat_helpers" in main_game and main_game.cat_helpers is Array:
+		for c in main_game.cat_helpers:
+			if is_instance_valid(c) and c.get("cat_role") == "miner":
+				return c
+	if is_instance_valid(main_game.get("cat_helper")) and main_game.cat_helper.get("cat_role") == "miner":
+		return main_game.cat_helper
+	if is_instance_valid(main_game.get("cat_helper_orange")) and main_game.cat_helper_orange.get("cat_role") == "miner":
+		return main_game.cat_helper_orange
+	return null
 
 
 func enter_mine(floor_num: int = 1) -> void:
@@ -57,6 +78,11 @@ func enter_mine(floor_num: int = 1) -> void:
 	_generate_floor(current_floor)
 	if player != null:
 		player.position = Vector2(LADDER_UP_TILE.x * TILE + 16, LADDER_UP_TILE.y * TILE + 28)
+	var ch: Node2D = get_miner_cat()
+	if is_instance_valid(ch) and ch.get_parent() == self:
+		ch.visible = true
+		if ch.position == Vector2.ZERO or ch.position.distance_to(Vector2(112, 124)) < 10.0:
+			ch.position = Vector2(176, 112)
 	if _mine_hud != null:
 		_mine_hud.visible = true
 
@@ -234,6 +260,8 @@ func _generate_floor(floor_num: int) -> void:
 	occupied.append(LADDER_DOWN_TILE + Vector2i(0, -1))
 	occupied.append(Vector2i(21, 2))
 	occupied.append(Vector2i(21, 3))
+	occupied.append(Vector2i(5, 3))
+	occupied.append(Vector2i(5, 4))
 
 	for _i in rock_count:
 		var rx := rng.randi_range(2, MINE_TILES.x - 3)
@@ -355,6 +383,21 @@ func _update_floor_theme(floor_num: int) -> void:
 
 # Tìm tương tác khi người chơi đang trong hầm mỏ
 func get_interactable_near(p_pos: Vector2) -> Dictionary:
+	# 0. Mèo thợ mỏ trong hầm mỏ
+	var ch: Node2D = get_miner_cat()
+	if is_instance_valid(ch) and ch.get_parent() == self and ch.visible and p_pos.distance_to(ch.position) <= 45.0:
+		var cname: String = str(ch.get("cat_name")) if "cat_name" in ch else "Mèo Thợ Mỏ"
+		return {
+			"pos": ch.position,
+			"r": 45.0,
+			"label": "%s 🐱 (Quản lý Mèo Thợ Mỏ)" % cname,
+			"cb": func():
+				if main_game.ui_coordinator != null:
+					main_game.ui_coordinator.open_cat_panel(ch)
+				elif main_game.has_method("_open_cat_panel"):
+					main_game._open_cat_panel(ch)
+		}
+
 	# 1. Thang lên
 	var up_pos := _ladder_up.position
 	if p_pos.distance_to(up_pos) < 36.0:
@@ -412,6 +455,16 @@ func handle_tap(world_tap_pos: Vector2) -> void:
 	if player == null or not is_instance_valid(player):
 		return
 	var p_pos: Vector2 = player.position
+
+	# 0. Chạm vào Mèo thợ mỏ
+	var ch: Node2D = get_miner_cat()
+	if is_instance_valid(ch) and ch.get_parent() == self and ch.visible and world_tap_pos.distance_to(ch.position) <= 36.0:
+		if p_pos.distance_to(ch.position) <= 56.0:
+			if main_game.ui_coordinator != null:
+				main_game.ui_coordinator.open_cat_panel(ch)
+			elif main_game.has_method("_open_cat_panel"):
+				main_game._open_cat_panel(ch)
+		return
 
 	# 1. Chạm cầu thang lên
 	if is_instance_valid(_ladder_up):
@@ -493,21 +546,7 @@ func _hit_rock(rock_data: Dictionary) -> void:
 		_break_rock(rock_data)
 
 
-func _break_rock(rock_data: Dictionary) -> void:
-	var body: StaticBody2D = rock_data.get("body")
-	var ore_type: String = str(rock_data.get("type", "stone"))
-	var ore_info := OreDB.get_ore(ore_type)
-	var ore_name: String = str(ore_info.get("name", "Đá"))
-
-	_rocks_data.erase(rock_data)
-	if has_node("/root/AudioManager"):
-		get_node("/root/AudioManager").play_sfx("rock_break")
-	if is_instance_valid(body):
-		var tw := body.create_tween()
-		tw.tween_property(body, "scale", Vector2.ZERO, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-		tw.tween_callback(body.queue_free)
-
-	# Thưởng quặng rơi
+func get_rock_drops(ore_type: String) -> Array:
 	var drops: Array = []
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
@@ -539,7 +578,22 @@ func _break_rock(rock_data: Dictionary) -> void:
 		"diamond":
 			drops.append({"id": "diamond", "name": "Kim Cương", "count": 1})
 			drops.append({"id": "stone", "name": "Đá cuội", "count": rng.randi_range(1, 2)})
+	return drops
 
+
+func _break_rock(rock_data: Dictionary) -> void:
+	var body: StaticBody2D = rock_data.get("body")
+	var ore_type: String = str(rock_data.get("type", "stone"))
+
+	_rocks_data.erase(rock_data)
+	if has_node("/root/AudioManager"):
+		get_node("/root/AudioManager").play_sfx("rock_break")
+	if is_instance_valid(body):
+		var tw := body.create_tween()
+		tw.tween_property(body, "scale", Vector2.ZERO, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tw.tween_callback(body.queue_free)
+
+	var drops := get_rock_drops(ore_type)
 	var gained_text := ""
 	for d in drops:
 		var id: String = str(d.id)
@@ -556,3 +610,53 @@ func _break_rock(rock_data: Dictionary) -> void:
 
 	if main_game != null and "quest_mgr" in main_game and main_game.quest_mgr != null:
 		main_game.quest_mgr.advance_progress("mine", ore_type)
+
+
+func is_player_in_mine() -> bool:
+	if main_game != null and "in_mine" in main_game:
+		return bool(main_game.in_mine)
+	if has_node("/root/Main"):
+		var m = get_node("/root/Main")
+		if "in_mine" in m:
+			return bool(m.in_mine)
+	return visible
+
+
+func break_rock_for_cat(rock_data: Dictionary, cat: Node2D) -> Array:
+	var body: StaticBody2D = rock_data.get("body")
+	var ore_type: String = str(rock_data.get("type", "stone"))
+
+	_rocks_data.erase(rock_data)
+	if is_player_in_mine() and has_node("/root/AudioManager"):
+		get_node("/root/AudioManager").play_sfx("rock_break")
+	if is_instance_valid(body):
+		var tw := body.create_tween()
+		tw.tween_property(body, "scale", Vector2.ZERO, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tw.tween_callback(body.queue_free)
+
+	var drops := get_rock_drops(ore_type)
+	var gained_text := ""
+	for d in drops:
+		var id: String = str(d.id)
+		var cnt: int = int(d.count)
+		cat.harvest_bag[id] = int(cat.harvest_bag.get(id, 0)) + cnt
+		gained_text += "+%d %s " % [cnt, str(d.name)]
+
+	if is_instance_valid(cat) and cat.has_signal("toast_requested"):
+		if is_player_in_mine():
+			cat.toast_requested.emit("%s đã đập vỡ đá và thu được %s! ⛏️💎" % [cat.cat_name, gained_text.strip_edges()], Color(0.85, 0.95, 1.0))
+		cat.action_performed.emit("mine", ore_type)
+
+	if main_game != null and "quest_mgr" in main_game and main_game.quest_mgr != null:
+		main_game.quest_mgr.advance_progress("mine", ore_type)
+
+	return drops
+
+
+func advance_floor_for_cat() -> void:
+	if current_floor < MAX_FLOORS:
+		current_floor += 1
+		_update_hud()
+		_generate_floor(current_floor)
+	else:
+		_generate_floor(MAX_FLOORS)

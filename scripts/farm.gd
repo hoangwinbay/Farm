@@ -74,8 +74,8 @@ func tile_at_world(p: Vector2) -> Node:
 
 func tile_center(v: Vector2i) -> Vector2:
 	if tile_centers.has(v):
-		return to_global(tile_centers[v])
-	return global_position + Vector2(v.x * TILE + 16, v.y * TILE + 16)
+		return tile_centers[v]
+	return origin + Vector2(v.x * TILE + 16, v.y * TILE + 16)
 
 
 # Hành động có thể làm trên ô này -> hiển thị gợi ý phím E.

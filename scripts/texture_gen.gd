@@ -162,6 +162,8 @@ static func get_tex(key: String) -> ImageTexture:
 			tex = _shed()
 		"tent":
 			tex = _tent()
+		"junimo_hut":
+			tex = _junimo_hut()
 		"caterpillar":
 			tex = _caterpillar()
 		"fx_pest":
@@ -1205,36 +1207,65 @@ static func _shed() -> ImageTexture:
 	return _tex(img)
 
 
-static func _tent() -> ImageTexture:
-	var loaded := _load_picture("res://picture/tent.png")
+static func _junimo_hut() -> ImageTexture:
+	var loaded := _load_picture("res://Content (unpacked)/Buildings/Junimo Hut.png")
 	if loaded != null:
+		if loaded.get_width() > 48:
+			var cropped := loaded.get_region(Rect2i(0, 0, 48, 64))
+			return _tex(cropped)
 		return _tex(loaded)
+	var loaded_pic := _load_picture("res://picture/junimo_hut.png")
+	if loaded_pic != null:
+		return _tex(loaded_pic)
 	var img := _img(48, 64)
-	rect(img, 8, 16, 32, 44, Color(0.82, 0.72, 0.52))
+	rect(img, 4, 16, 40, 44, Color(0.35, 0.65, 0.35))
 	return _tex(img)
 
 
-static func cat_char_tex(anim: String, frame_idx: int = 0) -> Texture2D:
+static func _tent() -> ImageTexture:
+	return _junimo_hut()
+
+
+static func cat_char_tex(anim: String, frame_idx: int = 0, cat_breed: String = "calico") -> Texture2D:
 	var path := ""
+	var key_idx := absi(frame_idx) % 4
+	var folder := "picture/cat"
+	if cat_breed == "orange":
+		folder = "picture/cat_orange"
+	elif cat_breed == "white":
+		folder = "picture/cat_white"
+	elif cat_breed == "tuxedo":
+		folder = "picture/cat_tuxedo"
 	match anim:
 		"down":
-			var idx := absi(frame_idx) % 3
-			path = "res://picture/cat/cat_down_%d.png" % idx
+			path = "res://%s/cat_down_%d.png" % [folder, key_idx]
 		"up":
-			var idx := absi(frame_idx) % 3
-			path = "res://picture/cat/cat_up_%d.png" % idx
-		"side":
-			var idx := absi(frame_idx) % 2
-			path = "res://picture/cat/cat_side_%d.png" % idx
+			path = "res://%s/cat_up_%d.png" % [folder, key_idx]
+		"side", "right":
+			path = "res://%s/cat_side_%d.png" % [folder, key_idx]
+		"left":
+			path = "res://%s/cat_left_%d.png" % [folder, key_idx]
 		"act", "action", "side_act":
-			path = "res://picture/cat/cat_side_act.png"
+			path = "res://%s/cat_side_act.png" % folder
+			key_idx = 0
+		"till", "hoe":
+			path = "res://%s/cat_till_%d.png" % [folder, key_idx]
+		"water", "watering":
+			path = "res://%s/cat_water_%d.png" % [folder, key_idx]
+		"fish", "fishing":
+			path = "res://%s/cat_fish_%d.png" % [folder, key_idx]
 		_:
-			path = "res://picture/cat/cat_down_0.png"
+			path = "res://%s/cat_down_0.png" % folder
+			key_idx = 0
 
-	var key := "cat_%s_%d" % [anim, frame_idx]
+	var key := "%s_cat_%s_%d" % [cat_breed, anim, key_idx]
 	if _cache.has(key):
 		return _cache[key]
 	var img := _load_picture(path)
+	if img == null and (anim in ["water", "watering", "till", "hoe", "fish", "fishing"]):
+		img = _load_picture("res://%s/cat_side_act.png" % folder)
+		if img == null:
+			img = _load_picture("res://%s/cat_side_0.png" % folder)
 	if img != null:
 		var tex := _tex(img)
 		_cache[key] = tex

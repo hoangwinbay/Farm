@@ -84,6 +84,12 @@ func do_sleep(forced: bool) -> void:
 	if main.in_mine:
 		main.in_mine = false
 		main.player.reparent(main.world)
+		if is_instance_valid(main.get("cat_helper_orange")):
+			var ch: Node2D = main.cat_helper_orange
+			if ch.get_parent() == main.mine_manager:
+				ch.reparent(main.world)
+				if ch.has_method("exit_underground_mine"):
+					ch.exit_underground_mine()
 		if main.mine_manager != null:
 			main.mine_manager.process_mode = Node.PROCESS_MODE_DISABLED
 			main.mine_manager.visible = false
@@ -110,12 +116,19 @@ func do_sleep(forced: bool) -> void:
 
 	main.stall_manager.clear_night_customers()
 
-	if is_instance_valid(main.cat_helper) and main.cat_helper.is_hired:
-		main.cat_helper._pay_daily_wage()
-		main.cat_helper.wage_paid_today = false
-		main.cat_helper.position = CatHelperScript.TENT_SLEEP_POS
-		main.cat_helper.state = CatHelperScript.State.IDLE
-		main.cat_helper._hide_bubble()
+	var all_cats: Array = []
+	if is_instance_valid(main.cat_helper): all_cats.append(main.cat_helper)
+	if is_instance_valid(main.get("cat_helper_orange")): all_cats.append(main.cat_helper_orange)
+	if is_instance_valid(main.get("cat_helper_white")): all_cats.append(main.cat_helper_white)
+	if is_instance_valid(main.get("cat_helper_tuxedo")): all_cats.append(main.cat_helper_tuxedo)
+	for ch in all_cats:
+		if is_instance_valid(ch) and ch.is_hired:
+			ch._pay_daily_wage()
+			ch.wage_paid_today = false
+			ch.position = ch.get_sleep_pos()
+			ch.state = CatHelperScript.State.IDLE
+			ch.visible = false
+			ch._hide_bubble()
 
 	if is_instance_valid(main.quest_mgr):
 		main.quest_mgr.check_real_time_refresh()

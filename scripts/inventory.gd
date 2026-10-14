@@ -1081,6 +1081,86 @@ func withdraw_item(category: String, id: String, amount: int = 1) -> bool:
 	return true
 
 
+func total_item_available(category: String, id: String) -> int:
+	var cat_key := _normalize_cat(category)
+	var in_storage := storage_count(cat_key, id)
+	var in_bag := 0
+	match cat_key:
+		"produce", "crop", "poultry":
+			in_bag = produce_count(id)
+		"fish":
+			in_bag = fish_count(id)
+		"ores", "ore":
+			in_bag = ore_count(id)
+		"seeds", "seed":
+			in_bag = seed_count(id)
+	return in_storage + in_bag
+
+
+func take_from_storage(category: String, id: String, amount: int = 1) -> int:
+	if amount <= 0:
+		return 0
+	var cat_key := _normalize_cat(category)
+	var stored := storage_count(cat_key, id)
+	if stored <= 0:
+		return 0
+	var from_storage := mini(stored, amount)
+	storage[cat_key][id] = stored - from_storage
+	if int(storage[cat_key][id]) <= 0:
+		storage[cat_key].erase(id)
+	changed.emit()
+	return from_storage
+
+
+func take_item_for_sale(category: String, id: String, amount: int = 1, from_storage_only: bool = false) -> int:
+	if amount <= 0:
+		return 0
+	var cat_key := _normalize_cat(category)
+	var needed := amount
+	var taken := 0
+
+	# 1. Lấy từ Nhà Kho (Shed Storage)
+	var stored := storage_count(cat_key, id)
+	if stored > 0:
+		var from_storage := mini(stored, needed)
+		storage[cat_key][id] = stored - from_storage
+		if int(storage[cat_key][id]) <= 0:
+			storage[cat_key].erase(id)
+		needed -= from_storage
+		taken += from_storage
+
+	if from_storage_only:
+		if taken > 0:
+			changed.emit()
+		return taken
+
+	# 2. Nếu vẫn còn thiếu và không giới hạn kho, lấy từ Balo người chơi
+	if needed > 0:
+		match cat_key:
+			"produce", "crop", "poultry":
+				var have := produce_count(id)
+				var from_bag := mini(have, needed)
+				if from_bag > 0 and take_produce(id, from_bag):
+					taken += from_bag
+					needed -= from_bag
+			"fish":
+				var have := fish_count(id)
+				var from_bag := mini(have, needed)
+				if from_bag > 0 and take_fish(id, from_bag):
+					taken += from_bag
+					needed -= from_bag
+			"ores", "ore":
+				var have := ore_count(id)
+				var from_bag := mini(have, needed)
+				if from_bag > 0 and take_ore(id, from_bag):
+					taken += from_bag
+					needed -= from_bag
+
+	if taken > 0:
+		changed.emit()
+	return taken
+
+
 func store_all_category(category: String) -> int:
 	var cat_key := _normalize_cat(category)
 	var total_moved := 0

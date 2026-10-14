@@ -69,13 +69,64 @@ func build_world(main: Node2D) -> void:
 	main.add_child(main.quest_mgr)
 
 	main.cat_helper = CatHelperScript.new()
+	main.cat_helper.cat_breed = "calico"
+	main.cat_helper.cat_name = "Mèo Tam Thể"
+	main.cat_helper.cat_role = "miner"
+	main.cat_helper.daily_wage = 100
 	main.cat_helper.farm = main.farm
+	main.cat_helper.mine_manager = main.mine_manager
 	main.cat_helper.toast_requested.connect(func(txt: String, col: Color): main.hud.toast(txt, col))
 	main.cat_helper.action_performed.connect(func(act_type: String, target_id: String):
 		if main.quest_mgr != null:
 			main.quest_mgr.advance_progress(act_type, target_id)
 	)
 	main.world.add_child(main.cat_helper)
+
+	main.cat_helper_orange = CatHelperScript.new()
+	main.cat_helper_orange.cat_breed = "orange"
+	main.cat_helper_orange.cat_name = "Mèo Mướp Vàng"
+	main.cat_helper_orange.cat_role = "gardener"
+	main.cat_helper_orange.daily_wage = 50
+	main.cat_helper_orange.farm = main.farm
+	main.cat_helper_orange.toast_requested.connect(func(txt: String, col: Color): main.hud.toast(txt, col))
+	main.cat_helper_orange.action_performed.connect(func(act_type: String, target_id: String):
+		if main.quest_mgr != null:
+			main.quest_mgr.advance_progress(act_type, target_id)
+	)
+	main.world.add_child(main.cat_helper_orange)
+
+	main.cat_helper_white = CatHelperScript.new()
+	main.cat_helper_white.cat_breed = "white"
+	main.cat_helper_white.cat_name = "Mèo Trắng Tuyết"
+	main.cat_helper_white.cat_role = "fisher"
+	main.cat_helper_white.daily_wage = 75
+	main.cat_helper_white.farm = main.farm
+	main.cat_helper_white.toast_requested.connect(func(txt: String, col: Color): main.hud.toast(txt, col))
+	main.cat_helper_white.action_performed.connect(func(act_type: String, target_id: String):
+		if main.quest_mgr != null:
+			main.quest_mgr.advance_progress(act_type, target_id)
+	)
+	main.world.add_child(main.cat_helper_white)
+
+	main.cat_helper_tuxedo = CatHelperScript.new()
+	main.cat_helper_tuxedo.cat_breed = "tuxedo"
+	main.cat_helper_tuxedo.cat_name = "Mèo Mun Tuxedo"
+	main.cat_helper_tuxedo.cat_role = "seller"
+	main.cat_helper_tuxedo.daily_wage = 80
+	main.cat_helper_tuxedo.farm = main.farm
+	main.cat_helper_tuxedo.stall_manager = main.stall_manager
+	main.cat_helper_tuxedo.toast_requested.connect(func(txt: String, col: Color): main.hud.toast(txt, col))
+	main.cat_helper_tuxedo.action_performed.connect(func(act_type: String, target_id: String):
+		if main.quest_mgr != null:
+			main.quest_mgr.advance_progress(act_type, target_id)
+	)
+	main.world.add_child(main.cat_helper_tuxedo)
+
+	main.cat_helpers = [main.cat_helper, main.cat_helper_orange, main.cat_helper_white, main.cat_helper_tuxedo]
+	for c in main.cat_helpers:
+		c.other_cats = main.cat_helpers.filter(func(other): return other != c)
+		if c.other_cats.size() > 0:
+			c.other_cat = c.other_cats[0]
 
 	main.cam = Camera2D.new()
 	main.cam.zoom = Vector2(2, 2)

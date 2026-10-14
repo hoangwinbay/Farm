@@ -127,6 +127,12 @@ var highlight: Sprite2D
 var weather_mgr: CanvasLayer
 var quest_mgr: Node
 var cat_helper: Node2D
+var cat_helper_calico: Node2D:
+	get: return cat_helper
+var cat_helper_orange: Node2D
+var cat_helper_white: Node2D
+var cat_helper_tuxedo: Node2D
+var cat_helpers: Array = []
 var mine_manager: Node2D
 var in_mine: bool = false
 
@@ -600,8 +606,8 @@ func _open_mailbox() -> void:
 func _open_storage() -> void:
 	ui_coordinator.open_storage()
 
-func _open_cat_panel() -> void:
-	ui_coordinator.open_cat_panel()
+func _open_cat_panel(target_cat: Node2D = null) -> void:
+	ui_coordinator.open_cat_panel(target_cat)
 
 func _open_quest_panel() -> void:
 	ui_coordinator.open_quest_panel()

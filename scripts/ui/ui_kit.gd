@@ -370,3 +370,93 @@ static func divider(parent: Node) -> ColorRect:
 	if parent != null:
 		parent.add_child(cr)
 	return cr
+
+
+# ---------------- Giao Diện Cửa Hàng Thẻ Lưới & Hộp Thoại Chi Tiết (Rustic Wood & Gold Theme) ----------------
+
+static func shop_dock_panel(bg_color := COLOR_WOOD_BG, border_color := COLOR_BORDER_GOLD) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg_color
+	sb.corner_radius_top_left = 18
+	sb.corner_radius_bottom_left = 18
+	sb.border_width_left = 3
+	sb.border_width_top = 3
+	sb.border_width_bottom = 3
+	sb.border_color = border_color
+	sb.shadow_color = Color(0, 0, 0, 0.6)
+	sb.shadow_size = 12
+	sb.shadow_offset = Vector2(-5, 0)
+	sb.content_margin_left = 14
+	sb.content_margin_right = 14
+	sb.content_margin_top = 12
+	sb.content_margin_bottom = 12
+	return sb
+
+
+static func shop_card_box(hovered: bool = false) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = COLOR_WOOD_INNER if not hovered else COLOR_WOOD_LIGHT
+	sb.set_corner_radius_all(10)
+	sb.set_border_width_all(2 if hovered else 1)
+	sb.border_color = COLOR_BORDER_BRIGHT if hovered else COLOR_BORDER_WOOD
+	sb.shadow_color = Color(0, 0, 0, 0.45)
+	sb.shadow_size = 4
+	sb.shadow_offset = Vector2(0, 2)
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
+	return sb
+
+
+static func shop_price_pill(bg := Color(0.14, 0.22, 0.12), border := Color(0.35, 0.55, 0.30)) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.set_corner_radius_all(8)
+	sb.set_border_width_all(1)
+	sb.border_color = border
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
+	return sb
+
+
+static func modal_top_box(bg := COLOR_WOOD_INNER, border := COLOR_BORDER_GOLD) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.corner_radius_top_left = 16
+	sb.corner_radius_top_right = 16
+	sb.border_width_left = 2
+	sb.border_width_top = 2
+	sb.border_width_right = 2
+	sb.border_color = border
+	sb.shadow_color = Color(0, 0, 0, 0.5)
+	sb.shadow_size = 6
+	sb.shadow_offset = Vector2(0, 3)
+	sb.content_margin_left = 16
+	sb.content_margin_right = 16
+	sb.content_margin_top = 16
+	sb.content_margin_bottom = 14
+	return sb
+
+
+static func modal_banner_box(bg := COLOR_WOOD_DARK, border := COLOR_BORDER_GOLD) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.corner_radius_bottom_left = 16
+	sb.corner_radius_bottom_right = 16
+	sb.border_width_left = 2
+	sb.border_width_bottom = 2
+	sb.border_width_right = 2
+	sb.border_color = border
+	sb.shadow_color = Color(0, 0, 0, 0.5)
+	sb.shadow_size = 6
+	sb.shadow_offset = Vector2(0, 4)
+	sb.content_margin_left = 16
+	sb.content_margin_right = 16
+	sb.content_margin_top = 14
+	sb.content_margin_bottom = 16
+	return sb
+
+
