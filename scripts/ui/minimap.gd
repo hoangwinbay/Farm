@@ -4,40 +4,53 @@ extends CanvasLayer
 
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
 
-const WORLD_SIZE := Vector2(1500, 1000)
+const WORLD_SIZE := Vector2(1900, 1000)
 const SMALL_W := 272.0
 const DOT_SPACING := 26.0
 
 # Đồ thị nút giao nằm trên mạng lối đi PATHS (xem main.gd) — dùng tính đường đi.
 const NODES := {
-	"shed": Vector2(105, 250),
-	"house": Vector2(250, 250),
-	"tent": Vector2(366, 250),
-	"j_house": Vector2(250, 470),
-	"j_tent": Vector2(366, 470),
-	"stall": Vector2(184, 440),
-	"j_stall": Vector2(184, 470),
-	"west_edge": Vector2(16, 470),
-	"j_pen": Vector2(304, 470),
-	"pen": Vector2(304, 574),
-	"farm_w": Vector2(408, 470),
-	"farm": Vector2(648, 470),
-	"j_tu": Vector2(1010, 470),
-	"tu": Vector2(1010, 430),
-	"j_pond": Vector2(1030, 470),
-	"pond": Vector2(1030, 748),
-	"j_batu": Vector2(1180, 470),
-	"batu": Vector2(1180, 430),
-	"j_hai": Vector2(1350, 470),
-	"hai": Vector2(1350, 430),
+	"mine": Vector2(96, 96),
+	"j_mine_road": Vector2(96, 470),
+	"west_edge": Vector2(20, 470),
+	"j_stall": Vector2(584, 470),
+	"stall": Vector2(584, 440),
+	"shed": Vector2(505, 250),
+	"house": Vector2(650, 250),
+	"tent": Vector2(1365, 195),
+	"j_house": Vector2(650, 470),
+	"j_tent": Vector2(1365, 470),
+	"j_pens": Vector2(456, 470),
+	"j_pens_center": Vector2(456, 712),
+	"pen_cow": Vector2(288, 608),
+	"pen_chicken": Vector2(624, 608),
+	"pen_sheep": Vector2(288, 816),
+	"pen_pig": Vector2(624, 816),
+	"pen": Vector2(624, 608),
+	"farm_w": Vector2(808, 470),
+	"farm": Vector2(1048, 470),
+	"j_tu": Vector2(1410, 470),
+	"tu": Vector2(1410, 430),
+	"j_pond": Vector2(1440, 470),
+	"pond": Vector2(1440, 730),
+	"j_batu": Vector2(1580, 470),
+	"batu": Vector2(1580, 430),
+	"j_hai": Vector2(1750, 470),
+	"hai": Vector2(1750, 430),
 }
 const EDGES := [
-	["shed", "house"], ["house", "tent"],
-	["house", "j_house"], ["tent", "j_tent"],
-	["stall", "j_stall"], ["west_edge", "j_stall"], ["j_stall", "j_house"],
-	["j_house", "j_pen"], ["j_pen", "pen"],
-	["j_pen", "j_tent"], ["j_tent", "farm_w"], ["farm_w", "farm"],
-	["farm_w", "j_tu"], ["j_tu", "tu"],
+	["mine", "j_mine_road"], ["j_mine_road", "west_edge"], ["j_mine_road", "j_stall"],
+	["shed", "house"],
+	["house", "j_house"],
+	["stall", "j_stall"], ["j_stall", "j_pens"], ["j_pens", "j_house"],
+	["j_pens", "j_pens_center"],
+	["j_pens_center", "pen_cow"], ["j_pens_center", "pen_chicken"],
+	["j_pens_center", "pen_sheep"], ["j_pens_center", "pen_pig"],
+	["j_pens_center", "pen"],
+	["j_house", "farm_w"], ["farm_w", "farm"],
+	["farm", "j_tent"], ["j_tent", "j_tu"],
+	["tent", "j_tent"],
+	["j_tu", "tu"],
 	["j_tu", "j_pond"], ["j_pond", "pond"],
 	["j_pond", "j_batu"], ["j_batu", "batu"],
 	["j_batu", "j_hai"], ["j_hai", "hai"],
@@ -46,16 +59,20 @@ const EDGES := [
 # Địa điểm bấm được trên bản đồ (id trùng với nút đích trong NODES).
 # "mlabel" là tên ngắn vẽ trên bản đồ; "mlab_above" đẩy nhãn lên trên điểm.
 const POIS := [
-	{"id": "shed", "name": "Nhà kho (cất đồ)", "mlabel": "Nhà kho", "pos": Vector2(105, 250), "color": Color(0.75, 0.55, 0.35), "letter": "K"},
-	{"id": "house", "name": "Nhà (ngủ & lưu game)", "mlabel": "Nhà (ngủ & lưu)", "pos": Vector2(250, 250), "color": Color(0.98, 0.62, 0.45), "letter": "N"},
-	{"id": "tent", "name": "Lều của Mèo (ngủ đêm)", "mlabel": "Lều Mèo", "pos": Vector2(366, 250), "color": Color(0.95, 0.78, 0.42), "letter": "M"},
-	{"id": "stall", "name": "Sạp hàng nông sản", "mlabel": "Sạp hàng", "mlab_above": true, "pos": Vector2(184, 440), "color": Color(0.95, 0.45, 0.35), "letter": "S"},
-	{"id": "farm", "name": "Nông trại", "mlabel": "Nông trại", "pos": Vector2(648, 470), "color": Color(0.55, 0.88, 0.42), "letter": "R"},
-	{"id": "pen", "name": "Chuồng gia cầm", "mlabel": "Chuồng gia cầm", "pos": Vector2(304, 574), "color": Color(0.85, 0.65, 0.35), "letter": "C"},
-	{"id": "tu", "name": "Quầy Cô Tư (gia cầm)", "mlabel": "Cô Tư — gia cầm", "mlab_above": true, "pos": Vector2(1010, 430), "color": Color(1.0, 0.68, 0.3), "letter": "T"},
-	{"id": "batu", "name": "Quầy Bác Tư (hạt giống)", "mlabel": "Bác Tư — hạt giống", "pos": Vector2(1180, 430), "color": Color(1.0, 0.86, 0.3), "letter": "B"},
-	{"id": "hai", "name": "Quầy Chú Hai (cần & cá)", "mlabel": "Chú Hai — cá", "mlab_above": true, "pos": Vector2(1350, 430), "color": Color(0.45, 0.82, 0.95), "letter": "H"},
-	{"id": "pond", "name": "Ao câu cá", "mlabel": "Ao câu cá", "pos": Vector2(1030, 748), "color": Color(0.35, 0.6, 0.95), "letter": "A"},
+	{"id": "mine", "name": "Hầm mỏ (khai thác quặng)", "mlabel": "Hầm mỏ", "mlab_above": false, "pos": Vector2(96, 90), "color": Color(0.70, 0.70, 0.85), "letter": "M"},
+	{"id": "shed", "name": "Nhà kho (cất đồ)", "mlabel": "Nhà kho", "pos": Vector2(505, 250), "color": Color(0.75, 0.55, 0.35), "letter": "K"},
+	{"id": "house", "name": "Nhà (ngủ & lưu game)", "mlabel": "Nhà (ngủ & lưu)", "pos": Vector2(650, 250), "color": Color(0.98, 0.62, 0.45), "letter": "N"},
+	{"id": "tent", "name": "Nhà Junimo 🛖 (Mèo ngủ đêm)", "mlabel": "Nhà Junimo", "pos": Vector2(1365, 195), "color": Color(0.95, 0.78, 0.42), "letter": "J"},
+	{"id": "stall", "name": "Sạp hàng nông sản", "mlabel": "Sạp hàng", "mlab_above": true, "pos": Vector2(584, 440), "color": Color(0.95, 0.45, 0.35), "letter": "S"},
+	{"id": "farm", "name": "Nông trại", "mlabel": "Nông trại", "pos": Vector2(1048, 470), "color": Color(0.55, 0.88, 0.42), "letter": "R"},
+	{"id": "pen_cow", "name": "Chuồng Bò", "mlabel": "Chuồng Bò", "pos": Vector2(288, 608), "color": Color(0.85, 0.70, 0.40), "letter": "B"},
+	{"id": "pen_chicken", "name": "Chuồng Gà", "mlabel": "Chuồng Gà", "pos": Vector2(624, 608), "color": Color(0.95, 0.85, 0.45), "letter": "G"},
+	{"id": "pen_sheep", "name": "Chuồng Cừu", "mlabel": "Chuồng Cừu", "pos": Vector2(288, 816), "color": Color(0.80, 0.85, 0.90), "letter": "C"},
+	{"id": "pen_pig", "name": "Chuồng Lợn", "mlabel": "Chuồng Lợn", "pos": Vector2(624, 816), "color": Color(0.95, 0.65, 0.65), "letter": "L"},
+	{"id": "tu", "name": "Quầy Cô Tư (gia súc, gia cầm)", "mlabel": "Cô Tư — chăn nuôi", "mlab_above": true, "pos": Vector2(1410, 430), "color": Color(1.0, 0.68, 0.3), "letter": "T"},
+	{"id": "batu", "name": "Quầy Bác Tư (hạt giống)", "mlabel": "Bác Tư — hạt giống", "pos": Vector2(1580, 430), "color": Color(1.0, 0.86, 0.3), "letter": "B"},
+	{"id": "hai", "name": "Quầy Chú Hai (cần & cá)", "mlabel": "Chú Hai — cá", "mlab_above": true, "pos": Vector2(1750, 430), "color": Color(0.45, 0.82, 0.95), "letter": "H"},
+	{"id": "pond", "name": "Ao câu cá", "mlabel": "Ao câu cá", "pos": Vector2(1440, 730), "color": Color(0.35, 0.6, 0.95), "letter": "A"},
 ]
 
 var toast_cb := Callable()  # main gán: hud.toast(text, color)
@@ -118,7 +135,7 @@ func _ready() -> void:
 	# --- khung ảnh bản đồ ---
 	map_view = MapView.new()
 	map_view.pois = POIS
-	map_view.size = Vector2(SMALL_W, SMALL_W / 1.5)
+	map_view.size = Vector2(SMALL_W, SMALL_W / (WORLD_SIZE.x / WORLD_SIZE.y))
 	map_view.custom_minimum_size = map_view.size
 	map_view.poi_clicked.connect(_on_poi_clicked)
 	v.add_child(map_view)
@@ -153,7 +170,7 @@ func set_big(p_big: bool) -> void:
 	big = p_big
 	map_view.show_labels = big
 	var w := SMALL_W if big == false else minf(780.0, map_view.get_viewport_rect().size.x * 0.62)
-	map_view.custom_minimum_size = Vector2(w, w / 1.5)
+	map_view.custom_minimum_size = Vector2(w, w / (WORLD_SIZE.x / WORLD_SIZE.y))
 	plus_btn.disabled = big
 	minus_btn.disabled = not big
 	_place_panel()

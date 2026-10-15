@@ -10,6 +10,7 @@ const ACTIONS := {
 	"inventory": [KEY_I, KEY_TAB],
 	"cycle_seed": [KEY_R],
 	"pause": [KEY_ESCAPE],
+	"quick_eat": [KEY_F],
 }
 
 

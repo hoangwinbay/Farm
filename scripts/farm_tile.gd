@@ -42,9 +42,12 @@ func _ready() -> void:
 	add_child(_pest_spr)
 
 
-func setup(c: Vector2i) -> void:
+func setup(c: Vector2i, custom_pos: Vector2 = Vector2(-9999, -9999)) -> void:
 	coord = c
-	position = Vector2(c.x * 32 + 16, c.y * 32 + 16)
+	if custom_pos.x > -9000:
+		position = custom_pos
+	else:
+		position = Vector2(c.x * 32 + 16, c.y * 32 + 16)
 
 
 func _process(delta: float) -> void:

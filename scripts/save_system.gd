@@ -8,12 +8,18 @@ func has_save() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
 
 
-func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: Dictionary = {}, foliage: Array = [], stall: Array = [], stall_revenue: int = 0, cat: Dictionary = {}) -> void:
+func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: Dictionary = {}, foliage: Array = [], stall: Array = [], stall_revenue: int = 0, cat: Dictionary = {}, quests: Dictionary = {}) -> void:
 	var data := {
 		"v": 2,
 		"money": GameState.money,
 		"day": GameState.day,
 		"clock": GameState.clock,
+		"stamina": GameState.stamina,
+		"max_stamina": GameState.max_stamina,
+		"weather": GameState.weather,
+		"sound_enabled": GameState.sound_enabled,
+		"sound_volume": get_node("/root/AudioManager").sound_volume if has_node("/root/AudioManager") else 0.8,
+		"game_speed": GameState.game_speed,
 		"unlocked": GameState.unlocked.duplicate(),
 		"seeds": Inventory.seeds.duplicate(),
 		"produce": Inventory.produce.duplicate(),
@@ -21,10 +27,14 @@ func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: D
 		"hoes": Inventory.hoes,
 		"water_level": Inventory.water_level,
 		"water_max": Inventory.water_max,
+		"pickaxe": Inventory.pickaxe,
+		"ores": Inventory.ores.duplicate(),
 		"active_item": Inventory.active_item.duplicate(),
 		"rods": Inventory.rods.duplicate(),
 		"fish": Inventory.fish.duplicate(),
+		"feed": Inventory.feed,
 		"coops": Inventory.coops.duplicate(),
+		"coop_tiers": Inventory.coop_tiers.duplicate(),
 		"animals": Inventory.animals.duplicate(true),
 		"backpack_max": Inventory.backpack_max,
 		"storage": Inventory.storage.duplicate(true),
@@ -36,6 +46,7 @@ func save_game(farm_state: Array, player_pos: Vector2, npc_met: bool, mailbox: D
 		"stall": stall.duplicate(true),
 		"stall_revenue": stall_revenue,
 		"cat": cat.duplicate(true),
+		"quests": quests.duplicate(true),
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:

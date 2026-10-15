@@ -2,25 +2,75 @@ extends CanvasLayer
 # HUD Nông Trại: Bảng trạng thái gỗ mộc, thanh hotbar hạt giống, gợi ý thao tác & thông báo cuộn giấy.
 
 const CropDB := preload("res://scripts/crop_db.gd")
+const OreDB := preload("res://scripts/ore_db.gd")
 const TextureGen := preload("res://scripts/texture_gen.gd")
 const UIKit := preload("res://scripts/ui/ui_kit.gd")
+const WeatherManager := preload("res://scripts/weather_manager.gd")
+const QuestDrawerScript := preload("res://scripts/ui/quest_drawer.gd")
 
 signal open_inventory_requested
 signal open_storage_requested
 signal open_cat_requested
 signal open_stall_requested
+signal open_quests_requested
+signal open_settings_requested
+
+# Nút ô Hotbar hỗ trợ kéo thả trực tiếp như Minecraft
+class HotbarSlotButton extends Button:
+	var slot_index: int = 0
+	var hud_ref: CanvasLayer
+
+	func _get_drag_data(_at_position: Vector2) -> Variant:
+		var slot: Dictionary = Inventory.get_hotbar_slot(slot_index)
+		if slot.is_empty() or int(slot.get("qty", 1)) <= 0:
+			return null
+
+		var preview := Control.new()
+		var p_icon := TextureRect.new()
+		p_icon.texture = Inventory.get_slot_icon(slot)
+		p_icon.custom_minimum_size = Vector2(36, 36)
+		p_icon.size = Vector2(36, 36)
+		p_icon.position = Vector2(-18, -18)
+		p_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		p_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		preview.add_child(p_icon)
+		if get_viewport() and get_viewport().gui_is_dragging():
+			set_drag_preview(preview)
+
+		return {
+			"source_area": "hotbar",
+			"source_index": slot_index
+		}
+
+	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+		return data is Dictionary and data.has("source_area") and data.has("source_index")
+
+	func _drop_data(_at_position: Vector2, data: Variant) -> void:
+		var src_area: String = str(data.get("source_area", ""))
+		var src_idx: int = int(data.get("source_index", -1))
+		if Inventory.swap_slots(src_area, src_idx, "hotbar", slot_index):
+			if hud_ref != null:
+				hud_ref.rebuild_hotbar()
+			Inventory.changed.emit()
+
 
 var clock_label: Label
 var day_label: Label
+var weather_label: Label
 var money_label: Label
 var hoe_label: Label
 var water_label: Label
+var stamina_bar: ProgressBar
+var stamina_label: Label
+var _stamina_fill_sb: StyleBoxFlat
+var _stamina_tween: Tween
 var hint_container: PanelContainer
 var hint_label: Label
 var active_label: Label
 var seed_label: Label
 var toast_row: VBoxContainer
 var hotbar_row: HBoxContainer
+var quest_drawer: PanelContainer
 var _group: ButtonGroup
 var _slots_cache: Array[Dictionary] = []
 
@@ -46,7 +96,7 @@ func _ready() -> void:
 	v_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tl.add_child(v_status)
 
-	# Hàng 1: Ngày & Giờ với icon
+	# Hàng 1: Ngày, Giờ & Thời tiết
 	var h_time := HBoxContainer.new()
 	h_time.add_theme_constant_override("separation", 10)
 	h_time.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -82,7 +132,38 @@ func _ready() -> void:
 	h_clk.add_child(clk_ic)
 	clock_label = UIKit.label(h_clk, "07:00", 15, Color(0.90, 0.95, 1.0))
 
-	# Hàng 2: Tiền vàng & Cuốc xới đất
+	# Huy hiệu Thời tiết
+	var weather_pill := PanelContainer.new()
+	weather_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.22, 0.15, 0.10), UIKit.COLOR_BORDER_WOOD, 6))
+	weather_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h_time.add_child(weather_pill)
+	var h_wthr := HBoxContainer.new()
+	h_wthr.add_theme_constant_override("separation", 5)
+	weather_pill.add_child(h_wthr)
+	weather_label = UIKit.label(h_wthr, "☀️ Nắng đẹp", 14, UIKit.COLOR_TEXT_TITLE)
+
+	# Nút chỉnh Tốc độ chơi nhanh (x1 đến x5)
+	var speed_btn := Button.new()
+	speed_btn.focus_mode = Control.FOCUS_NONE
+	speed_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	speed_btn.tooltip_text = "Tốc độ trò chơi: Bấm để chuyển x1 ➔ x5 [F3]"
+	speed_btn.add_theme_font_size_override("font_size", 12)
+	speed_btn.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
+	speed_btn.text = "⚡ x%d" % int(GameState.game_speed)
+	speed_btn.add_theme_stylebox_override("normal", UIKit.badge_box(Color(0.24, 0.16, 0.10), UIKit.COLOR_BORDER_GOLD, 6))
+	speed_btn.add_theme_stylebox_override("hover", UIKit.badge_box(Color(0.34, 0.22, 0.14), UIKit.COLOR_BORDER_BRIGHT, 6))
+	speed_btn.pressed.connect(func():
+		var spd := GameState.cycle_game_speed()
+		speed_btn.text = "⚡ x%d" % int(spd)
+		toast("⚡ Tốc độ trò chơi: x%d" % int(spd), Color(1.0, 0.9, 0.4))
+	)
+	GameState.game_speed_changed.connect(func(spd: float):
+		if is_instance_valid(speed_btn):
+			speed_btn.text = "⚡ x%d" % int(spd)
+	)
+	h_time.add_child(speed_btn)
+
+	# Hàng 2: Tiền vàng & Cuốc xới đất & Nước
 	var h_assets := HBoxContainer.new()
 	h_assets.add_theme_constant_override("separation", 10)
 	h_assets.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -133,10 +214,66 @@ func _ready() -> void:
 	h_w.add_child(w_ic)
 	water_label = UIKit.label(h_w, "Nước 20/20", 14, Color(0.70, 0.90, 1.0))
 
-	# --- 1b. NÚT NHANH CẠNH MÀN HÌNH: Quản lý Mèo [M], Nhà kho [K] ---
+	# Hàng 3: Thanh Thể Lực (Stamina Bar)
+	var stamina_pill := PanelContainer.new()
+	stamina_pill.add_theme_stylebox_override("panel", UIKit.badge_box(Color(0.14, 0.10, 0.06), UIKit.COLOR_BORDER_WOOD, 6))
+	stamina_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v_status.add_child(stamina_pill)
+
+	var h_sta := HBoxContainer.new()
+	h_sta.add_theme_constant_override("separation", 6)
+	h_sta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamina_pill.add_child(h_sta)
+
+	var sta_ic := TextureRect.new()
+	sta_ic.texture = TextureGen.stamina_icon()
+	sta_ic.custom_minimum_size = Vector2(16, 16)
+	sta_ic.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	h_sta.add_child(sta_ic)
+
+	var bar_container := Control.new()
+	bar_container.custom_minimum_size = Vector2(240, 16)
+	bar_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h_sta.add_child(bar_container)
+
+	stamina_bar = ProgressBar.new()
+	stamina_bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	stamina_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamina_bar.show_percentage = false
+	stamina_bar.min_value = 0.0
+	stamina_bar.max_value = 100.0
+	stamina_bar.value = 100.0
+
+	var bar_bg := StyleBoxFlat.new()
+	bar_bg.bg_color = Color(0.08, 0.05, 0.03, 0.95)
+	bar_bg.border_color = Color(0.28, 0.20, 0.12)
+	bar_bg.set_border_width_all(1)
+	bar_bg.set_corner_radius_all(4)
+	stamina_bar.add_theme_stylebox_override("background", bar_bg)
+
+	_stamina_fill_sb = StyleBoxFlat.new()
+	_stamina_fill_sb.bg_color = Color(0.24, 0.82, 0.42)
+	_stamina_fill_sb.set_corner_radius_all(4)
+	stamina_bar.add_theme_stylebox_override("fill", _stamina_fill_sb)
+	bar_container.add_child(stamina_bar)
+
+	stamina_label = Label.new()
+	stamina_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	stamina_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stamina_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stamina_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamina_label.text = "100 / 100 ⚡"
+	stamina_label.add_theme_font_size_override("font_size", 11)
+	stamina_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+	stamina_label.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.95))
+	stamina_label.add_theme_constant_override("outline_size", 2)
+	bar_container.add_child(stamina_label)
+
+	# --- 1b. NÚT NHANH CẠNH MÀN HÌNH: Quản lý Mèo [M], Nhà kho [K], Nhiệm vụ [Q] ---
 	var quick_dock := PanelContainer.new()
 	quick_dock.add_theme_stylebox_override("panel", UIKit.wood_frame(6, 2, UIKit.COLOR_WOOD_DARK, UIKit.COLOR_BORDER_GOLD))
-	quick_dock.position = Vector2(16, 120)
+	quick_dock.position = Vector2(16, 148)
 	root.add_child(quick_dock)
 
 	var qv := VBoxContainer.new()
@@ -149,6 +286,24 @@ func _ready() -> void:
 	_make_quick_btn(qv, "K", TextureGen.get_tex("shed"), "Nhà kho [K]", func():
 		open_storage_requested.emit()
 	)
+	_make_quick_btn(qv, "Q", TextureGen.star_icon(), "Bảng Nhiệm Vụ [Q]", func():
+		if quest_drawer != null:
+			quest_drawer.toggle_drawer()
+	)
+	_make_quick_btn(qv, "⚙", TextureGen.gear_icon(), "Cài đặt trò chơi [⚙ / F2]", func():
+		open_settings_requested.emit()
+	)
+
+	# --- 1c. BẢNG RÚT GỌN NHIỆM VỤ CẠNH NÚT MÈO / NHÀ KHO [Q] ---
+	quest_drawer = QuestDrawerScript.new()
+	quest_drawer.position = Vector2(78, 148)
+	quest_drawer.open_full_quests_requested.connect(func():
+		open_quests_requested.emit()
+	)
+	quest_drawer.reward_claimed.connect(func(_q):
+		toast("Đã nhận thưởng nhiệm vụ! ✨", Color(1.0, 0.9, 0.4))
+	)
+	root.add_child(quest_drawer)
 
 	# --- 2. THÔNG BÁO CUỘN GIẤY PHẢI PHÍA DƯỚI BẢN ĐỒ NHỎ ---
 	var tr := MarginContainer.new()
@@ -259,9 +414,67 @@ func set_money(v: int) -> void:
 	money_label.text = "%d xu" % v
 
 
+func set_stamina(cur: float, max_v: float) -> void:
+	if stamina_bar == null or stamina_label == null:
+		return
+	stamina_bar.max_value = max_v
+	if _stamina_tween and _stamina_tween.is_valid():
+		_stamina_tween.kill()
+	_stamina_tween = create_tween()
+	_stamina_tween.tween_property(stamina_bar, "value", cur, 0.2).set_ease(Tween.EASE_OUT)
+
+	var pct := clampf(cur / maxf(max_v, 1.0), 0.0, 1.0)
+	if pct >= 0.5:
+		_stamina_fill_sb.bg_color = Color(0.24, 0.82, 0.42)
+		stamina_label.text = "%d / %d ⚡" % [int(ceil(cur)), int(max_v)]
+		stamina_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+	elif pct >= 0.2:
+		_stamina_fill_sb.bg_color = Color(0.95, 0.72, 0.20)
+		stamina_label.text = "%d / %d ⚡" % [int(ceil(cur)), int(max_v)]
+		stamina_label.add_theme_color_override("font_color", Color(1.0, 0.90, 0.6))
+	else:
+		_stamina_fill_sb.bg_color = Color(0.92, 0.32, 0.22)
+		if cur <= 0.0:
+			stamina_label.text = "KIỆT SỨC 0/%d ⚡" % int(max_v)
+			stamina_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+		else:
+			stamina_label.text = "%d / %d ⚡" % [int(ceil(cur)), int(max_v)]
+			stamina_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.6))
+
+
+var is_underground: bool = false
+
+
+func set_underground(val: bool) -> void:
+	is_underground = val
+	if weather_label != null:
+		if is_underground:
+			weather_label.text = "⛏️ Hầm mỏ"
+		else:
+			weather_label.text = WeatherManager.get_weather_display(GameState.weather)
+
+
 func set_clock(txt: String) -> void:
 	clock_label.text = txt
 	day_label.text = "Ngày %d" % GameState.day
+	if weather_label != null:
+		if is_underground:
+			weather_label.text = "⛏️ Hầm mỏ"
+		else:
+			weather_label.text = WeatherManager.get_weather_display(GameState.weather)
+
+
+func set_weather(w: String) -> void:
+	if weather_label != null:
+		if is_underground:
+			weather_label.text = "⛏️ Hầm mỏ"
+		else:
+			weather_label.text = WeatherManager.get_weather_display(w)
+
+
+func setup_quests(qm: Node) -> void:
+	if quest_drawer != null:
+		quest_drawer.setup(qm)
 
 
 func set_hint(t: String) -> void:
@@ -280,190 +493,108 @@ func rebuild_hotbar() -> void:
 	if hotbar_row == null:
 		return
 
+	Inventory.sync_slots_from_pools()
+
 	for c in hotbar_row.get_children():
 		c.queue_free()
 
 	_slots_cache.clear()
 
-	var act_t: String = str(Inventory.active_item.get("type", "hoe"))
+	for i in Inventory.HOTBAR_SIZE:
+		var slot: Dictionary = Inventory.get_hotbar_slot(i)
+		var is_act: bool = (i == Inventory.active_hotbar_index)
 
-	# Ô 1: Cuốc
-	var hoe_active: bool = (act_t == "hoe")
-	_slots_cache.append({
-		"key": "1",
-		"type": "hoe",
-		"name": "Cuốc",
-		"qty": Inventory.hoes,
-		"tooltip": "Cuốc (×%d)" % Inventory.hoes,
-		"icon": TextureGen.hoe_icon(),
-		"active": hoe_active,
-		"action": func():
-			Inventory.select_tool("hoe")
-	})
-
-	# Ô 2: Bình tưới (hiện rõ số nước X/20)
-	var water_active: bool = (act_t == "watering_can")
-	_slots_cache.append({
-		"key": "2",
-		"type": "watering_can",
-		"name": "Bình tưới",
-		"qty": Inventory.water_level,
-		"tooltip": "Bình tưới (%d/%d)" % [Inventory.water_level, Inventory.water_max],
-		"icon": TextureGen.watering_can_icon(),
-		"active": water_active,
-		"action": func():
-			Inventory.select_tool("watering_can")
-	})
-
-	# Ô 3: Cần câu
-	var rod_active: bool = (act_t == "rod")
-	_slots_cache.append({
-		"key": "3",
-		"type": "rod",
-		"name": "Cần câu",
-		"qty": Inventory.total_casts(),
-		"tooltip": "Cần câu (%d lượt)" % Inventory.total_casts(),
-		"icon": TextureGen.get_tex("fx_rod"),
-		"active": rod_active,
-		"action": func():
-			Inventory.select_tool("rod")
-	})
-
-	# Các ô tiếp theo: Hạt giống (hotkey 4..9)
-	var ids: Array = Inventory.owned_seed_ids()
-	if ids.is_empty():
-		ids = GameState.unlocked.duplicate()
-
-	var max_seed_slots: int = 6
-	var shown: int = mini(ids.size(), max_seed_slots)
-	for i in shown:
-		var sid := str(ids[i])
-		var crop := CropDB.get_crop(sid)
-		if crop.is_empty():
-			continue
-		var is_seed_active: bool = (act_t == "seed" and Inventory.selected_seed == sid)
-		_slots_cache.append({
-			"key": str(4 + i),
-			"type": "seed",
-			"id": sid,
-			"name": str(crop.name),
-			"qty": Inventory.seed_count(sid),
-			"tooltip": "%s (×%d)" % [crop.name, Inventory.seed_count(sid)],
-			"icon": TextureGen.seed_icon(crop),
-			"active": is_seed_active,
-			"action": func():
-				Inventory.select_seed(sid)
-		})
-
-	for slot in _slots_cache:
-		var b := Button.new()
+		var b := HotbarSlotButton.new()
+		b.slot_index = i
+		b.hud_ref = self
 		b.custom_minimum_size = Vector2(46, 46)
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.tooltip_text = str(slot.get("tooltip", ""))
 
-		var is_act: bool = bool(slot.get("active", false))
 		if is_act:
-			b.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.42, 0.28, 0.15), UIKit.COLOR_BORDER_GOLD, 6, 2))
-			b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.50, 0.34, 0.18), UIKit.COLOR_BORDER_GOLD, 6, 2))
-			b.add_theme_stylebox_override("pressed", UIKit.btn_style(Color(0.32, 0.20, 0.10), UIKit.COLOR_BORDER_GOLD, 6, 2))
+			b.add_theme_stylebox_override("normal", UIKit.btn_style(Color(0.42, 0.28, 0.15), Color(1.0, 0.85, 0.3), 6, 2))
+			b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.50, 0.34, 0.18), Color(1.0, 0.85, 0.3), 6, 2))
+			b.add_theme_stylebox_override("pressed", UIKit.btn_style(Color(0.32, 0.20, 0.10), Color(1.0, 0.85, 0.3), 6, 2))
 		else:
 			b.add_theme_stylebox_override("normal", UIKit.slot_box(false))
 			b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.30, 0.20, 0.12), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
 			b.add_theme_stylebox_override("pressed", UIKit.slot_box(true))
 
-		# 1. Hình ảnh trung tâm duy nhất (không có chữ thừa)
-		var ic := TextureRect.new()
-		ic.texture = slot.icon
-		ic.position = Vector2(9, 9)
-		ic.size = Vector2(28, 28)
-		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		b.add_child(ic)
-
-		# 2. Số thứ tự phím tắt ở góc trên-trái (1, 2, 3...)
+		# Số thứ tự phím tắt ở góc trên-trái (1..9)
 		var key_lbl := Label.new()
-		key_lbl.text = str(slot.get("key", ""))
+		key_lbl.text = str(i + 1)
 		key_lbl.position = Vector2(4, 2)
 		key_lbl.add_theme_font_size_override("font_size", 10)
-		key_lbl.add_theme_color_override("font_color", Color(0.85, 0.82, 0.78, 0.9))
+		key_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.6) if is_act else Color(0.85, 0.82, 0.78, 0.85))
 		key_lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.95))
 		key_lbl.add_theme_constant_override("outline_size", 2)
 		key_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(key_lbl)
 
-		# 3. Ký hiệu số lượng ở góc dưới-phải (ví dụ 998, 20, 0...)
-		var qty_val: int = int(slot.get("qty", 0))
-		var qty_lbl := Label.new()
-		qty_lbl.text = str(qty_val)
-		qty_lbl.position = Vector2(2, 28)
-		qty_lbl.size = Vector2(41, 16)
-		qty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		qty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-		qty_lbl.add_theme_font_size_override("font_size", 11)
-		if str(slot.get("type", "")) == "watering_can":
-			qty_lbl.add_theme_color_override("font_color", Color(0.5, 0.9, 1.0) if qty_val > 0 else Color(1.0, 0.45, 0.45))
-		else:
-			qty_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.8) if qty_val > 0 else Color(0.65, 0.60, 0.55, 0.8))
-		qty_lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.98))
-		qty_lbl.add_theme_constant_override("outline_size", 3)
-		qty_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		b.add_child(qty_lbl)
+		if not slot.is_empty():
+			var s_name := Inventory.get_slot_name(slot)
+			b.tooltip_text = "%s [Phím %d]" % [s_name, i + 1]
 
-		var fn: Callable = slot.action
+			var slot_meta: Dictionary = slot.duplicate()
+			slot_meta["name"] = s_name
+			slot_meta["active"] = is_act
+			slot_meta["qty"] = Inventory.get_slot_qty(slot)
+			_slots_cache.append(slot_meta)
+
+			var tex := Inventory.get_slot_icon(slot)
+			if tex != null:
+				var ic := TextureRect.new()
+				ic.texture = tex
+				ic.position = Vector2(9, 9)
+				ic.size = Vector2(28, 28)
+				ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				b.add_child(ic)
+
+			var qty_val: int = Inventory.get_slot_qty(slot)
+			var s_type: String = str(slot.get("type", ""))
+			if s_type == "watering_can" or qty_val > 1:
+				var qty_lbl := Label.new()
+				qty_lbl.text = str(qty_val)
+				qty_lbl.position = Vector2(2, 28)
+				qty_lbl.size = Vector2(41, 16)
+				qty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+				qty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+				qty_lbl.add_theme_font_size_override("font_size", 11)
+				if s_type == "watering_can":
+					qty_lbl.add_theme_color_override("font_color", Color(0.5, 0.9, 1.0) if qty_val > 0 else Color(1.0, 0.45, 0.45))
+				else:
+					qty_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.8))
+				qty_lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03, 0.98))
+				qty_lbl.add_theme_constant_override("outline_size", 3)
+				qty_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				b.add_child(qty_lbl)
+		else:
+			b.tooltip_text = "Ô %d (Trống)" % (i + 1)
+
+		var slot_idx := i
 		b.pressed.connect(func():
-			fn.call()
-			rebuild_hotbar()
+			select_slot_by_index(slot_idx)
 		)
 		hotbar_row.add_child(b)
-
-	if ids.size() > shown:
-		var more_b := Button.new()
-		more_b.custom_minimum_size = Vector2(46, 46)
-		more_b.tooltip_text = "+%d loại hạt khác (I)" % (ids.size() - shown)
-		more_b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		more_b.add_theme_stylebox_override("normal", UIKit.slot_box(false))
-		more_b.add_theme_stylebox_override("hover", UIKit.btn_style(Color(0.30, 0.20, 0.12), UIKit.COLOR_BORDER_BRIGHT, 6, 1))
-		more_b.add_theme_stylebox_override("pressed", UIKit.slot_box(true))
-		var more_lbl := Label.new()
-		more_lbl.text = "+%d" % (ids.size() - shown)
-		more_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		more_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		more_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		more_lbl.add_theme_font_size_override("font_size", 12)
-		more_lbl.add_theme_color_override("font_color", UIKit.COLOR_TEXT_GOLD)
-		more_lbl.add_theme_constant_override("outline_size", 2)
-		more_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		more_b.add_child(more_lbl)
-		more_b.pressed.connect(func():
-			open_inventory_requested.emit()
-		)
-		hotbar_row.add_child(more_b)
 
 	_update_active_label()
 
 
 func select_slot_by_index(idx: int) -> void:
-	if idx >= 0 and idx < _slots_cache.size():
-		var slot: Dictionary = _slots_cache[idx]
-		var act: Callable = slot.get("action", Callable())
-		if act.is_valid():
-			act.call()
-			rebuild_hotbar()
-			toast("Đã chọn: %s" % slot.get("name", ""), Color(1.0, 0.9, 0.5))
+	if idx >= 0 and idx < Inventory.HOTBAR_SIZE:
+		Inventory.select_hotbar_slot(idx)
+		rebuild_hotbar()
+		var slot: Dictionary = Inventory.get_hotbar_slot(idx)
+		if not slot.is_empty():
+			toast("Đã chọn: %s" % Inventory.get_slot_name(slot), Color(1.0, 0.9, 0.5))
 
 
 func cycle_slot(delta: int) -> void:
-	if _slots_cache.is_empty():
-		return
-	var cur_idx := 0
-	for i in _slots_cache.size():
-		if bool(_slots_cache[i].get("active", false)):
-			cur_idx = i
-			break
-	var next_idx: int = (cur_idx + delta) % _slots_cache.size()
-	if next_idx < 0:
-		next_idx += _slots_cache.size()
-	select_slot_by_index(next_idx)
+	Inventory.cycle_hotbar(delta)
+	rebuild_hotbar()
+	var slot: Dictionary = Inventory.get_hotbar_slot(Inventory.active_hotbar_index)
+	if not slot.is_empty():
+		toast("Đã chọn: %s" % Inventory.get_slot_name(slot), Color(1.0, 0.9, 0.5))
 
 
 func _select_seed(id: String) -> void:
@@ -477,14 +608,27 @@ func _update_active_label() -> void:
 	var act_type: String = str(Inventory.active_item.get("type", "hoe"))
 	match act_type:
 		"hoe":
-			active_label.text = "⛏ Cuốc (×%d)" % Inventory.hoes
+			if Inventory.hoes <= 0:
+				Inventory.active_item = Inventory.get_fallback_tool()
+				_update_active_label()
+				return
+			var h_info := OreDB.get_hoe(Inventory.get_hoe_tier())
+			active_label.text = "🌱 %s (×%d - Tốn %.0f⚡)" % [str(h_info.name), Inventory.hoes, float(h_info.stamina)]
 			active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_TITLE)
 		"watering_can":
-			active_label.text = "💧 Bình tưới (%d/%d)" % [Inventory.water_level, Inventory.water_max]
+			active_label.text = "💧 Bình tưới (%d/%d - Tốn 5⚡)" % [Inventory.water_level, Inventory.water_max]
 			active_label.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0))
 		"rod":
-			active_label.text = "🎣 Cần câu (%d lượt)" % Inventory.total_casts()
+			if Inventory.total_casts() <= 0:
+				Inventory.active_item = Inventory.get_fallback_tool()
+				_update_active_label()
+				return
+			active_label.text = "🎣 Cần câu (%d lượt - Tốn 15⚡)" % Inventory.total_casts()
 			active_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.4))
+		"pickaxe":
+			var p_info := OreDB.get_pickaxe(Inventory.get_pickaxe_tier())
+			active_label.text = "⛏️ %s (Cấp %d - Tốn %.0f⚡)" % [str(p_info.name), Inventory.get_pickaxe_power(), float(p_info.stamina)]
+			active_label.add_theme_color_override("font_color", Color(0.85, 0.90, 1.0))
 		"seed":
 			var sid := Inventory.selected_seed
 			var c := CropDB.get_crop(sid)
@@ -494,8 +638,29 @@ func _update_active_label() -> void:
 			else:
 				active_label.text = "🌱 Hạt: %s (×%d)" % [c.name, Inventory.seed_count(sid)]
 				active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_GREEN)
+		"feed":
+			active_label.text = "🌾 Túi Cám (×%d) · Đến gần vật nuôi bấm E" % Inventory.feed_count()
+			active_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+		"produce":
+			var pid: String = str(Inventory.active_item.get("id", ""))
+			var pname: String = Inventory.get_slot_name(Inventory.active_item)
+			var pqty: int = Inventory.produce_count(pid)
+			active_label.text = "🧺 %s (×%d)" % [pname, pqty]
+			active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_TITLE)
+		"fish":
+			var fid: String = str(Inventory.active_item.get("id", ""))
+			var fname: String = Inventory.get_slot_name(Inventory.active_item)
+			var fqty: int = Inventory.fish_count(fid)
+			active_label.text = "🐟 %s (×%d)" % [fname, fqty]
+			active_label.add_theme_color_override("font_color", Color(0.4, 0.8, 1.0))
+		"ore":
+			var oid: String = str(Inventory.active_item.get("id", ""))
+			var oname: String = Inventory.get_slot_name(Inventory.active_item)
+			var oqty: int = Inventory.ore_count(oid)
+			active_label.text = "⛏️ %s (×%d)" % [oname, oqty]
+			active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_GOLD)
 		_:
-			active_label.text = "Đang cầm: Trống"
+			active_label.text = "Đang cầm: Tay không (Trống)"
 			active_label.add_theme_color_override("font_color", UIKit.COLOR_TEXT_MUTED)
 	_update_seed_label()
 

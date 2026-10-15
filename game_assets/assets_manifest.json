@@ -1,0 +1,3224 @@
+[
+  {
+    "asset_name": "BabyPig.png",
+    "source_origin": "Stardew Valley",
+    "category": "animals",
+    "original_path": "picture/animals/BabyPig.png",
+    "collected_path": "stardew_valley/animals/BabyPig.png",
+    "file_size_bytes": 5680,
+    "dimensions": "128x160"
+  },
+  {
+    "asset_name": "BabySheep.png",
+    "source_origin": "Stardew Valley",
+    "category": "animals",
+    "original_path": "picture/animals/BabySheep.png",
+    "collected_path": "stardew_valley/animals/BabySheep.png",
+    "file_size_bytes": 5211,
+    "dimensions": "128x160"
+  },
+  {
+    "asset_name": "BabyWhite Chicken.png",
+    "source_origin": "Stardew Valley",
+    "category": "animals",
+    "original_path": "picture/animals/BabyWhite Chicken.png",
+    "collected_path": "stardew_valley/animals/BabyWhite Chicken.png",
+    "file_size_bytes": 2664,
+    "dimensions": "64x224"
+  },
+  {
+    "asset_name": "BabyWhite Cow.png",
+    "source_origin": "Stardew Valley",
+    "category": "animals",
+    "original_path": "picture/animals/BabyWhite Cow.png",
+    "collected_path": "stardew_valley/animals/BabyWhite Cow.png",
+    "file_size_bytes": 5054,
+    "dimensions": "128x160"
+  },
+  {
+    "asset_name": "Pig.png",
+    "source_origin": "Stardew Valley",
+    "category": "animals",
+    "original_path": "picture/animals/Pig.png",
+    "collected_path": "stardew_valley/animals/Pig.png",
+    "file_size_bytes": 7320,
+    "dimensions": "128x160"
+  },
+  {
+    "asset_name": "ShearedSheep.png",
+    "source_origin": "Stardew Valley",
+    "category": "animals",
+    "original_path": "picture/animals/ShearedSheep.png",
+    "collected_path": "stardew_valley/animals/ShearedSheep.png",
+    "file_size_bytes": 5524,
+    "dimensions": "128x160"
+  },
+  {
+    "asset_name": "Sheep.png",
+    "source_origin": "Stardew Valley",
+    "category": "animals",
+    "original_path": "picture/animals/Sheep.png",
+    "collected_path": "stardew_valley/animals/Sheep.png",
+    "file_size_bytes": 6058,
+    "dimensions": "128x160"
+  },
+  {
+    "asset_name": "White Chicken.png",
+    "source_origin": "Stardew Valley",
+    "category": "animals",
+    "original_path": "picture/animals/White Chicken.png",
+    "collected_path": "stardew_valley/animals/White Chicken.png",
+    "file_size_bytes": 3879,
+    "dimensions": "64x112"
+  },
+  {
+    "asset_name": "White Cow.png",
+    "source_origin": "Stardew Valley",
+    "category": "animals",
+    "original_path": "picture/animals/White Cow.png",
+    "collected_path": "stardew_valley/animals/White Cow.png",
+    "file_size_bytes": 5998,
+    "dimensions": "128x160"
+  },
+  {
+    "asset_name": "Abigail.png",
+    "source_origin": "Stardew Valley",
+    "category": "characters",
+    "original_path": "picture/characters/Abigail.png",
+    "collected_path": "stardew_valley/characters/Abigail.png",
+    "file_size_bytes": 18957,
+    "dimensions": "64x448"
+  },
+  {
+    "asset_name": "Alex.png",
+    "source_origin": "Stardew Valley",
+    "category": "characters",
+    "original_path": "picture/characters/Alex.png",
+    "collected_path": "stardew_valley/characters/Alex.png",
+    "file_size_bytes": 16520,
+    "dimensions": "64x416"
+  },
+  {
+    "asset_name": "Emily.png",
+    "source_origin": "Stardew Valley",
+    "category": "characters",
+    "original_path": "picture/characters/Emily.png",
+    "collected_path": "stardew_valley/characters/Emily.png",
+    "file_size_bytes": 19012,
+    "dimensions": "64x448"
+  },
+  {
+    "asset_name": "Haley.png",
+    "source_origin": "Stardew Valley",
+    "category": "characters",
+    "original_path": "picture/characters/Haley.png",
+    "collected_path": "stardew_valley/characters/Haley.png",
+    "file_size_bytes": 16449,
+    "dimensions": "64x416"
+  },
+  {
+    "asset_name": "Harvey.png",
+    "source_origin": "Stardew Valley",
+    "category": "characters",
+    "original_path": "picture/characters/Harvey.png",
+    "collected_path": "stardew_valley/characters/Harvey.png",
+    "file_size_bytes": 19261,
+    "dimensions": "64x448"
+  },
+  {
+    "asset_name": "Leah.png",
+    "source_origin": "Stardew Valley",
+    "category": "characters",
+    "original_path": "picture/characters/Leah.png",
+    "collected_path": "stardew_valley/characters/Leah.png",
+    "file_size_bytes": 15950,
+    "dimensions": "64x416"
+  },
+  {
+    "asset_name": "Maru.png",
+    "source_origin": "Stardew Valley",
+    "category": "characters",
+    "original_path": "picture/characters/Maru.png",
+    "collected_path": "stardew_valley/characters/Maru.png",
+    "file_size_bytes": 14468,
+    "dimensions": "64x384"
+  },
+  {
+    "asset_name": "Penny.png",
+    "source_origin": "Stardew Valley",
+    "category": "characters",
+    "original_path": "picture/characters/Penny.png",
+    "collected_path": "stardew_valley/characters/Penny.png",
+    "file_size_bytes": 15974,
+    "dimensions": "64x416"
+  },
+  {
+    "asset_name": "Sam.png",
+    "source_origin": "Stardew Valley",
+    "category": "characters",
+    "original_path": "picture/characters/Sam.png",
+    "collected_path": "stardew_valley/characters/Sam.png",
+    "file_size_bytes": 19357,
+    "dimensions": "64x448"
+  },
+  {
+    "asset_name": "Sebastian.png",
+    "source_origin": "Stardew Valley",
+    "category": "characters",
+    "original_path": "picture/characters/Sebastian.png",
+    "collected_path": "stardew_valley/characters/Sebastian.png",
+    "file_size_bytes": 13691,
+    "dimensions": "64x480"
+  },
+  {
+    "asset_name": "crop_cabbage_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_cabbage_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_cabbage_stage_0.png",
+    "file_size_bytes": 238,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_cabbage_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_cabbage_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_cabbage_stage_1.png",
+    "file_size_bytes": 237,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_cabbage_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_cabbage_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_cabbage_stage_2.png",
+    "file_size_bytes": 233,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_cabbage_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_cabbage_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_cabbage_stage_3.png",
+    "file_size_bytes": 300,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_cabbage_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_cabbage_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_cabbage_stage_4.png",
+    "file_size_bytes": 381,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_carrot_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_carrot_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_carrot_stage_0.png",
+    "file_size_bytes": 267,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_carrot_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_carrot_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_carrot_stage_1.png",
+    "file_size_bytes": 300,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_carrot_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_carrot_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_carrot_stage_2.png",
+    "file_size_bytes": 212,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_carrot_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_carrot_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_carrot_stage_3.png",
+    "file_size_bytes": 335,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_cassava_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_cassava_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_cassava_stage_0.png",
+    "file_size_bytes": 266,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_cassava_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_cassava_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_cassava_stage_1.png",
+    "file_size_bytes": 275,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_cassava_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_cassava_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_cassava_stage_2.png",
+    "file_size_bytes": 425,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_cassava_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_cassava_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_cassava_stage_3.png",
+    "file_size_bytes": 477,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_cassava_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_cassava_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_cassava_stage_4.png",
+    "file_size_bytes": 536,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_coffee_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_coffee_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_coffee_stage_0.png",
+    "file_size_bytes": 293,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_coffee_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_coffee_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_coffee_stage_1.png",
+    "file_size_bytes": 275,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_coffee_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_coffee_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_coffee_stage_2.png",
+    "file_size_bytes": 259,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_coffee_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_coffee_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_coffee_stage_3.png",
+    "file_size_bytes": 384,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_coffee_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_coffee_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_coffee_stage_4.png",
+    "file_size_bytes": 492,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_coffee_stage_5.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_coffee_stage_5.png",
+    "collected_path": "stardew_valley/crops/crop_coffee_stage_5.png",
+    "file_size_bytes": 619,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_corn_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_corn_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_corn_stage_0.png",
+    "file_size_bytes": 327,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_corn_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_corn_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_corn_stage_1.png",
+    "file_size_bytes": 325,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_corn_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_corn_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_corn_stage_2.png",
+    "file_size_bytes": 266,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_corn_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_corn_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_corn_stage_3.png",
+    "file_size_bytes": 338,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_corn_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_corn_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_corn_stage_4.png",
+    "file_size_bytes": 441,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_corn_stage_5.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_corn_stage_5.png",
+    "collected_path": "stardew_valley/crops/crop_corn_stage_5.png",
+    "file_size_bytes": 523,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_peanut_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_peanut_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_peanut_stage_0.png",
+    "file_size_bytes": 300,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_peanut_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_peanut_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_peanut_stage_1.png",
+    "file_size_bytes": 289,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_peanut_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_peanut_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_peanut_stage_2.png",
+    "file_size_bytes": 270,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_peanut_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_peanut_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_peanut_stage_3.png",
+    "file_size_bytes": 297,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_peanut_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_peanut_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_peanut_stage_4.png",
+    "file_size_bytes": 428,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_pepper_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_pepper_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_pepper_stage_0.png",
+    "file_size_bytes": 259,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_pepper_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_pepper_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_pepper_stage_1.png",
+    "file_size_bytes": 264,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_pepper_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_pepper_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_pepper_stage_2.png",
+    "file_size_bytes": 224,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_pepper_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_pepper_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_pepper_stage_3.png",
+    "file_size_bytes": 307,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_pepper_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_pepper_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_pepper_stage_4.png",
+    "file_size_bytes": 460,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_pepper_stage_5.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_pepper_stage_5.png",
+    "collected_path": "stardew_valley/crops/crop_pepper_stage_5.png",
+    "file_size_bytes": 541,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_potato_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_potato_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_potato_stage_0.png",
+    "file_size_bytes": 242,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_potato_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_potato_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_potato_stage_1.png",
+    "file_size_bytes": 249,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_potato_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_potato_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_potato_stage_2.png",
+    "file_size_bytes": 217,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_potato_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_potato_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_potato_stage_3.png",
+    "file_size_bytes": 263,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_potato_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_potato_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_potato_stage_4.png",
+    "file_size_bytes": 345,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_potato_stage_5.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_potato_stage_5.png",
+    "collected_path": "stardew_valley/crops/crop_potato_stage_5.png",
+    "file_size_bytes": 411,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rice_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rice_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_rice_stage_0.png",
+    "file_size_bytes": 243,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rice_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rice_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_rice_stage_1.png",
+    "file_size_bytes": 234,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rice_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rice_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_rice_stage_2.png",
+    "file_size_bytes": 323,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rice_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rice_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_rice_stage_3.png",
+    "file_size_bytes": 517,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rice_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rice_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_rice_stage_4.png",
+    "file_size_bytes": 558,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rubber_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rubber_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_rubber_stage_0.png",
+    "file_size_bytes": 207,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rubber_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rubber_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_rubber_stage_1.png",
+    "file_size_bytes": 207,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rubber_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rubber_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_rubber_stage_2.png",
+    "file_size_bytes": 216,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rubber_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rubber_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_rubber_stage_3.png",
+    "file_size_bytes": 320,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rubber_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rubber_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_rubber_stage_4.png",
+    "file_size_bytes": 526,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_rubber_stage_5.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_rubber_stage_5.png",
+    "collected_path": "stardew_valley/crops/crop_rubber_stage_5.png",
+    "file_size_bytes": 678,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_soybean_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_soybean_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_soybean_stage_0.png",
+    "file_size_bytes": 325,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_soybean_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_soybean_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_soybean_stage_1.png",
+    "file_size_bytes": 409,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_soybean_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_soybean_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_soybean_stage_2.png",
+    "file_size_bytes": 449,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_soybean_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_soybean_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_soybean_stage_3.png",
+    "file_size_bytes": 500,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_soybean_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_soybean_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_soybean_stage_4.png",
+    "file_size_bytes": 570,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_soybean_stage_5.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_soybean_stage_5.png",
+    "collected_path": "stardew_valley/crops/crop_soybean_stage_5.png",
+    "file_size_bytes": 635,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_sugarcane_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_sugarcane_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_sugarcane_stage_0.png",
+    "file_size_bytes": 323,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_sugarcane_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_sugarcane_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_sugarcane_stage_1.png",
+    "file_size_bytes": 325,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_sugarcane_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_sugarcane_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_sugarcane_stage_2.png",
+    "file_size_bytes": 373,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_sugarcane_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_sugarcane_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_sugarcane_stage_3.png",
+    "file_size_bytes": 498,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_sugarcane_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_sugarcane_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_sugarcane_stage_4.png",
+    "file_size_bytes": 674,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_sweet_potato_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_sweet_potato_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_sweet_potato_stage_0.png",
+    "file_size_bytes": 257,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_sweet_potato_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_sweet_potato_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_sweet_potato_stage_1.png",
+    "file_size_bytes": 271,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_sweet_potato_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_sweet_potato_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_sweet_potato_stage_2.png",
+    "file_size_bytes": 244,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_sweet_potato_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_sweet_potato_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_sweet_potato_stage_3.png",
+    "file_size_bytes": 345,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_sweet_potato_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_sweet_potato_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_sweet_potato_stage_4.png",
+    "file_size_bytes": 377,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_tomato_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_tomato_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_tomato_stage_0.png",
+    "file_size_bytes": 223,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_tomato_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_tomato_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_tomato_stage_1.png",
+    "file_size_bytes": 213,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_tomato_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_tomato_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_tomato_stage_2.png",
+    "file_size_bytes": 288,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_tomato_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_tomato_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_tomato_stage_3.png",
+    "file_size_bytes": 378,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_tomato_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_tomato_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_tomato_stage_4.png",
+    "file_size_bytes": 457,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_tomato_stage_5.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_tomato_stage_5.png",
+    "collected_path": "stardew_valley/crops/crop_tomato_stage_5.png",
+    "file_size_bytes": 496,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_watermelon_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_watermelon_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_watermelon_stage_0.png",
+    "file_size_bytes": 215,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_watermelon_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_watermelon_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_watermelon_stage_1.png",
+    "file_size_bytes": 203,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_watermelon_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_watermelon_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_watermelon_stage_2.png",
+    "file_size_bytes": 230,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_watermelon_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_watermelon_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_watermelon_stage_3.png",
+    "file_size_bytes": 398,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_watermelon_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_watermelon_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_watermelon_stage_4.png",
+    "file_size_bytes": 479,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_watermelon_stage_5.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_watermelon_stage_5.png",
+    "collected_path": "stardew_valley/crops/crop_watermelon_stage_5.png",
+    "file_size_bytes": 586,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_wheat_stage_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_wheat_stage_0.png",
+    "collected_path": "stardew_valley/crops/crop_wheat_stage_0.png",
+    "file_size_bytes": 251,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_wheat_stage_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_wheat_stage_1.png",
+    "collected_path": "stardew_valley/crops/crop_wheat_stage_1.png",
+    "file_size_bytes": 214,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_wheat_stage_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_wheat_stage_2.png",
+    "collected_path": "stardew_valley/crops/crop_wheat_stage_2.png",
+    "file_size_bytes": 246,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_wheat_stage_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_wheat_stage_3.png",
+    "collected_path": "stardew_valley/crops/crop_wheat_stage_3.png",
+    "file_size_bytes": 599,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "crop_wheat_stage_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/crop_wheat_stage_4.png",
+    "collected_path": "stardew_valley/crops/crop_wheat_stage_4.png",
+    "file_size_bytes": 754,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "prod_cabbage.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_cabbage.png",
+    "collected_path": "stardew_valley/crops/prod_cabbage.png",
+    "file_size_bytes": 508,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_carrot.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_carrot.png",
+    "collected_path": "stardew_valley/crops/prod_carrot.png",
+    "file_size_bytes": 360,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_cassava.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_cassava.png",
+    "collected_path": "stardew_valley/crops/prod_cassava.png",
+    "file_size_bytes": 395,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_coffee.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_coffee.png",
+    "collected_path": "stardew_valley/crops/prod_coffee.png",
+    "file_size_bytes": 473,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_corn.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_corn.png",
+    "collected_path": "stardew_valley/crops/prod_corn.png",
+    "file_size_bytes": 464,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_long_cuu.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_long_cuu.png",
+    "collected_path": "stardew_valley/crops/prod_long_cuu.png",
+    "file_size_bytes": 329,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "prod_peanut.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_peanut.png",
+    "collected_path": "stardew_valley/crops/prod_peanut.png",
+    "file_size_bytes": 451,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_pepper.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_pepper.png",
+    "collected_path": "stardew_valley/crops/prod_pepper.png",
+    "file_size_bytes": 236,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_potato.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_potato.png",
+    "collected_path": "stardew_valley/crops/prod_potato.png",
+    "file_size_bytes": 405,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_rice.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_rice.png",
+    "collected_path": "stardew_valley/crops/prod_rice.png",
+    "file_size_bytes": 312,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_rubber.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_rubber.png",
+    "collected_path": "stardew_valley/crops/prod_rubber.png",
+    "file_size_bytes": 542,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_soybean.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_soybean.png",
+    "collected_path": "stardew_valley/crops/prod_soybean.png",
+    "file_size_bytes": 310,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_sua_bo.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_sua_bo.png",
+    "collected_path": "stardew_valley/crops/prod_sua_bo.png",
+    "file_size_bytes": 362,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "prod_sugarcane.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_sugarcane.png",
+    "collected_path": "stardew_valley/crops/prod_sugarcane.png",
+    "file_size_bytes": 463,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_sweet_potato.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_sweet_potato.png",
+    "collected_path": "stardew_valley/crops/prod_sweet_potato.png",
+    "file_size_bytes": 292,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_thit_lon.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_thit_lon.png",
+    "collected_path": "stardew_valley/crops/prod_thit_lon.png",
+    "file_size_bytes": 266,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "prod_tomato.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_tomato.png",
+    "collected_path": "stardew_valley/crops/prod_tomato.png",
+    "file_size_bytes": 396,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_trung_ga.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_trung_ga.png",
+    "collected_path": "stardew_valley/crops/prod_trung_ga.png",
+    "file_size_bytes": 136,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "prod_watermelon.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_watermelon.png",
+    "collected_path": "stardew_valley/crops/prod_watermelon.png",
+    "file_size_bytes": 434,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "prod_wheat.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/prod_wheat.png",
+    "collected_path": "stardew_valley/crops/prod_wheat.png",
+    "file_size_bytes": 404,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_cabbage.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_cabbage.png",
+    "collected_path": "stardew_valley/crops/seed_cabbage.png",
+    "file_size_bytes": 411,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_carrot.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_carrot.png",
+    "collected_path": "stardew_valley/crops/seed_carrot.png",
+    "file_size_bytes": 458,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_cassava.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_cassava.png",
+    "collected_path": "stardew_valley/crops/seed_cassava.png",
+    "file_size_bytes": 240,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_coffee.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_coffee.png",
+    "collected_path": "stardew_valley/crops/seed_coffee.png",
+    "file_size_bytes": 473,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_corn.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_corn.png",
+    "collected_path": "stardew_valley/crops/seed_corn.png",
+    "file_size_bytes": 390,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_peanut.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_peanut.png",
+    "collected_path": "stardew_valley/crops/seed_peanut.png",
+    "file_size_bytes": 522,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_pepper.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_pepper.png",
+    "collected_path": "stardew_valley/crops/seed_pepper.png",
+    "file_size_bytes": 381,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_potato.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_potato.png",
+    "collected_path": "stardew_valley/crops/seed_potato.png",
+    "file_size_bytes": 345,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_rice.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_rice.png",
+    "collected_path": "stardew_valley/crops/seed_rice.png",
+    "file_size_bytes": 297,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_rubber.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_rubber.png",
+    "collected_path": "stardew_valley/crops/seed_rubber.png",
+    "file_size_bytes": 455,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_soybean.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_soybean.png",
+    "collected_path": "stardew_valley/crops/seed_soybean.png",
+    "file_size_bytes": 362,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_sugarcane.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_sugarcane.png",
+    "collected_path": "stardew_valley/crops/seed_sugarcane.png",
+    "file_size_bytes": 422,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_sweet_potato.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_sweet_potato.png",
+    "collected_path": "stardew_valley/crops/seed_sweet_potato.png",
+    "file_size_bytes": 335,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_tomato.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_tomato.png",
+    "collected_path": "stardew_valley/crops/seed_tomato.png",
+    "file_size_bytes": 430,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_watermelon.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_watermelon.png",
+    "collected_path": "stardew_valley/crops/seed_watermelon.png",
+    "file_size_bytes": 376,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "seed_wheat.png",
+    "source_origin": "Stardew Valley",
+    "category": "crops",
+    "original_path": "picture/crops/seed_wheat.png",
+    "collected_path": "stardew_valley/crops/seed_wheat.png",
+    "file_size_bytes": 394,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "cat_down_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "cat",
+    "original_path": "picture/cat/cat_down_0.png",
+    "collected_path": "stardew_valley/cat/cat_down_0.png",
+    "file_size_bytes": 1421,
+    "dimensions": "28x32"
+  },
+  {
+    "asset_name": "cat_down_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "cat",
+    "original_path": "picture/cat/cat_down_1.png",
+    "collected_path": "stardew_valley/cat/cat_down_1.png",
+    "file_size_bytes": 1497,
+    "dimensions": "28x32"
+  },
+  {
+    "asset_name": "cat_down_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "cat",
+    "original_path": "picture/cat/cat_down_2.png",
+    "collected_path": "stardew_valley/cat/cat_down_2.png",
+    "file_size_bytes": 1423,
+    "dimensions": "28x32"
+  },
+  {
+    "asset_name": "cat_side_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "cat",
+    "original_path": "picture/cat/cat_side_0.png",
+    "collected_path": "stardew_valley/cat/cat_side_0.png",
+    "file_size_bytes": 975,
+    "dimensions": "28x32"
+  },
+  {
+    "asset_name": "cat_side_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "cat",
+    "original_path": "picture/cat/cat_side_1.png",
+    "collected_path": "stardew_valley/cat/cat_side_1.png",
+    "file_size_bytes": 1125,
+    "dimensions": "28x32"
+  },
+  {
+    "asset_name": "cat_side_act.png",
+    "source_origin": "Stardew Valley",
+    "category": "cat",
+    "original_path": "picture/cat/cat_side_act.png",
+    "collected_path": "stardew_valley/cat/cat_side_act.png",
+    "file_size_bytes": 1168,
+    "dimensions": "28x32"
+  },
+  {
+    "asset_name": "cat_up_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "cat",
+    "original_path": "picture/cat/cat_up_0.png",
+    "collected_path": "stardew_valley/cat/cat_up_0.png",
+    "file_size_bytes": 1451,
+    "dimensions": "28x32"
+  },
+  {
+    "asset_name": "cat_up_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "cat",
+    "original_path": "picture/cat/cat_up_1.png",
+    "collected_path": "stardew_valley/cat/cat_up_1.png",
+    "file_size_bytes": 1452,
+    "dimensions": "28x32"
+  },
+  {
+    "asset_name": "cat_up_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "cat",
+    "original_path": "picture/cat/cat_up_2.png",
+    "collected_path": "stardew_valley/cat/cat_up_2.png",
+    "file_size_bytes": 1462,
+    "dimensions": "28x32"
+  },
+  {
+    "asset_name": "farmer_down_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_0.png",
+    "file_size_bytes": 866,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_1.png",
+    "file_size_bytes": 919,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_2.png",
+    "file_size_bytes": 898,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_action.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_action.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_action.png",
+    "file_size_bytes": 833,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_fish_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_fish_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_fish_0.png",
+    "file_size_bytes": 863,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_fish_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_fish_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_fish_1.png",
+    "file_size_bytes": 850,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_fish_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_fish_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_fish_2.png",
+    "file_size_bytes": 818,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_fish_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_fish_3.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_fish_3.png",
+    "file_size_bytes": 829,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_fish_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_fish_4.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_fish_4.png",
+    "file_size_bytes": 807,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_harvest_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_harvest_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_harvest_0.png",
+    "file_size_bytes": 773,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_harvest_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_harvest_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_harvest_1.png",
+    "file_size_bytes": 794,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_harvest_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_harvest_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_harvest_2.png",
+    "file_size_bytes": 838,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_harvest_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_harvest_3.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_harvest_3.png",
+    "file_size_bytes": 874,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_plant_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_plant_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_plant_0.png",
+    "file_size_bytes": 782,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_plant_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_plant_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_plant_1.png",
+    "file_size_bytes": 841,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_plant_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_plant_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_plant_2.png",
+    "file_size_bytes": 777,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_till_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_till_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_till_0.png",
+    "file_size_bytes": 858,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_till_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_till_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_till_1.png",
+    "file_size_bytes": 819,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_till_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_till_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_till_2.png",
+    "file_size_bytes": 871,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_till_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_till_3.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_till_3.png",
+    "file_size_bytes": 820,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_till_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_till_4.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_till_4.png",
+    "file_size_bytes": 807,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_water_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_water_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_water_0.png",
+    "file_size_bytes": 790,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_water_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_water_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_water_1.png",
+    "file_size_bytes": 879,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_down_water_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_down_water_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_down_water_2.png",
+    "file_size_bytes": 880,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_0.png",
+    "file_size_bytes": 806,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_1.png",
+    "file_size_bytes": 831,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_2.png",
+    "file_size_bytes": 849,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_action.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_action.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_action.png",
+    "file_size_bytes": 803,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_fish_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_fish_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_fish_0.png",
+    "file_size_bytes": 873,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_fish_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_fish_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_fish_1.png",
+    "file_size_bytes": 851,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_fish_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_fish_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_fish_2.png",
+    "file_size_bytes": 836,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_fish_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_fish_3.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_fish_3.png",
+    "file_size_bytes": 890,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_fish_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_fish_4.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_fish_4.png",
+    "file_size_bytes": 903,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_harvest_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_harvest_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_harvest_0.png",
+    "file_size_bytes": 752,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_harvest_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_harvest_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_harvest_1.png",
+    "file_size_bytes": 790,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_harvest_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_harvest_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_harvest_2.png",
+    "file_size_bytes": 803,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_harvest_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_harvest_3.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_harvest_3.png",
+    "file_size_bytes": 813,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_plant_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_plant_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_plant_0.png",
+    "file_size_bytes": 758,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_plant_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_plant_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_plant_1.png",
+    "file_size_bytes": 809,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_plant_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_plant_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_plant_2.png",
+    "file_size_bytes": 767,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_till_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_till_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_till_0.png",
+    "file_size_bytes": 881,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_till_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_till_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_till_1.png",
+    "file_size_bytes": 839,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_till_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_till_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_till_2.png",
+    "file_size_bytes": 851,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_till_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_till_3.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_till_3.png",
+    "file_size_bytes": 876,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_till_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_till_4.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_till_4.png",
+    "file_size_bytes": 844,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_water_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_water_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_water_0.png",
+    "file_size_bytes": 825,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_water_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_water_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_water_1.png",
+    "file_size_bytes": 894,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_side_water_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_side_water_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_side_water_2.png",
+    "file_size_bytes": 979,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_0.png",
+    "file_size_bytes": 803,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_1.png",
+    "file_size_bytes": 830,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_2.png",
+    "file_size_bytes": 838,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_action.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_action.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_action.png",
+    "file_size_bytes": 767,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_fish_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_fish_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_fish_0.png",
+    "file_size_bytes": 748,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_fish_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_fish_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_fish_1.png",
+    "file_size_bytes": 805,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_fish_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_fish_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_fish_2.png",
+    "file_size_bytes": 818,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_fish_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_fish_3.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_fish_3.png",
+    "file_size_bytes": 780,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_fish_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_fish_4.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_fish_4.png",
+    "file_size_bytes": 778,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_harvest_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_harvest_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_harvest_0.png",
+    "file_size_bytes": 783,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_harvest_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_harvest_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_harvest_1.png",
+    "file_size_bytes": 813,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_harvest_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_harvest_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_harvest_2.png",
+    "file_size_bytes": 780,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_harvest_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_harvest_3.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_harvest_3.png",
+    "file_size_bytes": 794,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_plant_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_plant_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_plant_0.png",
+    "file_size_bytes": 787,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_plant_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_plant_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_plant_1.png",
+    "file_size_bytes": 815,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_plant_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_plant_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_plant_2.png",
+    "file_size_bytes": 791,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_till_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_till_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_till_0.png",
+    "file_size_bytes": 842,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_till_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_till_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_till_1.png",
+    "file_size_bytes": 848,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_till_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_till_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_till_2.png",
+    "file_size_bytes": 797,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_till_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_till_3.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_till_3.png",
+    "file_size_bytes": 837,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_till_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_till_4.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_till_4.png",
+    "file_size_bytes": 826,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_water_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_water_0.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_water_0.png",
+    "file_size_bytes": 814,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_water_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_water_1.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_water_1.png",
+    "file_size_bytes": 865,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "farmer_up_water_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "farmer",
+    "original_path": "picture/farmer_up_water_2.png",
+    "collected_path": "stardew_valley/farmer/farmer_up_water_2.png",
+    "file_size_bytes": 948,
+    "dimensions": "24x36"
+  },
+  {
+    "asset_name": "cave_entrance.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/cave_entrance.png",
+    "collected_path": "stardew_valley/mine/cave_entrance.png",
+    "file_size_bytes": 1991,
+    "dimensions": "48x48"
+  },
+  {
+    "asset_name": "decor_barrel.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/decor_barrel.png",
+    "collected_path": "stardew_valley/mine/decor_barrel.png",
+    "file_size_bytes": 461,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "decor_cart.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/decor_cart.png",
+    "collected_path": "stardew_valley/mine/decor_cart.png",
+    "file_size_bytes": 548,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "decor_torch.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/decor_torch.png",
+    "collected_path": "stardew_valley/mine/decor_torch.png",
+    "file_size_bytes": 630,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "item_coal.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/item_coal.png",
+    "collected_path": "stardew_valley/mine/item_coal.png",
+    "file_size_bytes": 207,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "item_copper_ore.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/item_copper_ore.png",
+    "collected_path": "stardew_valley/mine/item_copper_ore.png",
+    "file_size_bytes": 225,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "item_diamond.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/item_diamond.png",
+    "collected_path": "stardew_valley/mine/item_diamond.png",
+    "file_size_bytes": 314,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "item_gold_ore.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/item_gold_ore.png",
+    "collected_path": "stardew_valley/mine/item_gold_ore.png",
+    "file_size_bytes": 253,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "item_iron_ore.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/item_iron_ore.png",
+    "collected_path": "stardew_valley/mine/item_iron_ore.png",
+    "file_size_bytes": 320,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "item_ruby.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/item_ruby.png",
+    "collected_path": "stardew_valley/mine/item_ruby.png",
+    "file_size_bytes": 311,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "item_stone.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/item_stone.png",
+    "collected_path": "stardew_valley/mine/item_stone.png",
+    "file_size_bytes": 287,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_floor.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/mine_floor.png",
+    "collected_path": "stardew_valley/mine/mine_floor.png",
+    "file_size_bytes": 381,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_floor_frost.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/mine_floor_frost.png",
+    "collected_path": "stardew_valley/mine/mine_floor_frost.png",
+    "file_size_bytes": 361,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_floor_lava.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/mine_floor_lava.png",
+    "collected_path": "stardew_valley/mine/mine_floor_lava.png",
+    "file_size_bytes": 363,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_floor_stone.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/mine_floor_stone.png",
+    "collected_path": "stardew_valley/mine/mine_floor_stone.png",
+    "file_size_bytes": 432,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_ladder_down.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/mine_ladder_down.png",
+    "collected_path": "stardew_valley/mine/mine_ladder_down.png",
+    "file_size_bytes": 489,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_ladder_up.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/mine_ladder_up.png",
+    "collected_path": "stardew_valley/mine/mine_ladder_up.png",
+    "file_size_bytes": 403,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_wall.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/mine_wall.png",
+    "collected_path": "stardew_valley/mine/mine_wall.png",
+    "file_size_bytes": 456,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_wall_beam.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/mine_wall_beam.png",
+    "collected_path": "stardew_valley/mine/mine_wall_beam.png",
+    "file_size_bytes": 458,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_wall_frost.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/mine_wall_frost.png",
+    "collected_path": "stardew_valley/mine/mine_wall_frost.png",
+    "file_size_bytes": 489,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_wall_lava.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/mine_wall_lava.png",
+    "collected_path": "stardew_valley/mine/mine_wall_lava.png",
+    "file_size_bytes": 436,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "rock_coal.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/rock_coal.png",
+    "collected_path": "stardew_valley/mine/rock_coal.png",
+    "file_size_bytes": 464,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "rock_copper_ore.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/rock_copper_ore.png",
+    "collected_path": "stardew_valley/mine/rock_copper_ore.png",
+    "file_size_bytes": 531,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "rock_diamond.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/rock_diamond.png",
+    "collected_path": "stardew_valley/mine/rock_diamond.png",
+    "file_size_bytes": 581,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "rock_gold_ore.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/rock_gold_ore.png",
+    "collected_path": "stardew_valley/mine/rock_gold_ore.png",
+    "file_size_bytes": 584,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "rock_iron_ore.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/rock_iron_ore.png",
+    "collected_path": "stardew_valley/mine/rock_iron_ore.png",
+    "file_size_bytes": 510,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "rock_ruby.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/rock_ruby.png",
+    "collected_path": "stardew_valley/mine/rock_ruby.png",
+    "file_size_bytes": 496,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "rock_stone.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine/rock_stone.png",
+    "collected_path": "stardew_valley/mine/rock_stone.png",
+    "file_size_bytes": 436,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "mine_sign.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/mine_sign.png",
+    "collected_path": "stardew_valley/mine/mine_sign.png",
+    "file_size_bytes": 525,
+    "dimensions": "32x48"
+  },
+  {
+    "asset_name": "pickaxe_basic.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/pickaxe_basic.png",
+    "collected_path": "stardew_valley/mine/pickaxe_basic.png",
+    "file_size_bytes": 372,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "pickaxe_copper.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/pickaxe_copper.png",
+    "collected_path": "stardew_valley/mine/pickaxe_copper.png",
+    "file_size_bytes": 368,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "pickaxe_gold.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/pickaxe_gold.png",
+    "collected_path": "stardew_valley/mine/pickaxe_gold.png",
+    "file_size_bytes": 423,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "pickaxe_icon.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/pickaxe_icon.png",
+    "collected_path": "stardew_valley/mine/pickaxe_icon.png",
+    "file_size_bytes": 372,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "pickaxe_iridium.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/pickaxe_iridium.png",
+    "collected_path": "stardew_valley/mine/pickaxe_iridium.png",
+    "file_size_bytes": 411,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "pickaxe_iron.png",
+    "source_origin": "Stardew Valley",
+    "category": "mine",
+    "original_path": "picture/pickaxe_iron.png",
+    "collected_path": "stardew_valley/mine/pickaxe_iron.png",
+    "file_size_bytes": 412,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "bush_berry.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/bush_berry.png",
+    "collected_path": "stardew_valley/environment_and_nature/bush_berry.png",
+    "file_size_bytes": 1337,
+    "dimensions": "32x48"
+  },
+  {
+    "asset_name": "bush_large.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/bush_large.png",
+    "collected_path": "stardew_valley/environment_and_nature/bush_large.png",
+    "file_size_bytes": 1760,
+    "dimensions": "48x48"
+  },
+  {
+    "asset_name": "bush_med.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/bush_med.png",
+    "collected_path": "stardew_valley/environment_and_nature/bush_med.png",
+    "file_size_bytes": 1078,
+    "dimensions": "32x48"
+  },
+  {
+    "asset_name": "bush_small.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/bush_small.png",
+    "collected_path": "stardew_valley/environment_and_nature/bush_small.png",
+    "file_size_bytes": 1120,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "sdv_cobblestone_path.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_cobblestone_path.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_cobblestone_path.png",
+    "file_size_bytes": 1259,
+    "dimensions": "64x64"
+  },
+  {
+    "asset_name": "sdv_dark_grass_tiles.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_dark_grass_tiles.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_dark_grass_tiles.png",
+    "file_size_bytes": 5288,
+    "dimensions": "128x32"
+  },
+  {
+    "asset_name": "sdv_dirt.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_dirt.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_dirt.png",
+    "file_size_bytes": 914,
+    "dimensions": "64x16"
+  },
+  {
+    "asset_name": "sdv_dirt_patch_tiles.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_dirt_patch_tiles.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_dirt_patch_tiles.png",
+    "file_size_bytes": 5145,
+    "dimensions": "128x32"
+  },
+  {
+    "asset_name": "sdv_grass.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_grass.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_grass.png",
+    "file_size_bytes": 1027,
+    "dimensions": "144x16"
+  },
+  {
+    "asset_name": "sdv_north_cliff.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_north_cliff.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_north_cliff.png",
+    "file_size_bytes": 11138,
+    "dimensions": "1900x96"
+  },
+  {
+    "asset_name": "sdv_north_cliff_top.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_north_cliff_top.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_north_cliff_top.png",
+    "file_size_bytes": 13865,
+    "dimensions": "1900x160"
+  },
+  {
+    "asset_name": "sdv_pond.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_pond.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_pond.png",
+    "file_size_bytes": 6325,
+    "dimensions": "176x96"
+  },
+  {
+    "asset_name": "sdv_pond_stardew.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_pond_stardew.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_pond_stardew.png",
+    "file_size_bytes": 37240,
+    "dimensions": "416x368"
+  },
+  {
+    "asset_name": "sdv_ripple_0.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_ripple_0.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_ripple_0.png",
+    "file_size_bytes": 1101,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "sdv_ripple_1.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_ripple_1.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_ripple_1.png",
+    "file_size_bytes": 1083,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "sdv_ripple_2.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_ripple_2.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_ripple_2.png",
+    "file_size_bytes": 956,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "sdv_ripple_3.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_ripple_3.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_ripple_3.png",
+    "file_size_bytes": 896,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "sdv_ripple_4.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_ripple_4.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_ripple_4.png",
+    "file_size_bytes": 847,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "sdv_ripple_5.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_ripple_5.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_ripple_5.png",
+    "file_size_bytes": 747,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "sdv_ripple_6.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_ripple_6.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_ripple_6.png",
+    "file_size_bytes": 727,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "sdv_ripple_7.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_ripple_7.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_ripple_7.png",
+    "file_size_bytes": 701,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "sdv_road_tiles.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/sdv_road_tiles.png",
+    "collected_path": "stardew_valley/environment_and_nature/sdv_road_tiles.png",
+    "file_size_bytes": 7192,
+    "dimensions": "96x64"
+  },
+  {
+    "asset_name": "tree.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/tree.png",
+    "collected_path": "stardew_valley/environment_and_nature/tree.png",
+    "file_size_bytes": 3691,
+    "dimensions": "48x96"
+  },
+  {
+    "asset_name": "tree_broadleaf.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/tree_broadleaf.png",
+    "collected_path": "stardew_valley/environment_and_nature/tree_broadleaf.png",
+    "file_size_bytes": 5130,
+    "dimensions": "64x112"
+  },
+  {
+    "asset_name": "tree_maple.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/tree_maple.png",
+    "collected_path": "stardew_valley/environment_and_nature/tree_maple.png",
+    "file_size_bytes": 3342,
+    "dimensions": "48x96"
+  },
+  {
+    "asset_name": "tree_oak.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/tree_oak.png",
+    "collected_path": "stardew_valley/environment_and_nature/tree_oak.png",
+    "file_size_bytes": 3691,
+    "dimensions": "48x96"
+  },
+  {
+    "asset_name": "tree_pine.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/tree_pine.png",
+    "collected_path": "stardew_valley/environment_and_nature/tree_pine.png",
+    "file_size_bytes": 2723,
+    "dimensions": "48x96"
+  },
+  {
+    "asset_name": "tree_stump.png",
+    "source_origin": "Stardew Valley",
+    "category": "environment_and_nature",
+    "original_path": "picture/tree_stump.png",
+    "collected_path": "stardew_valley/environment_and_nature/tree_stump.png",
+    "file_size_bytes": 559,
+    "dimensions": "16x32"
+  },
+  {
+    "asset_name": "fence_corner.png",
+    "source_origin": "Stardew Valley",
+    "category": "fences_and_gates",
+    "original_path": "picture/fence_corner.png",
+    "collected_path": "stardew_valley/fences_and_gates/fence_corner.png",
+    "file_size_bytes": 401,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "fence_corner_bl.png",
+    "source_origin": "Stardew Valley",
+    "category": "fences_and_gates",
+    "original_path": "picture/fence_corner_bl.png",
+    "collected_path": "stardew_valley/fences_and_gates/fence_corner_bl.png",
+    "file_size_bytes": 499,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "fence_corner_br.png",
+    "source_origin": "Stardew Valley",
+    "category": "fences_and_gates",
+    "original_path": "picture/fence_corner_br.png",
+    "collected_path": "stardew_valley/fences_and_gates/fence_corner_br.png",
+    "file_size_bytes": 568,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "fence_corner_tl.png",
+    "source_origin": "Stardew Valley",
+    "category": "fences_and_gates",
+    "original_path": "picture/fence_corner_tl.png",
+    "collected_path": "stardew_valley/fences_and_gates/fence_corner_tl.png",
+    "file_size_bytes": 484,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "fence_corner_tr.png",
+    "source_origin": "Stardew Valley",
+    "category": "fences_and_gates",
+    "original_path": "picture/fence_corner_tr.png",
+    "collected_path": "stardew_valley/fences_and_gates/fence_corner_tr.png",
+    "file_size_bytes": 562,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "fence_h.png",
+    "source_origin": "Stardew Valley",
+    "category": "fences_and_gates",
+    "original_path": "picture/fence_h.png",
+    "collected_path": "stardew_valley/fences_and_gates/fence_h.png",
+    "file_size_bytes": 572,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "fence_v.png",
+    "source_origin": "Stardew Valley",
+    "category": "fences_and_gates",
+    "original_path": "picture/fence_v.png",
+    "collected_path": "stardew_valley/fences_and_gates/fence_v.png",
+    "file_size_bytes": 329,
+    "dimensions": "16x32"
+  },
+  {
+    "asset_name": "gate_coop.png",
+    "source_origin": "Stardew Valley",
+    "category": "fences_and_gates",
+    "original_path": "picture/gate_coop.png",
+    "collected_path": "stardew_valley/fences_and_gates/gate_coop.png",
+    "file_size_bytes": 691,
+    "dimensions": "48x32"
+  },
+  {
+    "asset_name": "gate_farm.png",
+    "source_origin": "Stardew Valley",
+    "category": "fences_and_gates",
+    "original_path": "picture/gate_farm.png",
+    "collected_path": "stardew_valley/fences_and_gates/gate_farm.png",
+    "file_size_bytes": 775,
+    "dimensions": "64x32"
+  },
+  {
+    "asset_name": "gate_v.png",
+    "source_origin": "Stardew Valley",
+    "category": "fences_and_gates",
+    "original_path": "picture/gate_v.png",
+    "collected_path": "stardew_valley/fences_and_gates/gate_v.png",
+    "file_size_bytes": 730,
+    "dimensions": "32x64"
+  },
+  {
+    "asset_name": "hoe_dirt_dark_isolated.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_dark_isolated.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_dark_isolated.png",
+    "file_size_bytes": 578,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_dark_left.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_dark_left.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_dark_left.png",
+    "file_size_bytes": 465,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_dark_mid.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_dark_mid.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_dark_mid.png",
+    "file_size_bytes": 473,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_dark_right.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_dark_right.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_dark_right.png",
+    "file_size_bytes": 474,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_isolated.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_isolated.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_isolated.png",
+    "file_size_bytes": 580,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_left.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_left.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_left.png",
+    "file_size_bytes": 465,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_mid.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_mid.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_mid.png",
+    "file_size_bytes": 487,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_right.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_right.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_right.png",
+    "file_size_bytes": 490,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_wet_isolated.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_wet_isolated.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_wet_isolated.png",
+    "file_size_bytes": 578,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_wet_left.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_wet_left.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_wet_left.png",
+    "file_size_bytes": 465,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_wet_mid.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_wet_mid.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_wet_mid.png",
+    "file_size_bytes": 473,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "hoe_dirt_wet_right.png",
+    "source_origin": "Stardew Valley",
+    "category": "hoe_dirt",
+    "original_path": "picture/hoe_dirt_wet_right.png",
+    "collected_path": "stardew_valley/hoe_dirt/hoe_dirt_wet_right.png",
+    "file_size_bytes": 474,
+    "dimensions": "32x32"
+  },
+  {
+    "asset_name": "barn_tier1.png",
+    "source_origin": "Stardew Valley",
+    "category": "buildings",
+    "original_path": "picture/barn_tier1.png",
+    "collected_path": "stardew_valley/buildings/barn_tier1.png",
+    "file_size_bytes": 4689,
+    "dimensions": "112x128"
+  },
+  {
+    "asset_name": "barn_tier2.png",
+    "source_origin": "Stardew Valley",
+    "category": "buildings",
+    "original_path": "picture/barn_tier2.png",
+    "collected_path": "stardew_valley/buildings/barn_tier2.png",
+    "file_size_bytes": 5258,
+    "dimensions": "112x128"
+  },
+  {
+    "asset_name": "coop_tier1.png",
+    "source_origin": "Stardew Valley",
+    "category": "buildings",
+    "original_path": "picture/coop_tier1.png",
+    "collected_path": "stardew_valley/buildings/coop_tier1.png",
+    "file_size_bytes": 6171,
+    "dimensions": "96x128"
+  },
+  {
+    "asset_name": "coop_tier2.png",
+    "source_origin": "Stardew Valley",
+    "category": "buildings",
+    "original_path": "picture/coop_tier2.png",
+    "collected_path": "stardew_valley/buildings/coop_tier2.png",
+    "file_size_bytes": 6326,
+    "dimensions": "96x128"
+  },
+  {
+    "asset_name": "house.png",
+    "source_origin": "Stardew Valley",
+    "category": "buildings",
+    "original_path": "picture/house.png",
+    "collected_path": "stardew_valley/buildings/house.png",
+    "file_size_bytes": 10541,
+    "dimensions": "144x144"
+  },
+  {
+    "asset_name": "shed.png",
+    "source_origin": "Stardew Valley",
+    "category": "buildings",
+    "original_path": "picture/shed.png",
+    "collected_path": "stardew_valley/buildings/shed.png",
+    "file_size_bytes": 9761,
+    "dimensions": "112x128"
+  },
+  {
+    "asset_name": "tent.png",
+    "source_origin": "Stardew Valley",
+    "category": "buildings",
+    "original_path": "picture/tent.png",
+    "collected_path": "stardew_valley/buildings/tent.png",
+    "file_size_bytes": 1304,
+    "dimensions": "48x64"
+  },
+  {
+    "asset_name": "springobjects.png",
+    "source_origin": "Stardew Valley",
+    "category": "tilesheets",
+    "original_path": "picture/springobjects.png",
+    "collected_path": "stardew_valley/tilesheets/springobjects.png",
+    "file_size_bytes": 257822,
+    "dimensions": "384x624"
+  },
+  {
+    "asset_name": "Craftables.png",
+    "source_origin": "Stardew Valley",
+    "category": "tilesheets",
+    "original_path": "picture/tilesheets/Craftables.png",
+    "collected_path": "stardew_valley/tilesheets/Craftables.png",
+    "file_size_bytes": 138086,
+    "dimensions": "128x1472"
+  },
+  {
+    "asset_name": "animations.png",
+    "source_origin": "Stardew Valley",
+    "category": "tilesheets",
+    "original_path": "picture/tilesheets/animations.png",
+    "collected_path": "stardew_valley/tilesheets/animations.png",
+    "file_size_bytes": 132809,
+    "dimensions": "640x3328"
+  },
+  {
+    "asset_name": "bobbers.png",
+    "source_origin": "Stardew Valley",
+    "category": "tilesheets",
+    "original_path": "picture/tilesheets/bobbers.png",
+    "collected_path": "stardew_valley/tilesheets/bobbers.png",
+    "file_size_bytes": 11179,
+    "dimensions": "128x160"
+  },
+  {
+    "asset_name": "crops.png",
+    "source_origin": "Stardew Valley",
+    "category": "tilesheets",
+    "original_path": "picture/tilesheets/crops.png",
+    "collected_path": "stardew_valley/tilesheets/crops.png",
+    "file_size_bytes": 84050,
+    "dimensions": "256x1024"
+  },
+  {
+    "asset_name": "tools.png",
+    "source_origin": "Stardew Valley",
+    "category": "tilesheets",
+    "original_path": "picture/tilesheets/tools.png",
+    "collected_path": "stardew_valley/tilesheets/tools.png",
+    "file_size_bytes": 34517,
+    "dimensions": "336x384"
+  },
+  {
+    "asset_name": "feed_bag.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/feed_bag.png",
+    "collected_path": "stardew_valley/tools_and_props/feed_bag.png",
+    "file_size_bytes": 228,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "hoe_icon.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/hoe_icon.png",
+    "collected_path": "stardew_valley/tools_and_props/hoe_icon.png",
+    "file_size_bytes": 266,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "mailbox.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/mailbox.png",
+    "collected_path": "stardew_valley/tools_and_props/mailbox.png",
+    "file_size_bytes": 499,
+    "dimensions": "16x32"
+  },
+  {
+    "asset_name": "rod_basic.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/rod_basic.png",
+    "collected_path": "stardew_valley/tools_and_props/rod_basic.png",
+    "file_size_bytes": 262,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "rod_high.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/rod_high.png",
+    "collected_path": "stardew_valley/tools_and_props/rod_high.png",
+    "file_size_bytes": 280,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "rod_mid.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/rod_mid.png",
+    "collected_path": "stardew_valley/tools_and_props/rod_mid.png",
+    "file_size_bytes": 269,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "scarecrow.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/scarecrow.png",
+    "collected_path": "stardew_valley/tools_and_props/scarecrow.png",
+    "file_size_bytes": 740,
+    "dimensions": "16x32"
+  },
+  {
+    "asset_name": "sdv_bobber.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/sdv_bobber.png",
+    "collected_path": "stardew_valley/tools_and_props/sdv_bobber.png",
+    "file_size_bytes": 183,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "sdv_bobber_float.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/sdv_bobber_float.png",
+    "collected_path": "stardew_valley/tools_and_props/sdv_bobber_float.png",
+    "file_size_bytes": 204,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "sdv_rod.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/sdv_rod.png",
+    "collected_path": "stardew_valley/tools_and_props/sdv_rod.png",
+    "file_size_bytes": 262,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "watering_can_icon.png",
+    "source_origin": "Stardew Valley",
+    "category": "tools_and_props",
+    "original_path": "picture/watering_can_icon.png",
+    "collected_path": "stardew_valley/tools_and_props/watering_can_icon.png",
+    "file_size_bytes": 323,
+    "dimensions": "16x16"
+  },
+  {
+    "asset_name": "Bắp cải.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Bắp cải.png",
+    "collected_path": "outside_sources/vietnamese_crops/Bắp cải.png",
+    "file_size_bytes": 1840048,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Cao su.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Cao su.png",
+    "collected_path": "outside_sources/vietnamese_crops/Cao su.png",
+    "file_size_bytes": 9644,
+    "dimensions": "60x66"
+  },
+  {
+    "asset_name": "Cà Phê.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Cà Phê.png",
+    "collected_path": "outside_sources/vietnamese_crops/Cà Phê.png",
+    "file_size_bytes": 1793857,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Cà chua.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Cà chua.png",
+    "collected_path": "outside_sources/vietnamese_crops/Cà chua.png",
+    "file_size_bytes": 1977453,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Cà rốt.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Cà rốt.png",
+    "collected_path": "outside_sources/vietnamese_crops/Cà rốt.png",
+    "file_size_bytes": 2068701,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Cây ngô pixel giữa nền đất_lua.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Cây ngô pixel giữa nền đất_lua.png",
+    "collected_path": "outside_sources/vietnamese_crops/Cây ngô pixel giữa nền đất_lua.png",
+    "file_size_bytes": 1536066,
+    "dimensions": "1254x1254"
+  },
+  {
+    "asset_name": "Dưa Hấu .png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Dưa Hấu .png",
+    "collected_path": "outside_sources/vietnamese_crops/Dưa Hấu .png",
+    "file_size_bytes": 2024316,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Hồ tiêu.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Hồ tiêu.png",
+    "collected_path": "outside_sources/vietnamese_crops/Hồ tiêu.png",
+    "file_size_bytes": 1741942,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Khoai Lang.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Khoai Lang.png",
+    "collected_path": "outside_sources/vietnamese_crops/Khoai Lang.png",
+    "file_size_bytes": 1786320,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Khoai Tây.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Khoai Tây.png",
+    "collected_path": "outside_sources/vietnamese_crops/Khoai Tây.png",
+    "file_size_bytes": 1955039,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Lúa Mì .png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Lúa Mì .png",
+    "collected_path": "outside_sources/vietnamese_crops/Lúa Mì .png",
+    "file_size_bytes": 1896998,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Lúa gạo.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Lúa gạo.png",
+    "collected_path": "outside_sources/vietnamese_crops/Lúa gạo.png",
+    "file_size_bytes": 1993594,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Lạc.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Lạc.png",
+    "collected_path": "outside_sources/vietnamese_crops/Lạc.png",
+    "file_size_bytes": 2008683,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Mía.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Mía.png",
+    "collected_path": "outside_sources/vietnamese_crops/Mía.png",
+    "file_size_bytes": 2010681,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Sắn.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Sắn.png",
+    "collected_path": "outside_sources/vietnamese_crops/Sắn.png",
+    "file_size_bytes": 1922160,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "Đậu tương.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "vietnamese_crops",
+    "original_path": "picture/Đậu tương.png",
+    "collected_path": "outside_sources/vietnamese_crops/Đậu tương.png",
+    "file_size_bytes": 2005753,
+    "dimensions": "1024x1024"
+  },
+  {
+    "asset_name": "coop.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "custom_pixel_art",
+    "original_path": "picture/coop.png",
+    "collected_path": "outside_sources/custom_pixel_art/coop.png",
+    "file_size_bytes": 649,
+    "dimensions": "48x48"
+  },
+  {
+    "asset_name": "market_stall.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "custom_pixel_art",
+    "original_path": "picture/market_stall.png",
+    "collected_path": "outside_sources/custom_pixel_art/market_stall.png",
+    "file_size_bytes": 10516,
+    "dimensions": "112x66"
+  },
+  {
+    "asset_name": "stall_shadow.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "custom_pixel_art",
+    "original_path": "picture/stall_shadow.png",
+    "collected_path": "outside_sources/custom_pixel_art/stall_shadow.png",
+    "file_size_bytes": 1023,
+    "dimensions": "124x32"
+  },
+  {
+    "asset_name": "trough.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "custom_pixel_art",
+    "original_path": "picture/trough.png",
+    "collected_path": "outside_sources/custom_pixel_art/trough.png",
+    "file_size_bytes": 228,
+    "dimensions": "22x8"
+  },
+  {
+    "asset_name": "water_trough.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "custom_pixel_art",
+    "original_path": "picture/water_trough.png",
+    "collected_path": "outside_sources/custom_pixel_art/water_trough.png",
+    "file_size_bytes": 180,
+    "dimensions": "18x8"
+  },
+  {
+    "asset_name": "btn_continue.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "title_screen_ui",
+    "original_path": "picture/title_screen/btn_continue.png",
+    "collected_path": "outside_sources/title_screen_ui/btn_continue.png",
+    "file_size_bytes": 61458,
+    "dimensions": "442x118"
+  },
+  {
+    "asset_name": "btn_guide.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "title_screen_ui",
+    "original_path": "picture/title_screen/btn_guide.png",
+    "collected_path": "outside_sources/title_screen_ui/btn_guide.png",
+    "file_size_bytes": 78992,
+    "dimensions": "481x134"
+  },
+  {
+    "asset_name": "btn_new_game.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "title_screen_ui",
+    "original_path": "picture/title_screen/btn_new_game.png",
+    "collected_path": "outside_sources/title_screen_ui/btn_new_game.png",
+    "file_size_bytes": 69154,
+    "dimensions": "442x118"
+  },
+  {
+    "asset_name": "title_bg.png",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "title_screen_ui",
+    "original_path": "picture/title_screen/title_bg.png",
+    "collected_path": "outside_sources/title_screen_ui/title_bg.png",
+    "file_size_bytes": 862272,
+    "dimensions": "1024x571"
+  },
+  {
+    "asset_name": "icon.svg",
+    "source_origin": "Nguồn ngoài / Tự thiết kế (Custom)",
+    "category": "app_icon",
+    "original_path": "icon.svg",
+    "collected_path": "outside_sources/app_icon/icon.svg",
+    "file_size_bytes": 995,
+    "dimensions": "Vector SVG"
+  }
+]
